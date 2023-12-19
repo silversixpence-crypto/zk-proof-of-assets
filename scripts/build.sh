@@ -46,8 +46,7 @@ CIRCUIT_NAME=ecdsa_verification
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 
 # snarkjs requires lots of memory.
-# export NODE_OPTIONS="--max-old-space-size=56000"
-export NODE_OPTIONS="--max-old-space-size=1024"
+export NODE_OPTIONS="--max-old-space-size=56000"
 
 if [ -f "$PHASE1" ]; then
     printf "Found Phase 1 ptau file $PHASE1"
