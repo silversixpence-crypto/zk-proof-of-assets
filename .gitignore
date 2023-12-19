@@ -1,0 +1,6 @@
+build/
+node_modules/
+__pycache__/
+
+pot*.ptau
+yarn.lock

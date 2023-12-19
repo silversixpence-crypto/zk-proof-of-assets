@@ -1,0 +1,12 @@
+{
+  "name": "zk-proof-of-assets",
+  "version": "0.1.0",
+  "description": "ZK-SNARK Proof of Assets protocol written in Circom",
+  "main": "index.js",
+  "repository": "https://github.com/silversixpence-crypto/zk-proof-of-assets",
+  "author": "Stenton Mayne <stentonian@protonmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "snarkjs": "^0.7.2"
+  }
+}
