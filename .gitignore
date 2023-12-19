@@ -2,5 +2,5 @@ build/
 node_modules/
 __pycache__/
 
-pot*.ptau
+*.ptau
 yarn.lock
