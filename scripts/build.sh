@@ -92,7 +92,7 @@ printf "\n================ $WORDS ================\n"
 WORDS="VERIFYING FINAL ZKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
+\time --quiet npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 WORDS="EXPORTING VKEY"
 ERR_MSG="ERROR $WORDS"
@@ -102,9 +102,9 @@ printf "\n================ $WORDS ================\n"
 WORDS="GENERATING PROOF FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+\time --quiet npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
 WORDS="VERIFYING PROOF FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+\time --quiet npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
