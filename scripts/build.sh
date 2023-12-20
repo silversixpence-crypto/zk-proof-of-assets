@@ -18,8 +18,8 @@ function graceful_exit {
 # call like `err_report $LINENO $ERR_MSG`
 function err_report {
     ret=$? # previous command exit value
-    printf "\n####### A COMMAND FAILED ON LINE $1 #######\n"
-    printf "Error message: ${@:2}"
+    printf "\n####### A COMMAND FAILED ON LINE $1 #######\n\n"
+    echo "Error message: ${@:2}"
     graceful_exit "$ret"
 }
 
@@ -49,14 +49,14 @@ export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 export NODE_OPTIONS="--max-old-space-size=200000"
 
 if [ -f "$PHASE1" ]; then
-    printf "Found Phase 1 ptau file $PHASE1"
+    echo "Found Phase 1 ptau file $PHASE1"
 else
-    printf "Phase 1 ptau file not found: $PHASE1\nExiting..."
-    exit 1
+    echo "Phase 1 ptau file not found: $PHASE1"
+    graceful_exit 1
 fi
 
 if [ ! -d "$BUILD_DIR" ]; then
-    printf "No build directory found. Creating build directory..."
+    echo "No build directory found. Creating build directory..."
     mkdir -p "$BUILD_DIR"
 fi
 
@@ -70,7 +70,7 @@ printf "\n================ $WORDS ================\n"
 WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quite node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
+\time --quiet node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
 
 WORDS="GENERATING ZKEY 0"
 ERR_MSG="ERROR $WORDS"
@@ -91,7 +91,7 @@ printf "\n================ $WORDS ================\n"
 WORDS="VERIFYING FINAL ZKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quite npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
+\time --quiet npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
 
 WORDS="EXPORTING VKEY"
 ERR_MSG="ERROR $WORDS"
@@ -101,9 +101,9 @@ printf "\n================ $WORDS ================\n"
 WORDS="GENERATING PROOF FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quite npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+\time --quiet npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
 WORDS="VERIFYING PROOF FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quite npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+\time --quiet npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
