@@ -63,7 +63,14 @@ fi
 WORDS="COMPILING CIRCUIT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
+# TODO we don't need --c & --wasm (we should select 1 that we will use to generate the witness)
+# TODO what is --wat?
 \time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
+
+WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
+ERR_MSG="ERROR $WORDS"
+printf "\n================ $WORDS ================\n"
+\time --quite node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
 
 WORDS="GENERATING ZKEY 0"
 ERR_MSG="ERROR $WORDS"
@@ -78,9 +85,25 @@ printf "\n================ $WORDS ================\n"
 WORDS="GENERATING FINAL ZKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
+# TODO what is this random hex?
 \time --quiet npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 12FE2EC467BD428DD0E966A6287DE2AF8DE09C2C5C0AD902B2C666B0895ABB75 10 -n="Final Beacon phase2"
+
+WORDS="VERIFYING FINAL ZKEY"
+ERR_MSG="ERROR $WORDS"
+printf "\n================ $WORDS ================\n"
+\time --quite npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
 
 WORDS="EXPORTING VKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 \time --quiet npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+
+WORDS="GENERATING PROOF FOR SAMPLE INPUT"
+ERR_MSG="ERROR $WORDS"
+printf "\n================ $WORDS ================\n"
+\time --quite npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+
+WORDS="VERIFYING PROOF FOR SAMPLE INPUT"
+ERR_MSG="ERROR $WORDS"
+printf "\n================ $WORDS ================\n"
+\time --quite npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
