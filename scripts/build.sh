@@ -70,7 +70,7 @@ printf "\n================ $WORDS ================\n"
 WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-\time --quiet node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
+\time --quiet node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input.json "$BUILD_DIR"/witness.wtns
 
 WORDS="GENERATING ZKEY 0"
 ERR_MSG="ERROR $WORDS"
