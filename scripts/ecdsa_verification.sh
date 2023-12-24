@@ -31,7 +31,7 @@ ERR_MSG="UNKNOWN"
 trap 'err_report $LINENO $ERR_MSG' ERR
 
 ############################################
-############# INSTALLATION #################
+################# SNARK ####################
 ############################################
 
 # Circuit compilation commands were originally from 0xPARC/circom-ecdsa
