@@ -68,20 +68,25 @@ printf "\n================ $WORDS ================\n"
 # TODO what is --wat?
 \time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
 
-WORDS="COMPILING C++ WITNESS GENERATION CODE"
+# WORDS="COMPILING C++ WITNESS GENERATION CODE"
+# ERR_MSG="ERROR $WORDS"
+# printf "\n================ $WORDS ================\n"
+# cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
+# \time --quiet make
+
+# WORDS="VERIFYING WITNESS"
+# ERR_MSG="ERROR $WORDS"
+# printf "\n================ $WORDS ================\n"
+# \time --quiet ./"$CIRCUIT_NAME" ../../../scripts/"$SIGNALS" ../witness.wtns
+
+# cd ..
+# npx snarkjs wej witness.wtns witness.json
+# cd ../..
+
+WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
-\time --quiet make
-
-WORDS="VERIFYING WITNESS"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet ./"$CIRCUIT_NAME" ../../../scripts/"$SIGNALS" ../witness.wtns
-
-cd ..
-npx snarkjs wej witness.wtns witness.json
-cd ../..
+\time --quiet node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
 
 WORDS="GENERATING ZKEY 0"
 ERR_MSG="ERROR $WORDS"
