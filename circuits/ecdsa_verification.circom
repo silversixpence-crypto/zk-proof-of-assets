@@ -1,5 +1,7 @@
 // copied from https://github.com/sethhrbek/heyanoun/blob/c043243493710109cb1d0f47daaf1015e908b1b4/circuits/circuits/daddy.circom
 
+// TODO we need to do additional checks over and above ECDSAVerifyNoPubkeyCheck
+
 pragma circom 2.0.6;
 include "../git_modules/circom-ecdsa/circuits/ecdsa.circom";
 

@@ -83,6 +83,7 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 \time --quiet npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
 
+# Proving key
 WORDS="GENERATING FINAL ZKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
@@ -94,6 +95,7 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 \time --quiet npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
+# Verifying key
 WORDS="EXPORTING VKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
