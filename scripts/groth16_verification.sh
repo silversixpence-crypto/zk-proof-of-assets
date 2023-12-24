@@ -66,7 +66,7 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 # TODO we don't need --c & --wasm (we should select 1 that we will use to generate the witness)
 # TODO what is --wat?
-\time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --01 --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
+\time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
 
 WORDS="COMPILING C++ WITNESS GENERATION CODE"
 ERR_MSG="ERROR $WORDS"
