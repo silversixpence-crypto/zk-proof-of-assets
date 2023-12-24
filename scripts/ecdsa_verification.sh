@@ -41,7 +41,7 @@ CIRCUITS_DIR=./circuits
 PHASE1=./powersOfTau28_hez_final_22.ptau
 BUILD_DIR=./build/ecdsa_verification
 CIRCUIT_NAME=ecdsa_verification
-SIGNALS=./scripts/input.json
+SIGNALS=./scripts/ecdsa_verification_inputs.json
 
 # Format for the `time` command (see `man time` for more details).
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
