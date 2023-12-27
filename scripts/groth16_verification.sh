@@ -38,7 +38,7 @@ trap 'err_report $LINENO $ERR_MSG' ERR
 # Time command with backslash prefix: https://unix.stackexchange.com/questions/497094/time-not-accepting-arguments
 
 CIRCUITS_DIR=./circuits
-PHASE1=./powersOfTau28_hez_final_22.ptau
+PHASE1=./powersOfTau28_hez_final_25.ptau
 BUILD_DIR=./build/groth16_verification
 CIRCUIT_NAME=groth16_verification
 SIGNALS=./scripts/groth16_verification_inputs.json
