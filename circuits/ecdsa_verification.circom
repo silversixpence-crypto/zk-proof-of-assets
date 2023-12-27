@@ -24,6 +24,7 @@ template SignatureVerification(n, k) {
     // Final result
     signal output verificationResult;
     verificationResult <== ecdsaVerify.result;
+    assert(verificationResult == 1);
 }
 
 component main { public [ msghash ] } = SignatureVerification(64, 4);
