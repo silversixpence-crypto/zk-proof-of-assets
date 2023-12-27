@@ -96,7 +96,7 @@ MSG="GENERATING WITNESS FOR SAMPLE INPUT"
 execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
 
 MSG="CHECKING WITNESS"
-execute snarkjs wtns check circuit.r1cs witness.wtns
+execute npx snarkjs wtns check circuit.r1cs witness.wtns
 
 MSG="GENERATING ZKEY 0"
 execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
