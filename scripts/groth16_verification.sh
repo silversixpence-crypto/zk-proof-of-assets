@@ -31,7 +31,17 @@ ERR_MSG="UNKNOWN"
 trap 'err_report $LINENO $ERR_MSG' ERR
 
 ############################################
-################# SNARK ####################
+################ EXECUTOR ##################
+############################################
+
+function execute {
+    ERR_MSG="ERROR $MSG"
+    printf "\n================ $MSG ================\n"
+    \time --quiet "${@:1}"
+}
+
+############################################
+################ COMMANDS ##################
 ############################################
 
 # Circuit compilation commands were originally from https://github.com/yi-sun/circom-pairing/blob/107c316223a08ac577522c54edd81f0fc4c03130/scripts/dev/build_dev.sh
@@ -51,6 +61,8 @@ export NODE_OPTIONS="--max-old-space-size=200000"
 
 if [ -f "$PHASE1" ]; then
     echo "Found Phase 1 ptau file $PHASE1"
+    # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
+    # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
 else
     echo "Phase 1 ptau file not found: $PHASE1"
     graceful_exit 1
@@ -61,67 +73,50 @@ if [ ! -d "$BUILD_DIR" ]; then
     mkdir -p "$BUILD_DIR"
 fi
 
-WORDS="COMPILING CIRCUIT"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-# TODO we don't need --c & --wasm (we should select 1 that we will use to generate the witness)
-# TODO what is --wat?
-\time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
+MSG="COMPILING CIRCUIT"
+# what is --O2? Level of simplification done for the constraints (0, 1, 2)
+# sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
 
-# WORDS="COMPILING C++ WITNESS GENERATION CODE"
-# ERR_MSG="ERROR $WORDS"
-# printf "\n================ $WORDS ================\n"
+snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
+
+# echo "COMPILING C++ WITNESS GENERATION CODE"
 # cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
-# \time --quiet make
+# make
 
-# WORDS="VERIFYING WITNESS"
-# ERR_MSG="ERROR $WORDS"
-# printf "\n================ $WORDS ================\n"
-# \time --quiet ./"$CIRCUIT_NAME" ../../../scripts/"$SIGNALS" ../witness.wtns
+# MSG="VERIFYING WITNESS"
+# execute ./"$CIRCUIT_NAME" ../../../scripts/"$SIGNALS" ../witness.wtns
 
 # cd ..
 # npx snarkjs wej witness.wtns witness.json
 # cd ../..
 
-WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+MSG="GENERATING WITNESS FOR SAMPLE INPUT"
+execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
 
-WORDS="GENERATING ZKEY 0"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+MSG="CHECKING WITNESS"
+execute snarkjs wtns check circuit.r1cs witness.wtns
 
-WORDS="CONTRIBUTING TO PHASE 2 CEREMONY"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
+MSG="GENERATING ZKEY 0"
+execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+
+MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
+execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
 
 # Proving key
-WORDS="GENERATING FINAL ZKEY"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-# TODO what is this random hex?
-\time --quiet npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+MSG="GENERATING FINAL ZKEY"
+# what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
+execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 
-WORDS="VERIFYING FINAL ZKEY"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+MSG="VERIFYING FINAL ZKEY"
+execute npx snarkjs zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 # Verifying key
-WORDS="EXPORTING VKEY"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+MSG="EXPORTING VKEY"
+execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 
-WORDS="GENERATING PROOF FOR SAMPLE INPUT"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+MSG="GENERATING PROOF FOR SAMPLE INPUT"
+execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
-WORDS="VERIFYING PROOF FOR SAMPLE INPUT"
-ERR_MSG="ERROR $WORDS"
-printf "\n================ $WORDS ================\n"
-\time --quiet npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+MSG="VERIFYING PROOF FOR SAMPLE INPUT"
+execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
