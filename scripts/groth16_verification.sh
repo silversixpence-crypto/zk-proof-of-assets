@@ -76,10 +76,10 @@ fi
 MSG="COMPILING CIRCUIT"
 # what is --O2? Level of simplification done for the constraints (0, 1, 2)
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
+# execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
-execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
+# execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
 
 # echo "COMPILING C++ WITNESS GENERATION CODE"
 # cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
