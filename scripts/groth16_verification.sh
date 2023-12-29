@@ -35,6 +35,7 @@ trap 'err_report $LINENO $ERR_MSG' ERR
 ############################################
 
 function execute {
+    date
     ERR_MSG="ERROR $MSG"
     printf "\n================ $MSG ================\n"
     \time --quiet "${@:1}"
@@ -59,6 +60,9 @@ export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 # snarkjs requires lots of memory.
 export NODE_OPTIONS="--max-old-space-size=200000"
 
+# https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
+sysctl -w vm.max_map_count=655300
+
 if [ -f "$PHASE1" ]; then
     echo "Found Phase 1 ptau file $PHASE1"
     # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
@@ -76,9 +80,11 @@ fi
 MSG="COMPILING CIRCUIT"
 # what is --O2? Level of simplification done for the constraints (0, 1, 2)
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
-# execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
+# takes about 50 min
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
+# took 2hrs to use 128GB of ram, then I killed it
 # execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
 
 # echo "COMPILING C++ WITNESS GENERATION CODE"
