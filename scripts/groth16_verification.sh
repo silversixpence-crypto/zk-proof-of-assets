@@ -60,9 +60,6 @@ export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 # snarkjs requires lots of memory.
 export NODE_OPTIONS="--max-old-space-size=200000"
 
-# https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
-sysctl -w vm.max_map_count=655300
-
 if [ -f "$PHASE1" ]; then
     echo "Found Phase 1 ptau file $PHASE1"
     # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
@@ -81,6 +78,7 @@ MSG="COMPILING CIRCUIT"
 # what is --O2? Level of simplification done for the constraints (0, 1, 2)
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
 # takes about 50 min
+# constraints: 32_451_250
 execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
@@ -99,13 +97,18 @@ MSG="PRINTING CIRCUIT INFO"
 # cd ../..
 
 MSG="GENERATING WITNESS FOR SAMPLE INPUT"
-execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+# took 20 min
+#execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
 
 MSG="CHECKING WITNESS"
-execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+# took 12 min
+#execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="GENERATING ZKEY 0"
-execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+# fails after 20 min, then I set `sysctl -w vm.max_map_count=655300`
+# https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
+# takes 27 hours & used 167GB mem
+#execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
 execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
