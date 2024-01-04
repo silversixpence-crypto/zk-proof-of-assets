@@ -1,3 +1,6 @@
 [submodule "git_modules/circom-ecdsa"]
 	path = git_modules/circom-ecdsa
 	url = https://github.com/0xPARC/circom-ecdsa.git
+[submodule "git_modules/circom-pairing"]
+	path = git_modules/circom-pairing
+	url = https://github.com/yi-sun/circom-pairing

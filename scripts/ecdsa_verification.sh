@@ -31,7 +31,7 @@ ERR_MSG="UNKNOWN"
 trap 'err_report $LINENO $ERR_MSG' ERR
 
 ############################################
-############# INSTALLATION #################
+################# SNARK ####################
 ############################################
 
 # Circuit compilation commands were originally from 0xPARC/circom-ecdsa
@@ -41,7 +41,7 @@ CIRCUITS_DIR=./circuits
 PHASE1=./powersOfTau28_hez_final_22.ptau
 BUILD_DIR=./build/ecdsa_verification
 CIRCUIT_NAME=ecdsa_verification
-SIGNALS=./scripts/input.json
+SIGNALS=./scripts/ecdsa_verification_inputs.json
 
 # Format for the `time` command (see `man time` for more details).
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
@@ -51,6 +51,8 @@ export NODE_OPTIONS="--max-old-space-size=200000"
 
 if [ -f "$PHASE1" ]; then
     echo "Found Phase 1 ptau file $PHASE1"
+    # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
+    # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
 else
     echo "Phase 1 ptau file not found: $PHASE1"
     graceful_exit 1
@@ -66,6 +68,7 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 # TODO we don't need --c & --wasm (we should select 1 that we will use to generate the witness)
 # TODO what is --wat?
+# sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
 \time --quiet circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --r1cs --wasm --sym --c --wat --output "$BUILD_DIR" -l ./node_modules
 
 WORDS="GENERATING WITNESS FOR SAMPLE INPUT"
@@ -83,10 +86,11 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 \time --quiet npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
 
+# Proving key
 WORDS="GENERATING FINAL ZKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
-# TODO what is this random hex?
+# what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
 \time --quiet npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 12FE2EC467BD428DD0E966A6287DE2AF8DE09C2C5C0AD902B2C666B0895ABB75 10 -n="Final Beacon phase2"
 
 WORDS="VERIFYING FINAL ZKEY"
@@ -94,6 +98,7 @@ ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
 \time --quiet npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
+# Verifying key
 WORDS="EXPORTING VKEY"
 ERR_MSG="ERROR $WORDS"
 printf "\n================ $WORDS ================\n"
