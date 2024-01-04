@@ -35,9 +35,9 @@ trap 'err_report $LINENO $ERR_MSG' ERR
 ############################################
 
 function execute {
-    date
     ERR_MSG="ERROR $MSG"
     printf "\n================ $MSG ================\n"
+    date
     \time --quiet "${@:1}"
 }
 
@@ -79,11 +79,14 @@ MSG="COMPILING CIRCUIT"
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
 # takes about 50 min
 # constraints: 32_451_250
-#execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
 # took 2hrs to use 128GB of ram, then I killed it
 # execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
+
+# ===============================
+# The C++ code wasn't working for some reason
 
 # echo "COMPILING C++ WITNESS GENERATION CODE"
 # cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
@@ -96,19 +99,29 @@ MSG="PRINTING CIRCUIT INFO"
 # npx snarkjs wej witness.wtns witness.json
 # cd ../..
 
+# ===============================
+
 MSG="GENERATING WITNESS FOR SAMPLE INPUT"
 # took 20 min
-#execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
 
 MSG="CHECKING WITNESS"
 # took 12 min
-#execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="GENERATING ZKEY 0"
-# fails after 20 min, then I set `sysctl -w vm.max_map_count=655300`
+# fails after 20 min with
+#
+# terminate called after throwing an instance of 'std::bad_alloc'
+#   what():  std::bad_alloc
+#
+# then I set `sysctl -w vm.max_map_count=655300`
+# https://github.com/iden3/snarkjs/issues/397#issuecomment-1876700914
+# https://github.com/nodejs/node/issues/27715#issuecomment-578557226
 # https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
+#
 # takes 27 hours & used 167GB mem
-#execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
 execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
@@ -118,13 +131,15 @@ MSG="GENERATING FINAL ZKEY"
 # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
 execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 
+# Time: 6 hours
 MSG="VERIFYING FINAL ZKEY"
 execute npx snarkjs zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
-# Verifying key
+# Quick, ~ 1 min
 MSG="EXPORTING VKEY"
 execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 
+# Time: 11.5 hrs
 MSG="GENERATING PROOF FOR SAMPLE INPUT"
 execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
