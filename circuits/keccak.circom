@@ -18,6 +18,10 @@ template MyKeccak() {
     for (var j = 0; j < m; j++) {
         assert(hashbits[j] == keccak256.out[j]);
     }
+
+    // need 1 non-linear constraint otherwise verification fails
+    // https://github.com/iden3/snarkjs/issues/406
+    signal xx <== preimagebits[0] * preimagebits[0];
 }
 
 component main = MyKeccak();
