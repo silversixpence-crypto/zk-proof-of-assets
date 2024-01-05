@@ -24,4 +24,4 @@ template MyKeccak() {
     signal xx <== preimagebits[0] * preimagebits[0];
 }
 
-component main = MyKeccak();
+component main { public [ hashbits ] } = MyKeccak();
