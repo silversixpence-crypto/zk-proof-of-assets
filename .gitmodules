@@ -4,3 +4,6 @@
 [submodule "git_modules/circom-pairing"]
 	path = git_modules/circom-pairing
 	url = https://github.com/yi-sun/circom-pairing
+[submodule "git_modules/keccak256-circom"]
+	path = git_modules/keccak256-circom
+	url = https://github.com/vocdoni/keccak256-circom
