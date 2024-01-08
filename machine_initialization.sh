@@ -45,9 +45,6 @@ trap 'err_report $LINENO $ERR_MSG' ERR
 DEFAULT_PTAU_SIZE=18
 PTAU_SIZE=${1:-$DEFAULT_PTAU_SIZE}
 
-DEFAULT_BRANCH="main"
-BRANCH=${2:-$DEFAULT_BRANCH}
-
 ############################################
 ####### APT SOFTWARE INSTALLATION ##########
 ############################################
@@ -57,6 +54,9 @@ ERR_MSG="Initial setup failed"
 sudo apt update && sudo apt upgrade -y
 
 sudo apt install -y nodejs build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4
+
+# for pyenv
+sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
 ############################################
 ############### CLOUDWATCH #################
@@ -94,51 +94,81 @@ echo '/swapfile whatever swap sw 0 0' | sudo tee -a /etc/fstab
 ############################################
 
 # PNPM
+cd "$HOME"
 ERR_MSG="PNPM setup failed"
 curl -fsSL https://get.pnpm.io/install.sh | sh -
-source /home/ubuntu/.bashrc
+export PNPM_HOME="/home/ubuntu/.local/share/pnpm"
+case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
 pnpm add npx -g
 
 # Rust
 ERR_MSG="Rust setup failed"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+cd "$HOME"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >> ./rustup-init.sh
+chmod +x ./rustup-init.sh
+./rustup-init.sh -y --no-modify-path
+rm -f ./rustup-init.sh
 source "$HOME/.cargo/env"
 
 # Circom
 ERR_MSG="Circom setup failed"
+cd "$HOME"
 git clone https://github.com/iden3/circom.git
 cd circom
 cargo build --release
 cargo install --path circom
-cd -
+
+# Pyenv
+ERR_MSG="Pyenv setup failed"
+cd "$HOME"
+git clone https://github.com/pyenv/pyenv.git
+export PATH="$HOME/pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+pyenv install 3.6
+pyenv global 3.6
 
 # Patched node
 ERR_MSG="Node setup failed"
+cd "$HOME"
 git clone https://github.com/nodejs/node.git
 cd node
 git checkout 8beef5eeb82425b13d447b50beafb04ece7f91b1
-./configure
+python configure.py
 make -j16
-NODE_PATH=$HOME/node/out/Release/node
-cd -
+export PATCHED_NODE_PATH=$HOME/node/out/Release/node
+
+# NPM
+ERR_MSG="NPM setup failed"
+cd "$HOME"
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install --lts
 
 # Rapidsnark
-git clone git@github.com:iden3/rapidsnark.git
+ERR_MSG="Node setup failed"
+cd "$HOME"
+git clone https://github.com/iden3/rapidsnark.git
 cd rapidsnark
-pnpm i
+npm install
 git submodule init
 git submodule update
 npx task createFieldSources
 npx task buildProver
-RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
-cd -
+export RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
 
 # Setup repo
 ERR_MSG="Repo setup failed"
+cd "$HOME"
 git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
 cd zk-proof-of-assets
 wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
-git switch -c "$BRANCH" origin/"$BRANCH"
+if [[ $BRANCH != "main" ]]; then
+    git switch -c "$BRANCH" origin/"$BRANCH"
+fi
 pnpm i
 git submodule init
 git submodule update
