@@ -7,3 +7,6 @@
 [submodule "git_modules/keccak256-circom"]
 	path = git_modules/keccak256-circom
 	url = https://github.com/vocdoni/keccak256-circom
+[submodule "git_modules/batch-ecdsa"]
+	path = git_modules/batch-ecdsa
+	url = https://github.com/puma314/batch-ecdsa
