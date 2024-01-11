@@ -176,12 +176,11 @@ ERR_MSG="Repo setup failed"
 cd "$HOME"
 git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
 cd zk-proof-of-assets
-wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
 if [[ $BRANCH != "main" ]]; then
     git switch -c "$BRANCH" origin/"$BRANCH"
 fi
 pnpm i
 git submodule init
 git submodule update
-
+wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
 

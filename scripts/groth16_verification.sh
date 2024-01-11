@@ -100,7 +100,7 @@ MSG="COMPILING CIRCUIT"
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
 # takes about 50 min (wasm)
 # constraints: 32_451_250
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
 # took 2hrs to use 128GB of ram, then I killed it
