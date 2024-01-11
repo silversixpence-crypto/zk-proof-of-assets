@@ -60,7 +60,7 @@ export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 # snarkjs requires lots of memory.
 # export NODE_OPTIONS="--max-old-space-size=200000"
 NODE_CLI_OPTIONS="--trace-gc --trace-gc-ignore-scavenger --max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
-NODE_OPTIONS="--trace-gc --trace-gc-ignore-scavenger --max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
+export NODE_OPTIONS="--trace-gc --trace-gc-ignore-scavenger --max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
 
 
 if [ -f "$PHASE1" ]; then
