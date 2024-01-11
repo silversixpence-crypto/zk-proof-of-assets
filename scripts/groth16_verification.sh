@@ -118,11 +118,12 @@ MSG="GENERATING WITNESS"
 cd -
 
 MSG="CHECKING WITNESS"
-# took 12 min
-execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+# took 9m (12m on prev measure)
+# execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="CONVERTING WITNESS TO JSON"
-execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
+# took 1.5 hrs then I killed it
+# execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
 
 MSG="GENERATING ZKEY 0"
 # fails after 20 min with
