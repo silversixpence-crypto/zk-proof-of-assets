@@ -7,6 +7,8 @@
 # http://stackoverflow.com/questions/35800082/ddg#35800451
 set -eE
 
+set -x
+
 # call like `graceful_exit <exit_code>`
 function graceful_exit {
     printf "\n####### EXITING... #######\n"
