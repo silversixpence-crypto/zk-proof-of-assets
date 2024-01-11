@@ -141,12 +141,13 @@ MSG="GENERATING ZKEY 0"
 #
 # takes 27 hours & used 167GB mem
 # execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
-execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey -v
-#execute snarkjs zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey -v
+# time: 8hrs
+#execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey -v
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
 # execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
-execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey contribute -verbose "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey -n="First phase2 contribution" -e="some random text for entropy"
+execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
+#execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey contribute -verbose "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey -n="First phase2 contribution" -e="some random text for entropy"
 
 # Proving key
 MSG="GENERATING FINAL ZKEY"
