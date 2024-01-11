@@ -149,19 +149,21 @@ export NVM_DIR="$HOME/.nvm"
 nvm install --lts
 
 # Rapidsnark
-ERR_MSG="Node setup failed"
+ERR_MSG="Rapidsnark setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/rapidsnark.git
 cd rapidsnark
-npm install
+pnpm i
 git submodule init
 git submodule update
-npx task createFieldSources
-npx task buildProver
+./build_gmp.sh host
+mkdir build_prover && cd build_prover
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
+make -j4 && make install
 export RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
 
 # snarkjs
-ERR_MSG="Node setup failed"
+ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/snarkjs.git
 cd snarkjs
