@@ -57,7 +57,7 @@ function execute {
 # https://hackmd.io/@yisun/BkT0RS87q
 
 CIRCUITS_DIR=./circuits
-PHASE1=./powersOfTau28_hez_final_22.ptau
+PHASE1=./powersOfTau28_hez_final_18.ptau
 BUILD_DIR=./build/batch_ecdsa
 CIRCUIT_NAME=batch_ecdsa
 SIGNALS=./scripts/batch_ecdsa_inputs.json
@@ -76,24 +76,19 @@ if [ ! -d "$BUILD_DIR" ]; then
     mkdir -p "$BUILD_DIR"
 fi
 
-
 MSG="COMPILING CIRCUIT"
 # add `--sym` to generate circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode)
 # what is --O1? Level of simplification done for the constraints (0, 1, 2)
 # In practice, one may still need to use --O1 because the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear).
-#execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --c --r1cs --output "$BUILD_DIR"
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --wasm --r1cs --output "$BUILD_DIR"
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --c --r1cs --output "$BUILD_DIR" -l ./node_modules
 
-MSG="GENERATING WITNESS FOR SAMPLE INPUT"
-execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+MSG="COMPILING C++ WITNESS GENERATION CODE"
+cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
+execute make
 
-# MSG="COMPILING C++ WITNESS GENERATION CODE"
-# cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
-# execute make
-
-# MSG="GENERATING WITNESS"
-# execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
-# cd -
+MSG="GENERATING WITNESS"
+execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+cd -
 
 execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
