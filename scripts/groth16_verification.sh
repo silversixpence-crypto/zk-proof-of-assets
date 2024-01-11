@@ -42,7 +42,7 @@ function execute {
 }
 
 ############################################
-################ COMMANDS ##################
+################## SETUP ###################
 ############################################
 
 # Circuit compilation commands were originally from https://github.com/yi-sun/circom-pairing/blob/107c316223a08ac577522c54edd81f0fc4c03130/scripts/dev/build_dev.sh
@@ -58,7 +58,9 @@ SIGNALS=./scripts/groth16_verification_inputs.json
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
 
 # snarkjs requires lots of memory.
-export NODE_OPTIONS="--max-old-space-size=200000"
+# export NODE_OPTIONS="--max-old-space-size=200000"
+NODE_CLI_OPTIONS="--trace-gc --trace-gc-ignore-scavenger --max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
+
 
 if [ -f "$PHASE1" ]; then
     echo "Found Phase 1 ptau file $PHASE1"
@@ -74,40 +76,50 @@ if [ ! -d "$BUILD_DIR" ]; then
     mkdir -p "$BUILD_DIR"
 fi
 
+if [[ -z "$PATCHED_NODE_PATH" ]]; then
+    echo "PATCHED_NODE_PATH env var not set. Must be set for optimized phase 2 trusted setup"
+    graceful_exit 1
+fi
+
+if [[ -z "$SNARKJS_PATH" ]]; then
+    echo "SNARKJS_PATH env var not set. Must be set for optimized trusted setup"
+    graceful_exit 1
+fi
+
+if [[ -z "$RAPIDSNARK_PATH" ]]; then
+    echo "RAPIDSNARK_PATH env var not set. Must be set for optimized proof generation"
+    graceful_exit 1
+fi
+
+############################################
+################ COMMANDS ##################
+############################################
+
 MSG="COMPILING CIRCUIT"
-# what is --O2? Level of simplification done for the constraints (0, 1, 2)
+# what is --O1? Level of simplification done for the constraints (0, 1, 2)
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
-# takes about 50 min
+# takes about 50 min (wasm)
 # constraints: 32_451_250
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
 # took 2hrs to use 128GB of ram, then I killed it
 # execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
 
-# ===============================
-# The C++ code wasn't working for some reason
+MSG="COMPILING C++ WITNESS GENERATION CODE"
+cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
+execute make
 
-# echo "COMPILING C++ WITNESS GENERATION CODE"
-# cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
-# make
-
-# MSG="VERIFYING WITNESS"
-# execute ./"$CIRCUIT_NAME" ../../../scripts/"$SIGNALS" ../witness.wtns
-
-# cd ..
-# npx snarkjs wej witness.wtns witness.json
-# cd ../..
-
-# ===============================
-
-MSG="GENERATING WITNESS FOR SAMPLE INPUT"
-# took 20 min
-execute node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+MSG="GENERATING WITNESS"
+execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+cd -
 
 MSG="CHECKING WITNESS"
 # took 12 min
-execute npx snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+execute "$SNARKJS_PATH" wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+
+MSG="CONVERTING WITNESS TO JSON"
+execute "$SNARKJS_PATH" wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
 
 MSG="GENERATING ZKEY 0"
 # fails after 20 min with
@@ -121,27 +133,33 @@ MSG="GENERATING ZKEY 0"
 # https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
 #
 # takes 27 hours & used 167GB mem
-execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+# execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+execute "$PATCHED_NODE_PATH" "$NODE_CLI_OPTIONS" "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey -v
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
-execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
+# execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey contribute -verbose "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey -n="First phase2 contribution" -e="some random text for entropy"
 
 # Proving key
 MSG="GENERATING FINAL ZKEY"
 # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
-execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+# execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 
-# Time: 6 hours
 MSG="VERIFYING FINAL ZKEY"
-execute npx snarkjs zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+# Time: 6 hours
+# execute npx snarkjs zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+execute "$PATCHED_NODE_PATH" "$NODE_CLI_OPTIONS" "$SNARKJS_PATH" zkey verify -verbose "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
-# Quick, ~ 1 min
 MSG="EXPORTING VKEY"
-execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+# Quick, ~ 1 min
+# execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 
-# Time: 11.5 hrs
 MSG="GENERATING PROOF FOR SAMPLE INPUT"
-execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+# Time: 11.5 hrs
+# execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
 MSG="VERIFYING PROOF FOR SAMPLE INPUT"
-execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+# execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json -v
