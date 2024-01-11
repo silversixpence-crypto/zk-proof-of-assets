@@ -160,6 +160,15 @@ npx task createFieldSources
 npx task buildProver
 export RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
 
+# snarkjs
+ERR_MSG="Node setup failed"
+cd "$HOME"
+git clone https://github.com/iden3/snarkjs.git
+cd snarkjs
+git checkout v0.3.59
+pnpm i
+export SNARKJS_PATH=$HOME/snarkjs/cli.js
+
 # Setup repo
 ERR_MSG="Repo setup failed"
 cd "$HOME"
