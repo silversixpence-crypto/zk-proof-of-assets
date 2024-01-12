@@ -148,19 +148,18 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install --lts
 
-# Rapidsnark
+# Rapidsnark (x86_64 architecture only)
 ERR_MSG="Rapidsnark setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/rapidsnark.git
 cd rapidsnark
-pnpm i
 git submodule init
 git submodule update
 ./build_gmp.sh host
 mkdir build_prover && cd build_prover
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
 make -j4 && make install
-export RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
+export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 
 # snarkjs
 ERR_MSG="Snarkjs setup failed"
