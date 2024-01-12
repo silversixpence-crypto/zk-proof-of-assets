@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# this is a copy of the g16 new script, used for testing on smaller circuit.
+# test was successful
+
 ############################################
 ########### ERROR HANDLING #################
 ############################################

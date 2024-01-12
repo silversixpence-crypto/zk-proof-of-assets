@@ -7,8 +7,6 @@
 # http://stackoverflow.com/questions/35800082/ddg#35800451
 set -eE
 
-set -x
-
 # call like `graceful_exit <exit_code>`
 function graceful_exit {
     printf "\n####### EXITING... #######\n"
@@ -104,7 +102,7 @@ MSG="COMPILING CIRCUIT"
 # takes about 50 min (wasm) & 15 min (cpp)
 # non-linear constraints: 32_451_349
 # linear constraints: 21_55_310
-#execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules
 
 MSG="PRINTING CIRCUIT INFO"
 # took 2hrs to use 128GB of ram, then I killed it
@@ -113,16 +111,16 @@ MSG="PRINTING CIRCUIT INFO"
 MSG="COMPILING C++ WITNESS GENERATION CODE"
 cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
 # time: 20s
-#execute make
+execute make
 
 MSG="GENERATING WITNESS"
 # time: 3m
-#execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
 cd -
 
 MSG="CHECKING WITNESS"
 # took 9m (12m on prev measure)
-# execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="CONVERTING WITNESS TO JSON"
 # took 1.5 hrs then I killed it
@@ -142,11 +140,11 @@ MSG="GENERATING ZKEY 0"
 # takes 27 hours & used 167GB mem
 # execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 # time: 8hrs
-#execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
 # execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
-#execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
+execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
 
 # Proving key
 MSG="GENERATING FINAL ZKEY"
@@ -157,13 +155,13 @@ MSG="VERIFYING FINAL ZKEY"
 # Time: 6 hours
 # execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 # time: 11 hrs
-#execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 MSG="EXPORTING VKEY"
 # Quick, ~ 1 min
 # execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
 # time: <1s
-#execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
 
 # now getting an error saying that the zkey is invalid
 MSG="GENERATING PROOF FOR SAMPLE INPUT"
