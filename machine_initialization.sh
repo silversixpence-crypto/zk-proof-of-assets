@@ -166,7 +166,7 @@ ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/snarkjs.git
 cd snarkjs
-git checkout v0.3.59
+# git checkout v0.3.59
 pnpm i
 export SNARKJS_PATH=$HOME/snarkjs/cli.js
 
