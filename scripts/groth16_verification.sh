@@ -21,7 +21,7 @@
 #    - max cpu: 93%
 #    - max mem: 1%
 #  6. verifying final zkey:
-#    - time: 10.5h (old script took 6h)
+#    - time: 8h
 #    - max cpu: 67%
 #    - max mem: 20%
 #  7. generating proof:
@@ -166,8 +166,8 @@ MSG="GENERATING FINAL ZKEY"
 # execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 
 MSG="VERIFYING FINAL ZKEY"
-# time: 11 hrs
-execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+# time: 8h
+execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
 
 MSG="EXPORTING VKEY"
 # time: <1s
