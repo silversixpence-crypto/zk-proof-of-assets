@@ -132,7 +132,7 @@ MSG="COMPILING CIRCUIT"
 # time: 15m with c++ (50m with wasm)
 # non-linear constraints: 32_451_349
 # linear constraints: 21_55_310
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 MSG="COMPILING C++ WITNESS GENERATION CODE"
 cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
