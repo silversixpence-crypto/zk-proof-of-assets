@@ -175,7 +175,7 @@ ERR_MSG="Repo setup failed"
 cd "$HOME"
 git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
 cd zk-proof-of-assets
-if [[ $BRANCH != "main" ]]; then
+if [[ -z "$BRANCH" ]]; then
     git switch -c "$BRANCH" origin/"$BRANCH"
 fi
 pnpm i
