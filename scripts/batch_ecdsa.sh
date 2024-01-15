@@ -82,7 +82,7 @@ CIRCUITS_DIR=./circuits
 PHASE1=./powersOfTau28_hez_final_26.ptau
 BUILD_DIR=./build/batch_ecdsa
 CIRCUIT_NAME=batch_ecdsa
-SIGNALS=./scripts/batch_ecdsa_inputs.json
+SIGNALS=./scripts/batch_ecdsa_input_prep/input_2.json
 
 # Format for the `time` command (see `man time` for more details).
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
