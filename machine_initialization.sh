@@ -93,17 +93,6 @@ echo '/swapfile whatever swap sw 0 0' | sudo tee -a /etc/fstab
 ##### CUSTOM SOFTWARE INSTALLATION #########
 ############################################
 
-# PNPM
-cd "$HOME"
-ERR_MSG="PNPM setup failed"
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-export PNPM_HOME="/home/ubuntu/.local/share/pnpm"
-case ":$PATH:" in
-    *":$PNPM_HOME:"*) ;;
-    *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
-pnpm add npx -g
-
 # Rust
 ERR_MSG="Rust setup failed"
 cd "$HOME"
@@ -166,8 +155,19 @@ ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/snarkjs.git
 cd snarkjs
-pnpm i
+npm install
 export SNARKJS_PATH=$HOME/snarkjs/cli.js
+
+# PNPM
+cd "$HOME"
+ERR_MSG="PNPM setup failed"
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+export PNPM_HOME="/home/ubuntu/.local/share/pnpm"
+case ":$PATH:" in
+    *":$PNPM_HOME:"*) ;;
+    *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+pnpm add npx -g
 
 # snarkjs plain cli
 pnpm add snarkjs -g
