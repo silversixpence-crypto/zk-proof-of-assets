@@ -5,13 +5,18 @@
 
 # Benchmarks:
 #  1. compiling circuit:
-#    - time: 15m (c++)
-#    - max cpu: 3%
-#    - max mem: 8%
-#    - non-linear constraints: 32_451_349
-#    - linear constraints: 21_55_310
-#  2. generating witness: 3m
-#  3. checking witness: 9m
+#    - time: 23m (c++)
+#    - max cpu: 23%
+#    - max mem: 16%
+#    - non-linear constraints: 58_083_270
+#    - linear constraints: 3_419_228
+#    - public inputs: 512
+#    - private inputs: 2560
+#    - public outputs: 1
+#    - wires: 61130056
+#    - labels: 83118319
+#  2. generating witness: 13m
+#  3. checking witness: 13m
 #  4. generating zkey 0:
 #    - time: 8h (old script took 27h)
 #    - max cpu: 21%
@@ -132,21 +137,21 @@ MSG="COMPILING CIRCUIT"
 # time: 15m with c++ (50m with wasm)
 # non-linear constraints: 32_451_349
 # linear constraints: 21_55_310
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
+#execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 MSG="COMPILING C++ WITNESS GENERATION CODE"
 cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
 # time: 20s
-execute make
+#execute make
 
 MSG="GENERATING WITNESS"
 # time: 3m
-execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+#execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
 cd -
 
 MSG="CHECKING WITNESS"
 # took 9m
-execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+#execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="CONVERTING WITNESS TO JSON"
 # took 1.5 hrs then I killed it
