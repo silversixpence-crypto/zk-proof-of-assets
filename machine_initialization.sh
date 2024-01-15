@@ -161,14 +161,16 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
 make -j4 && make install
 export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 
-# snarkjs
+# snarkjs cli.js
 ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/snarkjs.git
 cd snarkjs
-# git checkout v0.3.59
 pnpm i
 export SNARKJS_PATH=$HOME/snarkjs/cli.js
+
+# snarkjs plain cli
+pnpm add snarkjs -g
 
 # Setup repo
 ERR_MSG="Repo setup failed"
