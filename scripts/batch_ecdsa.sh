@@ -18,14 +18,14 @@
 #  2. generating witness: 13m
 #  3. checking witness: 13m
 #  4. generating zkey 0:
-#    - time: 8h (old script took 27h)
-#    - max cpu: 21%
-#    - max mem: 60%
+#    - time: 16h
+#    - max cpu: 36%
+#    - max mem: 79%
 #  5. contributing to phase 2 ceremony:
-#    - time: 15m
-#    - max cpu: 93%
+#    - time: 19m
+#    - max cpu: 95%
 #    - max mem: 1%
-#  6. verifying final zkey:
+#  6. verifying final zkey: HERE
 #    - time: 8h
 #    - max cpu: 67%
 #    - max mem: 20%
@@ -134,45 +134,50 @@ fi
 MSG="COMPILING CIRCUIT"
 # --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
 # the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
-# time: 15m with c++ (50m with wasm)
-# non-linear constraints: 32_451_349
-# linear constraints: 21_55_310
+# time: 23m with c++
+#  non-linear constraints: 58_083_270
+#  linear constraints: 3_419_228
+#  public inputs: 512
+#  private inputs: 2560
+#  public outputs: 1
+#  wires: 61130056
+#  labels: 83118319
 #execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 MSG="COMPILING C++ WITNESS GENERATION CODE"
 cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
-# time: 20s
+# time: 1m
 #execute make
 
 MSG="GENERATING WITNESS"
-# time: 3m
+# time: 13m
 #execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
 cd -
 
 MSG="CHECKING WITNESS"
-# took 9m
+# took 13m
 #execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
-MSG="CONVERTING WITNESS TO JSON"
-# took 1.5 hrs then I killed it
-# execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
-
 MSG="GENERATING ZKEY 0"
-# time: 8hrs
-execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+# time: 16h
+#execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
-# time: 15m
-execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
+# time: 19m
+#execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
 
-# Proving key
 MSG="GENERATING FINAL ZKEY"
 # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
 # execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 
+MSG="CONVERTING WITNESS TO JSON"
+# took 1.5 hrs then I killed it
+#execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
+
+# HERE
 MSG="VERIFYING FINAL ZKEY"
 # time: 8h
-execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 MSG="EXPORTING VKEY"
 # time: <1s
