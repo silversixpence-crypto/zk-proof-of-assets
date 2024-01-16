@@ -148,24 +148,25 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 nvm install --lts
 
-# Rapidsnark
-ERR_MSG="Node setup failed"
+# Rapidsnark (x86_64 architecture only)
+ERR_MSG="Rapidsnark setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/rapidsnark.git
 cd rapidsnark
-npm install
 git submodule init
 git submodule update
-npx task createFieldSources
-npx task buildProver
-export RAPIDSNARK_PATH=$HOME/rapidsnark/build/prover
+./build_gmp.sh host
+mkdir build_prover && cd build_prover
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
+make -j4 && make install
+export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 
 # snarkjs
-ERR_MSG="Node setup failed"
+ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
 git clone https://github.com/iden3/snarkjs.git
 cd snarkjs
-git checkout v0.3.59
+# git checkout v0.3.59
 pnpm i
 export SNARKJS_PATH=$HOME/snarkjs/cli.js
 
@@ -174,12 +175,11 @@ ERR_MSG="Repo setup failed"
 cd "$HOME"
 git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
 cd zk-proof-of-assets
-wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
-if [[ $BRANCH != "main" ]]; then
+if [[ -z "$BRANCH" ]]; then
     git switch -c "$BRANCH" origin/"$BRANCH"
 fi
 pnpm i
 git submodule init
 git submodule update
-
+wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
 
