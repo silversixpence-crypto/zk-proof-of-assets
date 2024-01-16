@@ -167,7 +167,7 @@ MSG="CONVERTING WITNESS TO JSON"
 
 MSG="VERIFYING FINAL ZKEY"
 # time: 8h
-# execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+# execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 MSG="EXPORTING VKEY"
 # time: <1s
