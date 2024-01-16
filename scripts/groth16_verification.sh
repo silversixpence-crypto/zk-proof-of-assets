@@ -166,7 +166,7 @@ MSG="CONVERTING WITNESS TO JSON"
 # execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
 
 MSG="VERIFYING FINAL ZKEY"
-# time: 8h
+# time: 8h (note the command from https://hackmd.io/@yisun/BkT0RS87q takes longer)
 # execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 MSG="EXPORTING VKEY"
