@@ -75,11 +75,62 @@ if [ ! -d "$BUILD_DIR" ]; then
 fi
 
 MSG="COMPILING CIRCUIT"
-# what is --O2? Level of simplification done for the constraints (0, 1, 2)
-# sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
-# takes about 50 min
-# constraints: 32_451_250
-execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O2 --r1cs --wasm --sym --output "$BUILD_DIR" -l ./node_modules
+# --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
+# the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
+# time: 15m with c++ (50m with wasm)
+# non-linear constraints: 32_451_349
+# linear constraints: 21_55_310
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules
+
+MSG="COMPILING C++ WITNESS GENERATION CODE"
+cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
+# time: 20s
+execute make
+
+MSG="GENERATING WITNESS"
+# time: 3m
+execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+cd -
+
+MSG="CHECKING WITNESS"
+# took 9m
+execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+
+MSG="GENERATING ZKEY 0"
+# time: 8hrs
+execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+
+MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
+# time: 15m
+execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
+
+# Proving key
+MSG="GENERATING FINAL ZKEY"
+# what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
+# execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+
+MSG="CONVERTING WITNESS TO JSON"
+# took 1.5 hrs then I killed it
+# execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
+
+MSG="VERIFYING FINAL ZKEY"
+# time: 8h
+# execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+
+MSG="EXPORTING VKEY"
+# time: <1s
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
+
+MSG="GENERATING PROOF FOR SAMPLE INPUT"
+# time: <1m
+execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+
+MSG="VERIFYING PROOF FOR SAMPLE INPUT"
+execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+
+############################################
+############# OLD COMMANDS #################
+############################################
 
 MSG="PRINTING CIRCUIT INFO"
 # took 2hrs to use 128GB of ram, then I killed it
