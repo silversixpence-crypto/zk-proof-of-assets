@@ -26,13 +26,13 @@
 #    - max cpu: 95%
 #    - max mem: 1%
 #  6. verifying final zkey: HERE
-#    - time: 8h
-#    - max cpu: 67%
-#    - max mem: 20%
+#    - time: 15h
+#    - max cpu: 84%
+#    - max mem: 56%
 #  7. generating proof:
-#    - time: 45s (old script took 11.5h)
-#    - max cpu: 48%
-#    - max mem: 17%
+#    - time: 1m
+#    - max cpu: 47%
+#    - max mem: 24%
 
 ############################################
 ########### ERROR HANDLING #################
@@ -142,29 +142,29 @@ MSG="COMPILING CIRCUIT"
 #  public outputs: 1
 #  wires: 61130056
 #  labels: 83118319
-#execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
+execute circom "$CIRCUITS_DIR"/"$CIRCUIT_NAME".circom --O1 --r1cs --sym --c --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 MSG="COMPILING C++ WITNESS GENERATION CODE"
 cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
 # time: 1m
-#execute make
+execute make
 
 MSG="GENERATING WITNESS"
 # time: 13m
-#execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
+execute ./"$CIRCUIT_NAME" ../../../"$SIGNALS" ../witness.wtns
 cd -
 
 MSG="CHECKING WITNESS"
 # took 13m
-#execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 
 MSG="GENERATING ZKEY 0"
 # time: 16h
-#execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 
 MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
 # time: 19m
-#execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
+execute snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey --name="First contributor" -e="random text for entropy"
 
 MSG="GENERATING FINAL ZKEY"
 # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
@@ -172,11 +172,10 @@ MSG="GENERATING FINAL ZKEY"
 
 MSG="CONVERTING WITNESS TO JSON"
 # took 1.5 hrs then I killed it
-#execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
+execute snarkjs wej "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/witness.json
 
-# HERE
 MSG="VERIFYING FINAL ZKEY"
-# time: 8h
+# time: 15h
 execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 
 MSG="EXPORTING VKEY"
@@ -184,48 +183,8 @@ MSG="EXPORTING VKEY"
 execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
 
 MSG="GENERATING PROOF FOR SAMPLE INPUT"
-# time: <1m
+# time: 1m
 execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 
 MSG="VERIFYING PROOF FOR SAMPLE INPUT"
 execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
-
-############################################
-############# OLD COMMANDS #################
-############################################
-
-MSG="PRINTING CIRCUIT INFO"
-# took 2hrs to use 128GB of ram, then I killed it
-# execute npx snarkjs r1cs info "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs
-
-MSG="GENERATING ZKEY 0"
-# fails after 20 min with
-#
-# terminate called after throwing an instance of 'std::bad_alloc'
-#   what():  std::bad_alloc
-#
-# then I set `sysctl -w vm.max_map_count=655300`
-# https://github.com/iden3/snarkjs/issues/397#issuecomment-1876700914
-# https://github.com/nodejs/node/issues/27715#issuecomment-578557226
-# https://stackoverflow.com/questions/38558989/node-js-heap-out-of-memory/59923848#59923848
-#
-# takes 27 hours & used 167GB mem
-# execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
-
-MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
-# execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="First contributor" -e="random text for entropy"
-
-MSG="VERIFYING FINAL ZKEY"
-# time: 6 hours
-# execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
-
-MSG="EXPORTING VKEY"
-# Quick, ~ 1 min
-# execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
-
-MSG="GENERATING PROOF FOR SAMPLE INPUT"
-# Time: 11.5 hrs
-# execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
-
-MSG="VERIFYING PROOF FOR SAMPLE INPUT"
-# execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
