@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# for height 24 there are 5856 linear constraints, and no non-linear constraints
+
 ############################################
 ########### ERROR HANDLING #################
 ############################################
@@ -39,9 +41,9 @@ trap 'err_report $LINENO $ERR_MSG' ERR
 
 CIRCUITS_DIR=./circuits
 PHASE1=./powersOfTau28_hez_final_18.ptau
-BUILD_DIR=./build/keccak
-CIRCUIT_NAME=keccak
-SIGNALS=./scripts/keccak_inputs.json
+BUILD_DIR=./build/merkle
+CIRCUIT_NAME=merkle
+SIGNALS=./scripts/merkle_inputs.json
 
 # Format for the `time` command (see `man time` for more details).
 export TIME="STATS: time ([H:]M:S) %E ; mem %KKb ; cpu %P"
