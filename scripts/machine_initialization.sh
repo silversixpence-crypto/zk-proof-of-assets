@@ -4,10 +4,6 @@
 # in this repo. Inspiration was taken from here:
 # https://hackmd.io/@yisun/BkT0RS87q
 
-# Script should be run like so
-# ./machine_initialization.sh <ptau_size> <branch>
-# ./machine_initialization.sh 25 main
-
 ############################################
 ############## ERROR HANDLING ##############
 ############################################
@@ -39,11 +35,84 @@ ERR_MSG="UNKNOWN"
 trap 'err_report $LINENO $ERR_MSG' ERR
 
 ############################################
-################ VARIABLES #################
+################ DEFAULTS ##################
 ############################################
 
 DEFAULT_PTAU_SIZE=18
-PTAU_SIZE=${1:-$DEFAULT_PTAU_SIZE}
+DEFAULT_SWAP_SIZE=400G
+
+############################################
+################ CLI FLAGS #################
+############################################
+
+# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
+
+CLOUDWATCH=false
+SWAP=false
+REPO=false
+VERBOSE=false
+
+print_usage() {
+    printf "
+Usage:
+    . /machine_initialization.sh [OPTIONS]
+
+    (note the space after the dot, this allows env vars to be exported to surrounding shell)
+
+
+-c                        AWS CloudWatch memory metrics
+                          See this for more info https://stackoverflow.com/questions/42317062/how-to-monitor-ec2-instances-by-memory
+
+-s <SIZE>                 Create swap file of size <SIZE> (recommended for large circuits)
+
+-S                        Create a swap file with default size: $DEFAULT_SWAP_SIZE
+
+-r                        Clone zk-proof-of-assets repo
+
+-b <BRANCH>               Checkout <BRANCH> in $HOME/zk-proof-of-assets
+
+-p <NUM>                  Download ptau file <NUM> & put in $HOME/zk-proof-of-assets
+                          See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
+                          Default ptau number: $DEFAULT_PTAU_SIZE
+
+-v                        Print commands that are run (set -x)
+
+-h                        Help
+"
+}
+
+while getopts 'cvhrSs:b:p:' flag; do
+    case "${flag}" in
+    c) CLOUDWATCH=true ;;
+    s)
+        SWAP=true
+        SWAP_SIZE_INPUT="${OPTARG}"
+        ;;
+    r) REPO=true ;;
+    b) BRANCH="${OPTARG}" ;;
+    p)
+        PTAU=true
+        PTAU_SIZE_INPUT="${OPTARG}"
+        ;;
+    v) VERBOSE=true ;;
+    h)
+        print_usage
+        exit 1
+        ;;
+    *)
+        print_usage
+        exit 1
+        ;;
+    esac
+done
+
+SWAP_E=${SWAP_SIZE_INPUT:-$DEFAULT_SWAP_SIZE}
+PTAU_SIZE=${PTAU_SIZE_INPUT:-$DEFAULT_PTAU_SIZE}
+
+if $VERBOSE; then
+    # print commands before executing
+    set -x
+fi
 
 ############################################
 ####### APT SOFTWARE INSTALLATION ##########
@@ -53,7 +122,7 @@ ERR_MSG="Initial setup failed"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4
+sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget
 
 # for pyenv
 sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -65,29 +134,35 @@ sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadli
 # Setup memory metrics for CloudWatch
 # https://stackoverflow.com/questions/42317062/how-to-monitor-ec2-instances-by-memory
 
-ERR_MSG="CloudWatch setup failed"
+if $CLOUDWATCH; then
+    ERR_MSG="CloudWatch setup failed"
 
-sudo wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
-sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
-echo '{"metrics":{"metrics_collected":{"mem":{"measurement":["mem_used_percent"],"metrics_collection_interval":30}}}}' | sudo tee -a /opt/aws/amazon-cloudwatch-agent/bin/config.json > /dev/null
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+    sudo wget https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+    sudo dpkg -i -E ./amazon-cloudwatch-agent.deb
+    echo '{"metrics":{"metrics_collected":{"mem":{"measurement":["mem_used_percent"],"metrics_collection_interval":30}}}}' | sudo tee -a /opt/aws/amazon-cloudwatch-agent/bin/config.json >/dev/null
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+fi
 
 ############################################
 ############## SYSTEM CONFIG ###############
 ############################################
+
+ERR_MSG="System config setup failed"
 
 # Increase kernel memory map per process, and persist after reboot
 # https://www.kernel.org/doc/Documentation/sysctl/vm.txt
 sudo sysctl -w vm.max_map_count=655300
 sudo sh -c 'echo "vm.max_map_count=655300" >>/etc/sysctl.conf'
 
-# Increase swap memory, and persist after reboot
-# https://serverfault.com/questions/967852/swapfile-mount-etc-fstab-swap-swap-or-none-swap
-sudo fallocate -l 400G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-echo '/swapfile whatever swap sw 0 0' | sudo tee -a /etc/fstab
+if $SWAP; then
+    # Increase swap memory, and persist after reboot
+    sudo fallocate -l $SWAP_SIZE /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    # https://serverfault.com/questions/967852/swapfile-mount-etc-fstab-swap-swap-or-none-swap
+    echo '/swapfile whatever swap sw 0 0' | sudo tee -a /etc/fstab
+fi
 
 ############################################
 ##### CUSTOM SOFTWARE INSTALLATION #########
@@ -96,91 +171,136 @@ echo '/swapfile whatever swap sw 0 0' | sudo tee -a /etc/fstab
 # Rust
 ERR_MSG="Rust setup failed"
 cd "$HOME"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >> ./rustup-init.sh
-chmod +x ./rustup-init.sh
-./rustup-init.sh -y --no-modify-path
-rm -f ./rustup-init.sh
+if [[ ! -f "$HOME/.cargo/env" ]]; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs >>./rustup-init.sh
+    chmod +x ./rustup-init.sh
+    ./rustup-init.sh -y --no-modify-path
+    rm -f ./rustup-init.sh
+fi
 source "$HOME/.cargo/env"
 
 # Circom
 ERR_MSG="Circom setup failed"
 cd "$HOME"
-git clone https://github.com/iden3/circom.git
-cd circom
-cargo build --release
-cargo install --path circom
+if ! which circom; then
+    git clone https://github.com/iden3/circom.git
+    cd circom
+    cargo build --release
+    cargo install --path circom
+fi
 
 # Pyenv
 ERR_MSG="Pyenv setup failed"
 cd "$HOME"
-git clone https://github.com/pyenv/pyenv.git
+if [[ ! -d "$HOME/pyenv" ]]; then
+    git clone https://github.com/pyenv/pyenv.git
+fi
 export PATH="$HOME/pyenv/bin:$PATH"
 eval "$(pyenv init -)"
-pyenv install 3.6
-pyenv global 3.6
+if ! pyenv global | grep 3.6; then
+    pyenv install 3.6
+    pyenv global 3.6
+fi
 
 # Patched node
 ERR_MSG="Node setup failed"
 cd "$HOME"
-git clone https://github.com/nodejs/node.git
-cd node
-git checkout 8beef5eeb82425b13d447b50beafb04ece7f91b1
-python configure.py
-make -j16
+if [[ ! -f "$HOME/node/out/Release/node" ]]; then
+    git clone https://github.com/nodejs/node.git
+    cd node
+    git checkout 8beef5eeb82425b13d447b50beafb04ece7f91b1
+    python configure.py
+    make -j16
+fi
 export PATCHED_NODE_PATH=$HOME/node/out/Release/node
 
 # NPM
 ERR_MSG="NPM setup failed"
 cd "$HOME"
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install --lts
+if ! which npm; then
+    if [[ ! -d "$HOME/.nvm" ]]; then
+        wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+    fi
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    # NOTE This sometimes fails with:
+    # > Installing latest LTS version.
+    # > Downloading and installing node v20.11.0...
+    # > Binary download failed, trying source.
+    # In this case run the command manually.
+    nvm install --lts
+fi
 
 # Rapidsnark (x86_64 architecture only)
 ERR_MSG="Rapidsnark setup failed"
 cd "$HOME"
-git clone https://github.com/iden3/rapidsnark.git
-cd rapidsnark
-git submodule init
-git submodule update
-./build_gmp.sh host
-mkdir build_prover && cd build_prover
-cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
-make -j4 && make install
+if [[ ! -f "$HOME/rapidsnark/package/bin/prover" ]]; then
+    git clone https://github.com/iden3/rapidsnark.git
+    cd rapidsnark
+    git submodule init
+    git submodule update
+    ./build_gmp.sh host
+    mkdir build_prover && cd build_prover
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../package
+    make -j4 && make install
+fi
 export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 
 # snarkjs cli.js
 ERR_MSG="Snarkjs setup failed"
 cd "$HOME"
-git clone https://github.com/iden3/snarkjs.git
-cd snarkjs
-npm install
+if [[ ! -f "$HOME/snarkjs/cli.js" ]]; then
+    git clone https://github.com/iden3/snarkjs.git
+    cd snarkjs
+    npm install
+fi
 export SNARKJS_PATH=$HOME/snarkjs/cli.js
 
 # PNPM
-cd "$HOME"
 ERR_MSG="PNPM setup failed"
-curl -fsSL https://get.pnpm.io/install.sh | sh -
-export PNPM_HOME="/home/ubuntu/.local/share/pnpm"
-case ":$PATH:" in
-    *":$PNPM_HOME:"*) ;;
-    *) export PATH="$PNPM_HOME:$PATH" ;;
-esac
+cd "$HOME"
+if [[ ! -f "$HOME/.local/share/pnpm/pnpm" ]]; then
+    # NOTE This sometimes fails with:
+    # > ==> Downloading pnpm binaries 8.15.1
+    # > WARN using --force I sure hope you know what you are doing
+    # > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
+    # > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
+    # In this case just run this manually (with different tmp file):
+    # `SHELL="$SHELL"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    curl -fsSL https://get.pnpm.io/install.sh | sh -
+fi
+export PNPM_HOME="$HOME/.local/share/pnpm"
+export PATH="$PNPM_HOME:$PATH"
 pnpm add npx -g
 
 # snarkjs plain cli
 pnpm add snarkjs -g
 
-# Setup repo
-ERR_MSG="Repo setup failed"
-cd "$HOME"
-git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
-cd zk-proof-of-assets
-if [[ -z "$BRANCH" ]]; then
-    git switch -c "$BRANCH" origin/"$BRANCH"
+if $REPO; then
+    # Setup repo
+    ERR_MSG="Repo setup failed"
+
+    if [[ ! -d "$HOME/zk-proof-of-assets" ]]; then
+        cd "$HOME"
+        git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
+    fi
+
+    cd "$HOME/zk-proof-of-assets"
+
+    if [[ ! -z "$BRANCH" ]]; then
+        git switch -c "$BRANCH" origin/"$BRANCH"
+    fi
+
+    pnpm i
+    git submodule init
+    git submodule update
 fi
-pnpm i
-git submodule init
-git submodule update
-wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
+
+cd "$HOME/zk-proof-of-assets"
+
+# TODO instead of checking if the file exists rather check its checksum,
+# because the download might have only gotten partway
+if [[ ! -f "./powersOfTau28_hez_final_"$PTAU_SIZE".ptau" ]] && $PTAU; then
+    wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
+fi
