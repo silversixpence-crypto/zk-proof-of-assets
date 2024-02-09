@@ -1,38 +1,40 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# This script sets up a new Ubuntu machine to be able to run the bash scripts
+# This script sets up a new Debian machine to be able to run the bash scripts
 # in this repo. Inspiration was taken from here:
 # https://hackmd.io/@yisun/BkT0RS87q
 
 ############################################
-############## ERROR HANDLING ##############
+########### ERROR HANDLING #################
 ############################################
 
-# http://stackoverflow.com/questions/35800082/ddg#35800451
-set -eE
+# Inspiration taken from
+# https://unix.stackexchange.com/questions/462156/how-do-i-find-the-line-number-in-bash-when-an-error-occured
+# https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
 
-# call like `graceful_exit <exit_code>`
-function graceful_exit {
-    printf "\n####### EXITING... #######\n"
-    DEFAULT_EXIT_CODE=0
-    exit ${1:-$DEFAULT_EXIT_CODE} # use first param or default to 0
-}
-
-# Print line number & message of error and exit gracefully
-# call like `err_report $LINENO $ERR_MSG`
-function err_report {
-    ret=$? # previous command exit value
-    printf "\n####### A COMMAND FAILED ON LINE $1 #######\n\n"
-    echo "Error message: ${@:2}"
-    graceful_exit "$ret"
-}
-
-# can change this in the functions below to get nicer error messages
-# make sure to set back to "UNKNOWN" at end of function scope
+# Change this in sourcing script to get error messages.
 ERR_MSG="UNKNOWN"
 
-# global error catcher
-trap 'err_report $LINENO $ERR_MSG' ERR
+set -eE -o functrace
+
+failure() {
+    local lineno=$2
+    local fn=$3
+    local exitstatus=$4
+    local cmd=$5
+    local msg=$6
+    local lineno_fns=${1% 0}
+    if [[ "$lineno_fns" != "0" ]] ; then
+        lineno="${lineno} ${lineno_fns}"
+    fi
+    printf "\n####### ERROR #######\n\n"
+    echo "  Failure in file:                    ${BASH_SOURCE[1]}"
+    echo "  Function trace [line numbers]:      ${fn} [${lineno}]"
+    echo "  Exit status:                        ${exitstatus}"
+    echo "  Command that failed:                $cmd"
+    echo "  Error message:                      $msg"
+}
+trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR
 
 ############################################
 ################ DEFAULTS ##################
@@ -124,7 +126,7 @@ ERR_MSG="Initial setup failed"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git
+sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git time
 
 # for pyenv
 sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -184,7 +186,7 @@ source "$HOME/.cargo/env"
 # Circom
 ERR_MSG="Circom setup failed"
 cd "$HOME"
-if ! which circom; then
+if [[ ! -d "$HOME/circom" ]]; then
     git clone https://github.com/iden3/circom.git
     cd circom
     cargo build --release
@@ -230,7 +232,8 @@ if ! which npm; then
     # > Installing latest LTS version.
     # > Downloading and installing node v20.11.0...
     # > Binary download failed, trying source.
-    # In this case run the command manually.
+    # In this case run this command manually:
+    # `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts`.
     nvm install --lts
 fi
 
@@ -311,4 +314,4 @@ fi
 # This is the 2nd method mentioned here:
 # https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i/16619261#16619261
 # The 1st method in the above tends to break things, so try to avoid that.
-echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node"
+echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node && export PATH=$PATH"
