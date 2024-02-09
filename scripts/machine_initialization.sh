@@ -55,9 +55,7 @@ VERBOSE=false
 print_usage() {
     printf "
 Usage:
-    . /machine_initialization.sh [OPTIONS]
-
-    (note the space after the dot, this allows env vars to be exported to surrounding shell)
+    ./machine_initialization.sh [OPTIONS]
 
 
 -c                        AWS CloudWatch memory metrics
@@ -73,7 +71,8 @@ Usage:
 
 -p <NUM>                  Download ptau file <NUM> & put in $HOME/zk-proof-of-assets
                           See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
-                          Default ptau number: $DEFAULT_PTAU_SIZE
+
+-P                        Download ptau file number $DEFAULT_PTAU_SIZE & put in $HOME/zk-proof-of-assets
 
 -v                        Print commands that are run (set -x)
 
@@ -81,19 +80,21 @@ Usage:
 "
 }
 
-while getopts 'cvhrSs:b:p:' flag; do
+while getopts 'cvhrSs:b:Pp:' flag; do
     case "${flag}" in
     c) CLOUDWATCH=true ;;
     s)
         SWAP=true
         SWAP_SIZE_INPUT="${OPTARG}"
         ;;
+    S) SWAP=true ;;
     r) REPO=true ;;
     b) BRANCH="${OPTARG}" ;;
     p)
         PTAU=true
         PTAU_SIZE_INPUT="${OPTARG}"
         ;;
+    P) PTAU=true ;;
     v) VERBOSE=true ;;
     h)
         print_usage
@@ -122,7 +123,7 @@ ERR_MSG="Initial setup failed"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget
+sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git
 
 # for pyenv
 sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -304,3 +305,9 @@ cd "$HOME/zk-proof-of-assets"
 if [[ ! -f "./powersOfTau28_hez_final_"$PTAU_SIZE".ptau" ]] && $PTAU; then
     wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
 fi
+
+# This is so that the user can set these env vars in their shell.
+# This is the 2nd method mentioned here:
+# https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i/16619261#16619261
+# The 1st method in the above tends to break things, so try to avoid that.
+echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node"
