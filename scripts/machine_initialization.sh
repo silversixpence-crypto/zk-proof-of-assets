@@ -49,6 +49,7 @@ DEFAULT_SWAP_SIZE=400G
 
 CLOUDWATCH=false
 SWAP=false
+PTAU=false
 REPO=false
 VERBOSE=false
 
