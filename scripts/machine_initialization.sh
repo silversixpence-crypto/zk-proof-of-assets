@@ -57,29 +57,34 @@ VERBOSE=false
 
 print_usage() {
     printf "
-Usage:
-    ./machine_initialization.sh [OPTIONS]
+Setup various software required to used the zk-proof-of-asset repo.
 
+USAGE:
+    ./machine_initialization.sh [FLAGS] [OPTIONS]
 
--c                        AWS CloudWatch memory metrics
-                          See this for more info https://stackoverflow.com/questions/42317062/how-to-monitor-ec2-instances-by-memory
+FLAGS:
 
--s <SIZE>                 Create swap file of size <SIZE> (recommended for large circuits)
+     -c            AWS CloudWatch memory metrics
+                   See this for more info https://stackoverflow.com/questions/42317062/how-to-monitor-ec2-instances-by-memory
 
--S                        Create a swap file with default size: $DEFAULT_SWAP_SIZE
+     -S            Create a swap file with default size: $DEFAULT_SWAP_SIZE
 
--r                        Clone zk-proof-of-assets repo
+     -r            Clone zk-proof-of-assets repo
 
--b <BRANCH>               Checkout <BRANCH> in $HOME/zk-proof-of-assets
+     -P            Download ptau file number $DEFAULT_PTAU_SIZE & put in $HOME/zk-proof-of-assets
 
--p <NUM>                  Download ptau file <NUM> & put in $HOME/zk-proof-of-assets
-                          See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
+     -v            Print commands that are run (set -x)
 
--P                        Download ptau file number $DEFAULT_PTAU_SIZE & put in $HOME/zk-proof-of-assets
+     -h            Help
 
--v                        Print commands that are run (set -x)
+OPTIONS:
 
--h                        Help
+     -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
+
+     -b <BRANCH>   Checkout <BRANCH> in $HOME/zk-proof-of-assets
+
+     -p <NUM>      Download ptau file <NUM> & put in $HOME/zk-proof-of-assets
+                   See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
 "
 }
 
