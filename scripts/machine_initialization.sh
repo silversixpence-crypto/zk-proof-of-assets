@@ -307,12 +307,10 @@ if $REPO; then
     git submodule update
 fi
 
-cd "$HOME/zk-proof-of-assets"
-
 # TODO instead of checking if the file exists rather check its checksum,
 # because the download might have only gotten partway
 if [[ ! -f "./powersOfTau28_hez_final_"$PTAU_SIZE".ptau" ]] && $PTAU; then
-    wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
+    wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau -P "$HOME/zk-proof-of-assets"
 fi
 
 # This is so that the user can set these env vars in their shell.
