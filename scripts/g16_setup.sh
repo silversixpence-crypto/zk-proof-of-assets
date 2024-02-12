@@ -80,7 +80,7 @@ VERBOSE=false
 CIRCUIT_PATH="${@:(-2):1}"
 PTAU_PATH="${@: -1}"
 
-BUILD_DIR=$G16_SETUP_DIRECTORY/../build/
+BUILD_DIR="$G16_SETUP_DIRECTORY"/../build/
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'vhbrzn:s:B:' flag; do

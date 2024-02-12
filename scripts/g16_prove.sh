@@ -84,7 +84,7 @@ VERBOSE=false
 CIRCUIT_PATH="${@:(-2):1}"
 SIGNALS_PATH="${@: -1}"
 
-BUILD_DIR=$G16_PROVE_DIRECTORY/../build
+BUILD_DIR="$G16_PROVE_DIRECTORY"/../build
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'vhbzwn:r:B:' flag; do
@@ -167,9 +167,9 @@ if $BIG_CIRCUITS; then
         exit 1
     fi
 
-    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR/$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME"
+    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME"
 else
-    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR/$CIRCUIT_NAME"_js/generate_witness.js
+    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js
 fi
 
 if [[ ! -f "$EXPECTED_WTNS_GEN_PATH" ]]; then
