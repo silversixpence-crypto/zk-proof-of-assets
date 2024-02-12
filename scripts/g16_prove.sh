@@ -82,7 +82,7 @@ VERBOSE=false
 
 # https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
 CIRCUIT_PATH="${@:(-2):1}"
-SIGNALS="${@: -1}"
+SIGNALS_PATH="${@: -1}"
 
 BUILD_DIR=$G16_PROVE_DIRECTORY/../build
 
@@ -136,18 +136,22 @@ if [[ ! -d "$BUILD_DIR" ]]; then
     mkdir -p "$BUILD_DIR"
 fi
 
-if [[ "${SIGNALS##*.}" != "json" ]] || [[ ! -f "$SIGNALS" ]]; then
-    echo "ERROR: <signals> '$SIGNALS' does not point to an existing json file."
+if [[ "${SIGNALS_PATH##*.}" != "json" ]] || [[ ! -f "$SIGNALS_PATH" ]]; then
+    echo "ERROR: <signals_path> '$SIGNALS_PATH' does not point to an existing json file."
     print_usage
     exit 1
 fi
 
 if $BIG_CIRCUITS; then
-    # TODO check that the cpp witness generation code is available
-
-    if [[ -z "$PATCHED_NODE_PATH" ]]; then
+    if [[ -z $PATCHED_NODE_PATH ]]; then
         echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
+        exit 1
+    fi
+
+    PATCHED_NODE_FILE=$(basename $PATCHED_NODE_PATH)
+    if [[ ! -f "$PATCHED_NODE_PATH" ]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
+        echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
         exit 1
     fi
 
@@ -157,8 +161,20 @@ if $BIG_CIRCUITS; then
         exit 1
     fi
 
-#else
-# TODO check that the js witness generation code is available
+    RAPIDSNARK_FILE=$(basename "$RAPIDSNARK_PATH")
+    if [[ ! -f "$RAPIDSNARK_PATH "]] || [[ $RAPIDSNARK_FILE != "prover" ]]; then
+        echo "ERROR: $RAPIDSNARK_PATH must point to a file with name 'prover'"
+        exit 1
+    fi
+
+    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR/$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME"
+else
+    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR/$CIRCUIT_NAME"_js/generate_witness.js
+fi
+
+if [[ ! -f "$EXPECTED_WTNS_GEN_PATH "]]; then
+    echo "ERROR: The witness generation code does not exist at the expected path $EXPECTED_WTNS_GEN_PATH"
+    exit 1
 fi
 
 ############################################
@@ -167,18 +183,17 @@ fi
 
 # Commands were originally from 0xPARC/circom-ecdsa & https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA
 
-# TODO add more info to the messaging, such as "generating proof using rapidsnark"
-
 MSG="VERIFYING FINAL ZKEY"
 if $VERIFY_ZKEY; then
     execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 fi
 
-MSG="GENERATING WITNESS FOR SAMPLE INPUT"
 if $BIG_CIRCUITS; then
-    execute "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME" "$SIGNALS" "$BUILD_DIR"/witness.wtns
+    MSG="GENERATING WITNESS FOR $SIGNALS_PATH USING C++ CODE"
+    execute "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME" "$SIGNALS_PATH" "$BUILD_DIR"/witness.wtns
 else
-    execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS" "$BUILD_DIR"/witness.wtns
+    MSG="GENERATING WITNESS FOR $SIGNALS_PATH USING WASM CODE"
+    execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS_PATH" "$BUILD_DIR"/witness.wtns
 fi
 
 MSG="VERIFYING WITNESS"
@@ -186,9 +201,10 @@ if $VERIFY_WITNESS; then
     execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
 fi
 
-MSG="GENERATING PROOF FOR SAMPLE INPUT"
 if $BIG_CIRCUITS; then
+    MSG="GENERATING PROOF USING RAPIDSNARK"
     execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 else
+    MSG="GENERATING PROOF USING SNARKJS"
     execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 fi

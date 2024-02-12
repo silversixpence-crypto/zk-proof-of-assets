@@ -85,24 +85,24 @@ BUILD_DIR=$G16_SETUP_DIRECTORY/../build/
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'vhbrzn:s:B:' flag; do
     case "${flag}" in
-        b)
-            BIG_CIRCUITS=true
-            COMPILE_FLAGS="--O1 --c"
-            ;;
-        r) BEACON=true ;;
-        z) VERIFY_ZKEY=true ;;
-        n) PATCHED_NODE_PATH="${OPTARG}" ;;
-        s) SNARKJS_PATH="${OPTARG}" ;;
-        B) BUILD_DIR="${OPTARG}" ;;
-        v) VERBOSE=true ;;
-        h)
-            print_usage
-            exit 1
-            ;;
-        *)
-            print_usage
-            exit 1
-            ;;
+    b)
+        BIG_CIRCUITS=true
+        COMPILE_FLAGS="--O1 --c"
+        ;;
+    r) BEACON=true ;;
+    z) VERIFY_ZKEY=true ;;
+    n) PATCHED_NODE_PATH="${OPTARG}" ;;
+    s) SNARKJS_PATH="${OPTARG}" ;;
+    B) BUILD_DIR="${OPTARG}" ;;
+    v) VERBOSE=true ;;
+    h)
+        print_usage
+        exit 1
+        ;;
+    *)
+        print_usage
+        exit 1
+        ;;
     esac
 done
 
@@ -136,23 +136,39 @@ if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
     echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file."
     print_usage
     exit 1
-# elif
-# TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
-# TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
+    # elif
+    # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
+    # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
 fi
 
 if $BIG_CIRCUITS; then
-    # TODO also check that these are files with the correct name etc
-
     if [[ -z "$PATCHED_NODE_PATH" ]]; then
         echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
-    if [[ -z "$SNARKJS_PATH" ]]; then
+    PATCHED_NODE_FILE=$(basename $PATCHED_NODE_PATH)
+    if [[ ! -f "$PATCHED_NODE_PATH "]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
+        echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
+        exit 1
+    fi
+
+    if [[ -z "$SNARKJS_PATH "]]; then
         echo "ERROR: Path to v0.3.59  snarkjs not set. This must be set if using '-b'."
         print_usage
+        exit 1
+    fi
+
+    SNARKJS_FILE=$(basename $SNARKJS_PATH)
+    if [[ ! -f "$SNARKJS_PATH "]] || [[ $SNARKJS_FILE != "cli.js" ]]; then
+        echo "ERROR: $SNARKJS_PATH must point to a file with name 'cli.js'"
+        exit 1
+    fi
+
+    SNARKJS_VERSION=$(snarkjs | grep snarkjs@ | cut -c 9-)
+    if [[ "$SNARKJS_VERSION" != "0.3.59" ]]; then
+        "ERROR: snarkjs path $SNARKJS_PATH does not have the expected version 0.3.59 (version found: $SNARKJS_VERSION)"
         exit 1
     fi
 fi
@@ -162,8 +178,6 @@ fi
 ############################################
 
 # Commands were originally from 0xPARC/circom-ecdsa & https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA
-
-# TODO add more info to the messaging, such as "generating proof using rapidsnark"
 
 MSG="COMPILING CIRCUIT"
 # TODO what is --wat?
@@ -181,8 +195,8 @@ if $BIG_CIRCUITS; then
     cd -
 fi
 
-MSG="GENERATING ZKEY 0"
 if $BIG_CIRCUITS; then
+    MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE & SNARKJS "
     execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 else
     execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
@@ -209,7 +223,6 @@ if $VERIFY_ZKEY; then
     execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 fi
 
-# TODO there is a fast version of this using patched node
 MSG="EXPORTING VKEY"
 if $BIG_CIRCUITS; then
     execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
