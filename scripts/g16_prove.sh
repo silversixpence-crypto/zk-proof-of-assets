@@ -15,6 +15,8 @@ G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 ################## SETUP ###################
 ############################################
 
+ERR_MSG="Most likely a bug in the shell script"
+
 print_usage() {
     printf "
 Groth16 proof generation for circom circuits.
@@ -176,6 +178,8 @@ if [[ ! -f "$EXPECTED_WTNS_GEN_PATH" ]]; then
     echo "ERROR: The witness generation code does not exist at the expected path $EXPECTED_WTNS_GEN_PATH"
     exit 1
 fi
+
+ERR_MSG="UNKNOWN"
 
 ############################################
 ################ COMMANDS ##################

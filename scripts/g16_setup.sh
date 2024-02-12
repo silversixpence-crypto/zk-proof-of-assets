@@ -11,6 +11,8 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 ################## SETUP ###################
 ############################################
 
+ERR_MSG="Most likely a bug in the shell script"
+
 print_usage() {
     printf "
 Groth16 setup for circom circuits.
@@ -172,6 +174,8 @@ if $BIG_CIRCUITS; then
         exit 1
     fi
 fi
+
+ERR_MSG="UNKNOWN"
 
 ############################################
 ################ COMMANDS ##################
