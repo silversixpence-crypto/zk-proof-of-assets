@@ -5,7 +5,7 @@
 
 # Benchmarks:
 #  1. compiling circuit:
-#    - time: 23m (c++)
+#    - time: 23m (c++) (14m on new machine)
 #    - max cpu: 23%
 #    - max mem: 16%
 #    - non-linear constraints: 58_083_270
@@ -15,17 +15,17 @@
 #    - public outputs: 1
 #    - wires: 61130056
 #    - labels: 83118319
-#  2. generating witness: 13m
+#  2. generating witness: 13m (9 min on new machine)
 #  3. checking witness: 13m
 #  4. generating zkey 0:
-#    - time: 16h
+#    - time: 16h (11h 40m on new machine)
 #    - max cpu: 36%
 #    - max mem: 79%
 #  5. contributing to phase 2 ceremony:
 #    - time: 19m
 #    - max cpu: 95%
 #    - max mem: 1%
-#  6. verifying final zkey: HERE
+#  6. verifying final zkey:
 #    - time: 15h
 #    - max cpu: 84%
 #    - max mem: 56%
