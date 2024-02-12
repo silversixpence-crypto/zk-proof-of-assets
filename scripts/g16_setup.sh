@@ -149,19 +149,19 @@ if $BIG_CIRCUITS; then
     fi
 
     PATCHED_NODE_FILE=$(basename $PATCHED_NODE_PATH)
-    if [[ ! -f "$PATCHED_NODE_PATH "]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
+    if [[ ! -f "$PATCHED_NODE_PATH" ]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
         echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
         exit 1
     fi
 
-    if [[ -z "$SNARKJS_PATH "]]; then
+    if [[ -z "$SNARKJS_PATH" ]]; then
         echo "ERROR: Path to v0.3.59  snarkjs not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
     SNARKJS_FILE=$(basename $SNARKJS_PATH)
-    if [[ ! -f "$SNARKJS_PATH "]] || [[ $SNARKJS_FILE != "cli.js" ]]; then
+    if [[ ! -f "$SNARKJS_PATH" ]] || [[ $SNARKJS_FILE != "cli.js" ]]; then
         echo "ERROR: $SNARKJS_PATH must point to a file with name 'cli.js'"
         exit 1
     fi

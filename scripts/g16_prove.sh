@@ -162,7 +162,7 @@ if $BIG_CIRCUITS; then
     fi
 
     RAPIDSNARK_FILE=$(basename "$RAPIDSNARK_PATH")
-    if [[ ! -f "$RAPIDSNARK_PATH "]] || [[ $RAPIDSNARK_FILE != "prover" ]]; then
+    if [[ ! -f "$RAPIDSNARK_PATH" ]] || [[ $RAPIDSNARK_FILE != "prover" ]]; then
         echo "ERROR: $RAPIDSNARK_PATH must point to a file with name 'prover'"
         exit 1
     fi
@@ -172,7 +172,7 @@ else
     EXPECTED_WTNS_GEN_PATH="$BUILD_DIR/$CIRCUIT_NAME"_js/generate_witness.js
 fi
 
-if [[ ! -f "$EXPECTED_WTNS_GEN_PATH "]]; then
+if [[ ! -f "$EXPECTED_WTNS_GEN_PATH" ]]; then
     echo "ERROR: The witness generation code does not exist at the expected path $EXPECTED_WTNS_GEN_PATH"
     exit 1
 fi
