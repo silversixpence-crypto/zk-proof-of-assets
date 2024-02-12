@@ -11,8 +11,6 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 ################## SETUP ###################
 ############################################
 
-# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-
 print_usage() {
     printf "
 Groth16 setup for circom circuits.
@@ -66,6 +64,12 @@ ARGS:
 "
 }
 
+if [ "$#" -lt 2 ]; then
+    echo "ERROR: Not enough arguments"
+    print_usage
+    exit 1
+fi
+
 COMPILE_FLAGS="--wasm"
 BIG_CIRCUITS=false
 BEACON=false
@@ -78,6 +82,7 @@ PTAU_PATH="${@: -1}"
 
 BUILD_DIR=$G16_SETUP_DIRECTORY/../build/
 
+# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'vhbrzn:s:B:' flag; do
     case "${flag}" in
         b)
@@ -107,7 +112,7 @@ if $VERBOSE; then
 fi
 
 if [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "<circuit_path> '$CIRCUIT_PATH' does not point to a file."
+    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
     print_usage
     exit 1
 fi
@@ -117,7 +122,7 @@ CIRCUIT_FILE=$(basename $CIRCUIT_PATH)
 CIRCUIT_NAME="${CIRCUIT_FILE%.*}"
 
 if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "<circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
+    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
     print_usage
     exit 1
 fi
@@ -128,7 +133,7 @@ if [[ ! -d "$BUILD_DIR" ]]; then
 fi
 
 if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
-    echo "<ptau_path> '$PTAU_PATH' does not point to an existing ptau file."
+    echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file."
     print_usage
     exit 1
 # elif
@@ -140,13 +145,13 @@ if $BIG_CIRCUITS; then
     # TODO also check that these are files with the correct name etc
 
     if [[ -z "$PATCHED_NODE_PATH" ]]; then
-        echo "Path to patched node binary not set. This must be set if using '-b'."
+        echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
     if [[ -z "$SNARKJS_PATH" ]]; then
-        echo "Path to v0.3.59  snarkjs not set. This must be set if using '-b'."
+        echo "ERROR: Path to v0.3.59  snarkjs not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi

@@ -15,8 +15,6 @@ G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 ################## SETUP ###################
 ############################################
 
-# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-
 print_usage() {
     printf "
 Groth16 proof generation for circom circuits.
@@ -71,6 +69,12 @@ ARGS:
 "
 }
 
+if [ "$#" -lt 2 ]; then
+    echo "ERROR: Not enough arguments"
+    print_usage
+    exit 1
+fi
+
 BIG_CIRCUITS=false
 VERIFY_ZKEY=false
 VERIFY_WITNESS=false
@@ -82,6 +86,7 @@ SIGNALS="${@: -1}"
 
 BUILD_DIR=$G16_PROVE_DIRECTORY/../build
 
+# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'vhbzwn:r:B:' flag; do
     case "${flag}" in
     b)
@@ -111,7 +116,7 @@ if $VERBOSE; then
 fi
 
 if [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "<circuit_path> '$CIRCUIT_PATH' does not point to a file."
+    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
     print_usage
     exit 1
 fi
@@ -121,7 +126,7 @@ CIRCUIT_FILE=$(basename $CIRCUIT_PATH)
 CIRCUIT_NAME="${CIRCUIT_FILE%.*}"
 
 if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "<circuit_path> '$CIRCUIT_PATH' does not point to an existing  circom file."
+    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
     print_usage
     exit 1
 fi
@@ -132,7 +137,7 @@ if [[ ! -d "$BUILD_DIR" ]]; then
 fi
 
 if [[ "${SIGNALS##*.}" != "json" ]] || [[ ! -f "$SIGNALS" ]]; then
-    echo "<signals> '$SIGNALS' does not point to an existing json file."
+    echo "ERROR: <signals> '$SIGNALS' does not point to an existing json file."
     print_usage
     exit 1
 fi
@@ -141,13 +146,13 @@ if $BIG_CIRCUITS; then
     # TODO check that the cpp witness generation code is available
 
     if [[ -z "$PATCHED_NODE_PATH" ]]; then
-        echo "Path to patched node binary not set. This must be set if using '-b'."
+        echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
     if [[ -z "$RAPIDSNARK_PATH" ]]; then
-        echo "Path to rapidsnark binary not set. This must be set if using '-b'."
+        echo "ERROR: Path to rapidsnark binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
