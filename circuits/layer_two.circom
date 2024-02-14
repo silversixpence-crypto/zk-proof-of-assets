@@ -14,14 +14,13 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     // Recommended register bit length for ECDSA verification.
     var register_bit_length = 64;
 
-    // Layer one only has a single hash as an input.
-    var num_pub_inputs = 1;
-
     //////////////////////////////////////////////
-    // Inputs.
+    // Public inputs of layer one circuit.
+
+    // Layer one only has a single hash as public input (hash of the pubkey x-coords)
+    var layer_one_pub_inputs = 1;
 
     signal input pubkey_x_coord_hash;
-    signal input pubkey[num_sigs][ec_dimension][num_registers];
 
     //////////////////////////////////////////////
     // G16 verification.
@@ -33,7 +32,7 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     signal input negalfa1xbeta2[6][2][k]; // e(-alfa1, beta2)
     signal input gamma2[2][2][k];
     signal input delta2[2][2][k];
-    signal input IC[num_pub_inputs+1][2][k];
+    signal input IC[layer_one_pub_inputs+1][2][k];
 
     // G16 proof.
     signal input negpa[2][k];
@@ -41,15 +40,17 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     signal input pc[2][k];
 
     // G16 inputs.
-    signal pub_input[num_pub_inputs];
+    signal pub_input[layer_one_pub_inputs];
     pub_input[0] <== pubkey_x_coord_hash;
 
-    signal verification_result <== verifyProof(num_pub_inputs)(negalfa1xbeta2, gamma2, delta2, IC, negpa, pb, pc, pub_input);
+    signal verification_result <== verifyProof(layer_one_pub_inputs)(negalfa1xbeta2, gamma2, delta2, IC, negpa, pb, pc, pub_input);
 
     verification_result === 1;
 
     //////////////////////////////////////////////
-    // Verify pubkeys match layer one hash.
+    // Verify pubkeys hash match layer one public input.
+
+    signal input pubkey[num_sigs][ec_dimension][num_registers];
 
     component hasher = Poseidon(num_sigs*num_registers);
 
@@ -77,7 +78,7 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     //////////////////////////////////////////////
     // Merkle proof verification.
 
-    signal input root;
+    signal input merkle_root;
     signal input leaf_addresses[num_sigs];
     signal input leaf_balances[num_sigs];
     signal input path_elements[num_sigs][merkle_tree_height];
@@ -94,17 +95,18 @@ template LayerTwo(num_sigs, merkle_tree_height) {
         leaf_hashers[i].inputs[1] <== leaf_balances[i];
         leaves[i] <== leaf_hashers[i].out;
 
-        MerkleProofVerify(merkle_tree_height)(leaves[i], root, path_elements[i], path_indices[i]);
+        MerkleProofVerify(merkle_tree_height)(leaves[i], merkle_root, path_elements[i], path_indices[i]);
     }
 
     //////////////////////////////////////////////
     // Add balances.
 
     var sum = 0;
+
     for (var i = 0; i < num_sigs; i++) {
         sum += leaf_balances[i];
     }
-    signal output balance_sum <== sum;
 
+    signal output balance_sum <== sum;
 }
 
