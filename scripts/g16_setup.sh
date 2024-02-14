@@ -34,8 +34,6 @@ FLAGS:
                      - Use patched version of node (path to this must be set with '-n'), see these for more info
                        https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA#Install-patched-node
                        https://github.com/hermeznetwork/phase2ceremony_4/blob/main/VERIFY.md#adding-swap-and-tweeking-the-os-to-accept-high-amount-of-memory
-                     - Use v0.3.59 of snarkjs (path to this must be set with '-s'), see here for more info
-                       https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA#Install-snarkjs-from-source
 
     -r               Apply random beacon to get the final proving key (zkey)
 
@@ -53,9 +51,6 @@ OPTIONS:
 
     -n <PATH>        Path to the patched node binary (needed for '-b')
                      Can also be set with the env var PATCHED_NODE_PATH
-
-    -s <PATH>        Path to the v0.3.59 snarkjs cli (needed for '-b')
-                     Can also be set with the env var SNARKJS_PATH
 
 ARGS:
 
@@ -82,10 +77,11 @@ VERBOSE=false
 CIRCUIT_PATH="${@:(-2):1}"
 PTAU_PATH="${@: -1}"
 
-BUILD_DIR="$G16_SETUP_DIRECTORY"/../build/
+PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
+BUILD_DIR="$PROJECT_ROOT_DIR"/build/
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbrzn:s:B:' flag; do
+while getopts 'vhbrzn:B:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
@@ -94,7 +90,6 @@ while getopts 'vhbrzn:s:B:' flag; do
     r) BEACON=true ;;
     z) VERIFY_ZKEY=true ;;
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
-    s) SNARKJS_PATH="${OPTARG}" ;;
     B) BUILD_DIR="${OPTARG}" ;;
     v) VERBOSE=true ;;
     h)
@@ -107,6 +102,13 @@ while getopts 'vhbrzn:s:B:' flag; do
         ;;
     esac
 done
+
+SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
+SNARKJS_FILE=$(basename $SNARKJS_CLI)
+if [[ ! -f "$SNARKJS_CLI" ]]; then
+    echo "ERROR: snarkjs not present in node_modules. Run 'pnpm i'."
+    exit 1
+fi
 
 if $VERBOSE; then
     # print commands before executing
@@ -155,24 +157,6 @@ if $BIG_CIRCUITS; then
         echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
         exit 1
     fi
-
-    if [[ -z "$SNARKJS_PATH" ]]; then
-        echo "ERROR: Path to v0.3.59  snarkjs not set. This must be set if using '-b'."
-        print_usage
-        exit 1
-    fi
-
-    SNARKJS_FILE=$(basename $SNARKJS_PATH)
-    if [[ ! -f "$SNARKJS_PATH" ]] || [[ $SNARKJS_FILE != "cli.js" ]]; then
-        echo "ERROR: $SNARKJS_PATH must point to a file with name 'cli.js'"
-        exit 1
-    fi
-
-    SNARKJS_VERSION=$(snarkjs | grep snarkjs@ | cut -c 9-)
-    if [[ "$SNARKJS_VERSION" != "0.3.59" ]]; then
-        "ERROR: snarkjs path $SNARKJS_PATH does not have the expected version 0.3.59 (version found: $SNARKJS_VERSION)"
-        exit 1
-    fi
 fi
 
 ERR_MSG="UNKNOWN"
@@ -200,10 +184,10 @@ if $BIG_CIRCUITS; then
 fi
 
 if $BIG_CIRCUITS; then
-    MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE & OLD SNARKJS VERSION"
-    execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_PATH" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+    MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
+    execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 else
-    MSG="GENERATING ZKEY FOR CIRCUIT USING SNARKJS"
+    MSG="GENERATING ZKEY FOR CIRCUIT"
     execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 fi
 
@@ -230,7 +214,7 @@ fi
 
 MSG="EXPORTING VKEY"
 if $BIG_CIRCUITS; then
-    execute "$PATCHED_NODE_PATH" "$SNARKJS_PATH" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
+    execute "$PATCHED_NODE_PATH" "$SNARKJS_CLI" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
 else
     execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 fi

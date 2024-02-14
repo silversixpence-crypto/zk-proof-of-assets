@@ -257,16 +257,6 @@ if [[ ! -f "$HOME/rapidsnark/package/bin/prover" ]]; then
 fi
 export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 
-# snarkjs cli.js
-ERR_MSG="Snarkjs setup failed"
-cd "$HOME"
-if [[ ! -f "$HOME/snarkjs/cli.js" ]]; then
-    git clone https://github.com/iden3/snarkjs.git
-    cd snarkjs
-    npm install
-fi
-export SNARKJS_PATH=$HOME/snarkjs/cli.js
-
 # PNPM
 ERR_MSG="PNPM setup failed"
 cd "$HOME"
@@ -283,8 +273,6 @@ fi
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
 pnpm add npx -g
-
-# snarkjs plain cli
 pnpm add snarkjs -g
 
 if $REPO; then
