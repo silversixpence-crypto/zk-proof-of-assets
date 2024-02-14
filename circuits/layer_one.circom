@@ -31,6 +31,7 @@ template LayerOne(num_sigs) {
             hasher.inputs[i*num_registers + j] <== pubkey[i][0][j];
         }
     }
+
     signal output pubkey_x_coord_hash <== hasher.out;
 
     // TODO need to verify the pubkeys are valid
