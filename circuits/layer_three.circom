@@ -39,8 +39,11 @@ template LayerThree(layer_two_count) {
     signal verification_result[layer_two_count];
 
     for (var i = 0; i < layer_two_count; i++) {
-        pub_input[i][0] <== merkle_roots[i];
-        pub_input[i][1] <== balances[i];
+        log("balances i=", i, balances[i]);
+        log("merkle_roots i=", i, merkle_roots[i]);
+
+        pub_input[i][0] <== balances[i];
+        pub_input[i][1] <== merkle_roots[i];
 
         verification_result[i] <== verifyProof(layer_two_pub_inputs)(negalfa1xbeta2[i], gamma2[i], delta2[i], IC[i], negpa[i], pb[i], pc[i], pub_input[i]);
 
