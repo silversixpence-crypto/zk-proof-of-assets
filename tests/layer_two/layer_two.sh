@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This test verifies 2 signatures using the slower settings for g16_setup.sh & g16_prove.sh
+# This test verifies 2 signatures using the faster settings for g16_setup.sh & g16_prove.sh
 
 LAYER_TWO_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 LAYER_TWO_DIRECTORY="$(dirname "$LAYER_TWO_PATH")"

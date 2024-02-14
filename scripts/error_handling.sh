@@ -20,15 +20,19 @@ failure() {
     local cmd=$5
     local msg=$6
     local lineno_fns=${1% 0}
+
     if [[ "$lineno_fns" != "0" ]] ; then
         lineno="${lineno} ${lineno_fns}"
     fi
+
     printf "\n####### ERROR #######\n\n"
     echo "  Failure in file:                    ${BASH_SOURCE[1]}"
     echo "  Function trace [line numbers]:      ${fn} [${lineno}]"
     echo "  Exit status:                        ${exitstatus}"
     echo "  Command that failed:                $cmd"
     echo "  Error message:                      $msg"
+
+    exit 1
 }
 trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR
 
