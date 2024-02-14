@@ -1,4 +1,5 @@
 import { Point, CURVE } from '@noble/secp256k1';
+import { jsonReviver } from "../scripts/json_serde";
 
 const fs = require('fs');
 import path = require('path');
@@ -21,15 +22,6 @@ export interface Signature {
     s: bigint,
     r_prime: bigint,
     pubkey: Point,
-}
-
-function deserialize(json_data: any): SignaturesFileStruct {
-    return JSON.parse(json_data, (key, value) => {
-        if (typeof value === "string" && /^\d+n$/.test(value)) {
-            return BigInt(value.substr(0, value.length - 1));
-        }
-        return value;
-    });
 }
 
 function bigint_to_array(n: number, k: number, x: bigint) {
@@ -87,22 +79,17 @@ var argv = require('minimist')(process.argv.slice(2), {
 var input_path = argv.i;
 var output_path = argv.o;
 
-console.log("in", input_path);
-console.log("out", output_path);
-
-// TODO sanity check path
-
 fs.readFile(input_path, function read(err: any, json_in: any) {
     if (err) {
         throw err;
     }
 
-    var input: SignaturesFileStruct = deserialize(json_in);
+    var input: SignaturesFileStruct = JSON.parse(json_in, jsonReviver);
     var output: LayerOneInputFileStruct = construct_input(input.signatures, input.msg_hash);
 
     // Serialization
     const json_out = JSON.stringify(output, (key, value) =>
-        typeof value === "bigint" ? value.toString() + "n" : value
+        typeof value === "bigint" ? value.toString() : value
     );
 
     fs.writeFileSync(output_path, json_out);
