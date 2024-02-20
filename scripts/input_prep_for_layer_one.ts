@@ -5,6 +5,7 @@ import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./json_serde";
 
 const fs = require('fs');
+const circomlibjs = require("circomlibjs");
 import path = require('path');
 
 export interface SignaturesFileStruct {
@@ -74,13 +75,33 @@ function construct_input(sigs: Signature[], msg_hash: Uint8Array): LayerOneInput
     return output;
 }
 
+async function hash_x_coords(x_coords: bigint[]) {
+    const poseidon = await circomlibjs.buildPoseidon();
+    const F = poseidon.F; // poseidon finite field
+
+    let poseidonRes = await poseidon(x_coords);
+    let hash = await F.toObject(poseidonRes);
+
+    return hash.toString();
+}
+
+function write_pubkey_x_coords_hash(sigs: Signature[], output_path: String) {
+    var filename = "pubkey_x_coords.json";
+    var x_coords = sigs.map(sig => bigint_to_array(64, 4, sig.pubkey.x)).flat();
+    hash_x_coords(x_coords).then(hash => fs.writeFileSync(output_path, hash));
+}
 
 var argv = require('minimist')(process.argv.slice(2), {
-    default: { "i": path.join(__dirname, "../tests/signatures_2.json"), "o": path.join(__dirname, "../tests/layer_one/input.json") }
+    default: {
+        "i": path.join(__dirname, "../tests/signatures_2.json"),
+        "o": path.join(__dirname, "../tests/layer_one/input.json"),
+        "h": path.join(__dirname, "../tests/pubkey_x_coords_hash.txt"),
+    }
 });
 
 var input_path = argv.i;
 var output_path = argv.o;
+var x_coord_hash_output_path = argv.h;
 
 fs.readFile(input_path, function read(err: any, json_in: any) {
     if (err) {
@@ -88,11 +109,16 @@ fs.readFile(input_path, function read(err: any, json_in: any) {
     }
 
     var input: SignaturesFileStruct = JSON.parse(json_in, jsonReviver);
+
+    write_pubkey_x_coords_hash(input.signatures, x_coord_hash_output_path);
+
     var output: LayerOneInputFileStruct = construct_input(input.signatures, input.msg_hash);
 
     // Serialization
-    const json_out = JSON.stringify(output, (key, value) =>
-        typeof value === "bigint" ? value.toString() : value
+    const json_out = JSON.stringify(
+        output,
+        (key, value) => typeof value === "bigint" ? value.toString() : value,
+        2
     );
 
     fs.writeFileSync(output_path, json_out);

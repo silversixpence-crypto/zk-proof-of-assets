@@ -226,7 +226,6 @@ function construct_r_prime(r: bigint, s: bigint, pvtkey: bigint, msg_hash: Uint8
     return p_res.y;
 }
 
-
 async function generate_sigs(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<Signature[]> {
     var sigs: Signature[] = [];
 
@@ -265,7 +264,7 @@ generate_sigs(msg_hash, pairs).then(sigs => {
     };
     var filename = "signatures_" + num_sigs + ".json";
 
-    const json = JSON.stringify(output, jsonReplacer);
+    const json = JSON.stringify(output, jsonReplacer, 2);
 
     if (argv.p === true) {
         console.log("Writing the following signature data to", filename, sigs);
