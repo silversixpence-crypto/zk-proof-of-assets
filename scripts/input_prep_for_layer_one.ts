@@ -1,5 +1,8 @@
+// Some of this code was taken from
+// https://github.com/puma314/batch-ecdsa/blob/b512c651f497985a74858154e4a69bcdaf02443e/test/utils.ts
+
 import { Point, CURVE } from '@noble/secp256k1';
-import { jsonReviver } from "../scripts/json_serde";
+import { jsonReviver } from "./json_serde";
 
 const fs = require('fs');
 import path = require('path');
