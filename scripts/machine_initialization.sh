@@ -4,6 +4,10 @@
 # in this repo. Inspiration was taken from here:
 # https://hackmd.io/@yisun/BkT0RS87q
 
+# Get the path to the directory this script is in.
+INIT_SCRIPT_PATH="$(realpath "${BASH_SOURCE[-1]}")"
+INIT_SCRIPT_DIRECTORY="$(dirname "$INIT_SCRIPT_PATH")"
+
 ############################################
 ########### ERROR HANDLING #################
 ############################################
@@ -24,7 +28,7 @@ failure() {
     local cmd=$5
     local msg=$6
     local lineno_fns=${1% 0}
-    if [[ "$lineno_fns" != "0" ]] ; then
+    if [[ "$lineno_fns" != "0" ]]; then
         lineno="${lineno} ${lineno_fns}"
     fi
     printf "\n####### ERROR #######\n\n"
@@ -67,11 +71,9 @@ FLAGS:
      -c            AWS CloudWatch memory metrics
                    See this for more info https://stackoverflow.com/questions/42317062/how-to-monitor-ec2-instances-by-memory
 
-     -S            Create a swap file with default size: $DEFAULT_SWAP_SIZE
-
-     -r            Clone zk-proof-of-assets repo
-
      -P            Download ptau file number $DEFAULT_PTAU_SIZE & put in $HOME/zk-proof-of-assets
+
+     -S            Create a swap file with default size: $DEFAULT_SWAP_SIZE
 
      -v            Print commands that are run (set -x)
 
@@ -79,12 +81,14 @@ FLAGS:
 
 OPTIONS:
 
-     -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
-
      -b <BRANCH>   Checkout <BRANCH> in $HOME/zk-proof-of-assets
 
      -p <NUM>      Download ptau file <NUM> & put in $HOME/zk-proof-of-assets
                    See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
+
+     -r <DIR>      Clone zk-proof-of-assets repo into <DIR>
+
+     -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
 "
 }
 
@@ -96,7 +100,10 @@ while getopts 'cvhrSs:b:Pp:' flag; do
         SWAP_SIZE_INPUT="${OPTARG}"
         ;;
     S) SWAP=true ;;
-    r) REPO=true ;;
+    r)
+        REPO=true
+        REPO_PARENT_DIR="${OPTARG}"
+        ;;
     b) BRANCH="${OPTARG}" ;;
     p)
         PTAU=true
@@ -115,7 +122,7 @@ while getopts 'cvhrSs:b:Pp:' flag; do
     esac
 done
 
-SWAP_E=${SWAP_SIZE_INPUT:-$DEFAULT_SWAP_SIZE}
+SWAP_SIZE=${SWAP_SIZE_INPUT:-$DEFAULT_SWAP_SIZE}
 PTAU_SIZE=${PTAU_SIZE_INPUT:-$DEFAULT_PTAU_SIZE}
 
 if $VERBOSE; then
@@ -131,7 +138,7 @@ ERR_MSG="Initial setup failed"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git time
+sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git time patch
 
 # for pyenv
 sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -237,6 +244,7 @@ if ! which npm; then
     # > Installing latest LTS version.
     # > Downloading and installing node v20.11.0...
     # > Binary download failed, trying source.
+    #
     # In this case run this command manually:
     # `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts`.
     nvm install --lts
@@ -275,24 +283,29 @@ export PATH="$PNPM_HOME:$PATH"
 pnpm add npx -g
 pnpm add snarkjs -g
 
+# Setup repo.
 if $REPO; then
-    # Setup repo
     ERR_MSG="Repo setup failed"
+    REPO_DIR="$REPO_PARENT_DIR/zk-proof-of-assets"
 
-    if [[ ! -d "$HOME/zk-proof-of-assets" ]]; then
-        cd "$HOME"
+    if [[ ! -d "$REPO_DIR" ]]; then
+        cd "$REPO_PARENT_DIR"
         git clone https://github.com/silversixpence-crypto/zk-proof-of-assets
     fi
 
-    cd "$HOME/zk-proof-of-assets"
+    cd "$REPO_DIR"
 
     if [[ ! -z "$BRANCH" ]]; then
         git switch -c "$BRANCH" origin/"$BRANCH"
     fi
 
     pnpm i
+
     git submodule init
     git submodule update
+
+    BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
+    patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
 fi
 
 # TODO instead of checking if the file exists rather check its checksum,
