@@ -9,8 +9,8 @@
 
 import { sign, Point, CURVE } from '@noble/secp256k1';
 import path = require('path');
-import { Signature, SignaturesFileStruct } from "../scripts/input_prep_for_layer_one";
-import { jsonReplacer } from "../scripts/json_serde";
+import { Signature, SignaturesFileShape } from "../scripts/input_prep_for_layer_one";
+import { jsonReplacer } from "../scripts/lib/json_serde";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
@@ -258,7 +258,7 @@ var msg_hash: Uint8Array = sha256(msg);
 var pairs = generate_pvt_pub_key_pairs(argv.n);
 
 generate_sigs(msg_hash, pairs).then(sigs => {
-    var output: SignaturesFileStruct = {
+    var output: SignaturesFileShape = {
         msg_hash,
         signatures: sigs,
     };

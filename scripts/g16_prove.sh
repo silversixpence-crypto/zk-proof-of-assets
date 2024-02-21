@@ -8,8 +8,8 @@
 G16_PROVE_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 
-. "$G16_PROVE_DIRECTORY/error_handling.sh"
-. "$G16_PROVE_DIRECTORY/cmd_executor.sh"
+. "$G16_PROVE_DIRECTORY/lib/error_handling.sh"
+. "$G16_PROVE_DIRECTORY/lib/cmd_executor.sh"
 
 ############################################
 ################## SETUP ###################

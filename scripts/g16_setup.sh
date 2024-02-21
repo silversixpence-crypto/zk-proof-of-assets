@@ -4,8 +4,8 @@
 G16_SETUP_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 
-. "$G16_SETUP_DIRECTORY/error_handling.sh"
-. "$G16_SETUP_DIRECTORY/cmd_executor.sh"
+. "$G16_SETUP_DIRECTORY/lib/error_handling.sh"
+. "$G16_SETUP_DIRECTORY/lib/cmd_executor.sh"
 
 ############################################
 ################## SETUP ###################
