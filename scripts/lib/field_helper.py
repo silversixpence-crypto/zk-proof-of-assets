@@ -1,7 +1,7 @@
 # Directly copied from
 # https://github.com/yi-sun/circom-pairing/blob/107c316223a08ac577522c54edd81f0fc4c03130/python/field_helper.py
 
-from curve_field_elements import FQ2, FQ12
+from .curve_field_elements import FQ2, FQ12
 
 def numberToBase(num, b):
     num = abs(num)

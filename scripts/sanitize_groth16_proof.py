@@ -5,7 +5,7 @@ from py_ecc.fields import (
     bn128_FQ as FQ,
     bn128_FQ2 as FQ2,
 )
-from lib.groth16_proof_sanitation.field_helper import (
+from lib.field_helper import (
     numberToArray,
     Fp12convert,
 )
