@@ -197,7 +197,11 @@ convert_to_leaves(
 ).then(({ leaves, owned_leaves }) => {
     build_tree(leaves, depth).then((tree) => {
 
-        let json = JSON.stringify(tree, jsonReplacer, 2);
+        let json = JSON.stringify(
+            tree,
+            (key, value) => typeof value === "bigint" ? value.toString() : value,
+            2
+        );
         fs.writeFileSync(merkle_tree_path, json);
 
         let proofs = generate_proofs(tree, owned_leaves);
