@@ -306,6 +306,8 @@ if $REPO; then
 
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
+
+    pip install -r requirements.txt
 fi
 
 # TODO instead of checking if the file exists rather check its checksum,
