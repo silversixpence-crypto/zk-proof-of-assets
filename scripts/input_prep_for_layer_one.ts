@@ -45,18 +45,15 @@ var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         poa_input_data_path: ['poa-input-data', 'i'],
         layer_one_input_path: ['write-layer-one-data-to', 'o'],
-        x_coords_hash_path: ['write-x-coords-hash-to', 'h'],
     },
     default: {
         poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
         layer_one_input_path: path.join(__dirname, "../tests/layer_one/input.json"),
-        x_coords_hash_path: "../tests/pubkey_x_coords_hash.txt",
     }
 });
 
 var input_data_path = argv.poa_input_data_path;
 var layer_one_input_path = argv.layer_one_input_path;
-var x_coords_hash_output_path = argv.x_coords_hash_path;
 
 fs.readFile(input_data_path, function read(err: any, json_in: any) {
     if (err) {

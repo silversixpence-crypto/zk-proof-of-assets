@@ -1,5 +1,5 @@
 import { jsonReplacer, jsonReviver } from "./lib/json_serde";
-import { ProofOfAssetsInputFileShape, WalletData } from "./lib/interfaces";
+import { ProofOfAssetsInputFileShape, WalletData, Proofs } from "./lib/interfaces";
 
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
@@ -12,11 +12,6 @@ interface Leaf {
     address: bigint,
     balance: bigint,
     hash: bigint,
-}
-
-interface Proofs {
-    path_elements: bigint[][],
-    path_indices: number[][],
 }
 
 // Construct the Merkle tree and return all the data as a 2-dimensional array.
@@ -197,11 +192,7 @@ convert_to_leaves(
 ).then(({ leaves, owned_leaves }) => {
     build_tree(leaves, depth).then((tree) => {
 
-        let json = JSON.stringify(
-            tree,
-            (key, value) => typeof value === "bigint" ? value.toString() : value,
-            2
-        );
+        let json = JSON.stringify(tree, jsonReplacer, 2);
         fs.writeFileSync(merkle_tree_path, json);
 
         let proofs = generate_proofs(tree, owned_leaves);

@@ -35,3 +35,7 @@ export interface Groth16ProofAsInput {
     pubInput: number[],
 }
 
+export interface Proofs {
+    path_elements: bigint[][],
+    path_indices: number[][],
+}
