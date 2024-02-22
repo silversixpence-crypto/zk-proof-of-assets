@@ -7,6 +7,8 @@ FULL_WORKFLOW_DIRECTORY="$(dirname "$FULL_WORKFLOW_PATH")"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/cmd_executor.sh"
 
 npx ts-node ./tests/generate_test_input.ts --num-sigs 2 --message "message to sign"
+npx ts-node ./tests/generate_anon_set.ts --num-addresses 100
+
 npx ts-node ./scripts/input_prep_for_layer_one.ts -s "$FULL_WORKFLOW_DIRECTORY/signatures_2.json" -o "$FULL_WORKFLOW_DIRECTORY/layer_one/input.json" -h "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt"
 
 "$FULL_WORKFLOW_DIRECTORY"/layer_one/layer_one.sh
