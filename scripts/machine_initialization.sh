@@ -92,7 +92,7 @@ OPTIONS:
 "
 }
 
-while getopts 'cvhrSs:b:Pp:' flag; do
+while getopts 'cvhr:Ss:b:Pp:' flag; do
     case "${flag}" in
     c) CLOUDWATCH=true ;;
     s)
@@ -320,4 +320,4 @@ fi
 # This is the 2nd method mentioned here:
 # https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i/16619261#16619261
 # The 1st method in the above tends to break things, so try to avoid that.
-echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node && export PATH=$PATH"
+echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node && export PATH=$PATH:$HOME/pyenv/bin && eval \"$(pyenv init -)\""
