@@ -11,14 +11,13 @@ import { sign, Point, CURVE } from '@noble/secp256k1';
 import { randomBytes } from '@noble/hashes/utils';
 import { Wallet } from "ethers";
 
-import path = require('path');
-
 import { Signature, InputFileShape, WalletData } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
+const path = require('path');
 const parseArgs = require('minimist');
 
 interface KeyPair {
@@ -26,7 +25,7 @@ interface KeyPair {
     pub: Point,
 }
 
-function generate_pvt_pub_key_pairs(n: number): KeyPair[] {
+export function generate_pvt_pub_key_pairs(n: number = 128): KeyPair[] {
     var pvtkeys: Array<bigint> = [
         66938844460645107025781008991556355714625654511665288941412380224408210845354n,
         11103745739792365897258682640621486163995830732847673942264532053458061009278n,
@@ -259,10 +258,11 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
 }
 
 var argv = parseArgs(process.argv.slice(2), {
-    default: { "n": 2, "m": "my message to sign", "p": false }
+    alias: { num_sigs: ['num-sigs', 'n'], msg: ['message', 'm'], print_data: ['print', 'p'] },
+    default: { num_sigs: 2, msg: "my message to sign", print_data: false }
 });
-var num_sigs = argv.n;
-var msg = argv.m
+var num_sigs = argv.num_sigs;
+var msg = argv.msg;
 
 var msg_hash: Uint8Array = sha256(msg);
 var pairs = generate_pvt_pub_key_pairs(argv.n);
