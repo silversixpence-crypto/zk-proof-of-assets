@@ -12,7 +12,8 @@
     "circomlib": "^2.0.5",
     "circomlibjs": "0.1.1",
     "minimist": "^1.2.8",
-    "snarkjs": "^0.7.2"
+    "snarkjs": "^0.7.2",
+    "ethers": "6.11.1"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",
