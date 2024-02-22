@@ -4,7 +4,7 @@
 import { Point, CURVE } from '@noble/secp256k1';
 
 import { jsonReviver } from "./lib/json_serde";
-import { Signature, SignaturesFileShape } from "./lib/interfaces";
+import { Signature, InputFileShape } from "./lib/interfaces";
 import { bigint_to_array, Uint8Array_to_bigint } from "./lib/utils";
 
 const fs = require('fs');
@@ -57,8 +57,11 @@ fs.readFile(signatures_path, function read(err: any, json_in: any) {
         throw err;
     }
 
-    var signatures_data: SignaturesFileShape = JSON.parse(json_in, jsonReviver);
-    var layer_one_input: LayerOneInputFileShape = construct_input(signatures_data.signatures, signatures_data.msg_hash);
+    var input_data: InputFileShape = JSON.parse(json_in, jsonReviver);
+    var layer_one_input: LayerOneInputFileShape = construct_input(
+        input_data.wallet_data.map(w => w.signature),
+        input_data.msg_hash
+    );
 
     const json_out = JSON.stringify(
         layer_one_input,

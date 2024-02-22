@@ -1,15 +1,22 @@
 import { Point } from '@noble/secp256k1';
-
-export interface SignaturesFileShape {
-    signatures: Signature[],
-    msg_hash: Uint8Array,
-}
+import { interfaces } from 'mocha';
 
 export interface Signature {
     r: bigint,
     s: bigint,
     r_prime: bigint,
     pubkey: Point,
+}
+
+export interface WalletData {
+    signature: Signature,
+    address: bigint,
+    balance: bigint,
+}
+
+export interface InputFileShape {
+    wallet_data: WalletData[],
+    msg_hash: Uint8Array,
 }
 
 export interface Groth16ProofAsInput {

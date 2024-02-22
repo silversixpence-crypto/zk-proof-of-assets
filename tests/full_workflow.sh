@@ -3,7 +3,10 @@
 FULL_WORKFLOW_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 FULL_WORKFLOW_DIRECTORY="$(dirname "$FULL_WORKFLOW_PATH")"
 
-npx ts-node ./tests/generate_ecdsa_signatures.ts -n 2 -m "message to sign"
+. "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/error_handling.sh"
+. "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/cmd_executor.sh"
+
+npx ts-node ./tests/generate_test_input.ts -n 2 -m "message to sign"
 npx ts-node ./scripts/input_prep_for_layer_one.ts -s "$FULL_WORKFLOW_DIRECTORY/signatures_2.json" -o "$FULL_WORKFLOW_DIRECTORY/layer_one/input.json" -h "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt"
 
 "$FULL_WORKFLOW_DIRECTORY"/layer_one/layer_one.sh

@@ -8,9 +8,14 @@
 // A json file will be written with the signature data.
 
 import { sign, Point, CURVE } from '@noble/secp256k1';
+import { randomBytes } from '@noble/hashes/utils';
+import { Wallet } from "ethers";
+
 import path = require('path');
-import { Signature, SignaturesFileShape } from "../scripts/input_prep_for_layer_one";
+
+import { Signature, InputFileShape, WalletData } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
+import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
@@ -157,30 +162,10 @@ function generate_pvt_pub_key_pairs(n: number): KeyPair[] {
 
     for (var i = 0; i < n; i++) {
         var pubkey: Point = Point.fromPrivateKey(pvtkeys[i]);
-        pairs.push({pvt: pvtkeys[i], pub: pubkey});
+        pairs.push({ pvt: pvtkeys[i], pub: pubkey });
     }
 
     return pairs;
-}
-
-// bigendian
-function bigint_to_Uint8Array(x: bigint) {
-    var ret: Uint8Array = new Uint8Array(32);
-    for (var idx = 31; idx >= 0; idx--) {
-        ret[idx] = Number(x % 256n);
-        x = x / 256n;
-    }
-    return ret;
-}
-
-// bigendian
-function Uint8Array_to_bigint(x: Uint8Array) {
-    var ret: bigint = 0n;
-    for (var idx = 0; idx < x.length; idx++) {
-        ret = ret * 256n;
-        ret = ret + BigInt(x[idx]);
-    }
-    return ret;
 }
 
 // Calculates a modulo b
@@ -226,26 +211,51 @@ function construct_r_prime(r: bigint, s: bigint, pvtkey: bigint, msg_hash: Uint8
     return p_res.y;
 }
 
-async function generate_sigs(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<Signature[]> {
-    var sigs: Signature[] = [];
+// Signature values are returned as bigints.
+async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<Signature> {
+    var pvtkey = key_pair.pvt;
+    var pubkey = key_pair.pub;
+
+    var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(pvtkey), {
+        canonical: true,
+        der: false,
+    });
+
+    var r: bigint = Uint8Array_to_bigint(sig.slice(0, 32));
+    var s: bigint = Uint8Array_to_bigint(sig.slice(32, 64));
+    var r_prime: bigint = construct_r_prime(r, s, pvtkey, msg_hash);
+
+    return { r, s, r_prime, pubkey };
+}
+
+// Constructs a json object with ECDSA* signatures, eth addresses, and balances
+async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<InputFileShape> {
+    let wallet_data: WalletData[] = [];
 
     for (var i = 0; i < key_pairs.length; i++) {
-        var pvtkey = key_pairs[i].pvt;
-        var pubkey = key_pairs[i].pub;
+        let pvt_hex = key_pairs[i].pvt.toString(16);
+        let address_hex = new Wallet(pvt_hex).address;
+        let address_dec: bigint = BigInt(address_hex);
+        let signature = await ecdsa_star(msg_hash, key_pairs[i]);
 
-        var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(key_pairs[i].pvt), {
-            canonical: true,
-            der: false,
+        wallet_data.push({
+            signature,
+            address: address_dec,
+            balance: Uint8Array_to_bigint(randomBytes(8)),
         });
-
-        var r: bigint = Uint8Array_to_bigint(sig.slice(0, 32));
-        var s: bigint = Uint8Array_to_bigint(sig.slice(32, 64));
-        var r_prime: bigint = construct_r_prime(r, s, pvtkey, msg_hash);
-
-        sigs.push({ r, s, r_prime, pubkey });
     }
 
-    return sigs;
+    // It's very important to sort by address, otherwise the circuits will fail.
+    wallet_data.sort((a, b) => {
+        if (a.address < b.address) return -1;
+        else if (a.address < b.address) return 1;
+        else return 0;
+    });
+
+    return {
+        wallet_data,
+        msg_hash,
+    };
 }
 
 var argv = parseArgs(process.argv.slice(2), {
@@ -257,17 +267,13 @@ var msg = argv.m
 var msg_hash: Uint8Array = sha256(msg);
 var pairs = generate_pvt_pub_key_pairs(argv.n);
 
-generate_sigs(msg_hash, pairs).then(sigs => {
-    var output: SignaturesFileShape = {
-        msg_hash,
-        signatures: sigs,
-    };
-    var filename = "signatures_" + num_sigs + ".json";
+generate_input_data(msg_hash, pairs).then(data => {
+    var filename = "input_data_for_" + num_sigs + "_wallets.json";
 
-    const json = JSON.stringify(output, jsonReplacer, 2);
+    const json = JSON.stringify(data, jsonReplacer, 2);
 
     if (argv.p === true) {
-        console.log("Writing the following signature data to", filename, sigs);
+        console.log("Writing the following data to", filename, data);
     }
 
     fs.writeFileSync(path.join(__dirname, filename), json);

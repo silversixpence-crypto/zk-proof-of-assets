@@ -17,6 +17,17 @@ export function bigint_to_array(n: number, k: number, x: bigint) {
     return ret;
 }
 
+// bigendian
+export function bigint_to_Uint8Array(x: bigint) {
+    var ret: Uint8Array = new Uint8Array(32);
+    for (var idx = 31; idx >= 0; idx--) {
+        ret[idx] = Number(x % 256n);
+        x = x / 256n;
+    }
+    return ret;
+}
+
+// bigendian
 export function Uint8Array_to_bigint(x: Uint8Array) {
     var ret: bigint = 0n;
     for (var idx = 0; idx < x.length; idx++) {
