@@ -6,10 +6,13 @@ FULL_WORKFLOW_DIRECTORY="$(dirname "$FULL_WORKFLOW_PATH")"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/error_handling.sh"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/cmd_executor.sh"
 
+POA_INPUT="$FULL_WORKFLOW_DIRECTORY/input_data_for_2_wallets.json"
+
 npx ts-node ./tests/generate_test_input.ts --num-sigs 2 --message "message to sign"
 npx ts-node ./tests/generate_anon_set.ts --num-addresses 100
+npx ts-node ./scripts/merkle_tree.ts  --anonymity-set "$FULL_WORKFLOW_DIRECTORY/anonymity_set.json" --poa-input-data "$POA_INPUT" --write-merkle-tree-to "$FULL_WORKFLOW_DIRECTORY/merkle_tree.json" --write-merkle-proofs-to "$FULL_WORKFLOW_DIRECTORY/merkle_proofs.json"
 
-npx ts-node ./scripts/input_prep_for_layer_one.ts --poa-input-data "$FULL_WORKFLOW_DIRECTORY/input_data_for_2_wallets.json" --write-layer-one-data-to "$FULL_WORKFLOW_DIRECTORY/layer_one/input.json" --write-x-coords-hash-to "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt"
+npx ts-node ./scripts/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$FULL_WORKFLOW_DIRECTORY/layer_one/input.json" --write-x-coords-hash-to "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt"
 
 "$FULL_WORKFLOW_DIRECTORY"/layer_one/layer_one.sh
 
