@@ -6,22 +6,22 @@ FULL_WORKFLOW_DIRECTORY="$(dirname "$FULL_WORKFLOW_PATH")"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/error_handling.sh"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/cmd_executor.sh"
 
+SCRIPTS="$FULL_WORKFLOW_DIRECTORY"/../scripts
+TESTS="$FULL_WORKFLOW_DIRECTORY"/../tests
+BUILD="$FULL_WORKFLOW_DIRECTORY"/../build
 POA_INPUT="$FULL_WORKFLOW_DIRECTORY/input_data_for_2_wallets.json"
+MERKLE_TREE="$TESTS"/merkle_tree.json
+MERKLE_PROOFS="$TESTS"/merkle_proofs.json
 
-npx ts-node ./tests/generate_test_input.ts --num-sigs 2 --message "message to sign"
-npx ts-node ./tests/generate_anon_set.ts --num-addresses 100
-npx ts-node ./scripts/merkle_tree.ts  --anonymity-set "$FULL_WORKFLOW_DIRECTORY/anonymity_set.json" --poa-input-data "$POA_INPUT" --write-merkle-tree-to "$FULL_WORKFLOW_DIRECTORY/merkle_tree.json" --write-merkle-proofs-to "$FULL_WORKFLOW_DIRECTORY/merkle_proofs.json"
+npx ts-node "$TESTS"/generate_test_input.ts --num-sigs 2 --message "message to sign"
+npx ts-node "$TESTS"/generate_anon_set.ts --num-addresses 100
+npx ts-node "$SCRIPTS"/merkle_tree.ts  --anonymity-set "$TESTS"/anonymity_set.json --poa-input-data "$POA_INPUT" --write-merkle-tree-to "$MERKLE_TREE" --write-merkle-proofs-to "$MERKLE_PROOFS"
 
-npx ts-node ./scripts/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$FULL_WORKFLOW_DIRECTORY/layer_one/input.json" --write-x-coords-hash-to "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt"
+npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$TESTS"/layer_one/input.json
 
-"$FULL_WORKFLOW_DIRECTORY"/layer_one/layer_one.sh
+"$TESTS"/layer_one/layer_one.sh
 
-BUILD_DIR="$FULL_WORKFLOW_DIRECTORY"/../build/tests/layer_one
+python "$SCRIPTS"/sanitize_groth16_proof.py "$BUILD"/tests/layer_one
+npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-tree "$MERKLE_TREE" --merkle-proofs "$MERKLE_PROOFS" --layer-one-proof-dir "$BUILD"/tests/layer_one/sanitized_proof.json --write-layer-two-data-to "$TESTS"/layer_two/input.json
 
-X_COORDS_HASH_FRM_PROOF=$(cat "$BUILD_DIR/public.json" | grep -o -E "[0-9]{76}")
-X_COORDS_HASH_FRM_SCRIPT=$(cat "$FULL_WORKFLOW_DIRECTORY/pubkey_x_coords_hash.txt")
-
-if [[ $X_COORDS_HASH_FRM_PROOF != $X_COORDS_HASH_FRM_SCRIPT ]]; then
-    echo "X-coords hash from layer one proof ($X_COORDS_HASH_FRM_PROOF) is not the same as the one generated from the script ($X_COORDS_HASH_FRM_SCRIPT)"
-    exit 1
-fi
+"$TESTS"/layer_two/layer_two.sh
