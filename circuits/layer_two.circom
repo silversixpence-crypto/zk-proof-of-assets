@@ -73,16 +73,23 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     for (var i = 0; i < num_sigs; i++) {
         pubkey_bits[i] <== FlattenPubkey(register_bit_length, num_registers)(pubkey[i]);
         addresses[i] <== PubkeyToAddress()(pubkey_bits[i]);
+
+        if (i > 0) {
+            assert(addresses[i] > addresses[i-1]);
+        }
     }
 
     //////////////////////////////////////////////
     // Merkle proof verification.
 
+    // We only check the layers below the root.
+    var levels = merkle_tree_height - 1;
+
     signal input merkle_root;
     signal input leaf_addresses[num_sigs];
     signal input leaf_balances[num_sigs];
-    signal input path_elements[num_sigs][merkle_tree_height];
-    signal input path_indices[num_sigs][merkle_tree_height];
+    signal input path_elements[num_sigs][levels];
+    signal input path_indices[num_sigs][levels];
 
     component leaf_hashers[num_sigs];
     signal leaves[num_sigs];
@@ -95,7 +102,7 @@ template LayerTwo(num_sigs, merkle_tree_height) {
         leaf_hashers[i].inputs[1] <== leaf_balances[i];
         leaves[i] <== leaf_hashers[i].out;
 
-        MerkleProofVerify(merkle_tree_height)(leaves[i], merkle_root, path_elements[i], path_indices[i]);
+        MerkleProofVerify(levels)(leaves[i], merkle_root, path_elements[i], path_indices[i]);
     }
 
     //////////////////////////////////////////////
