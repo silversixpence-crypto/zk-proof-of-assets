@@ -11,7 +11,7 @@ import { sign, Point, CURVE } from '@noble/secp256k1';
 import { randomBytes } from '@noble/hashes/utils';
 import { Wallet } from "ethers";
 
-import { Signature, InputFileShape, WalletData } from "../scripts/lib/interfaces";
+import { Signature, ProofOfAssetsInputFileShape, WalletData, AccountData } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
 
@@ -23,6 +23,10 @@ const parseArgs = require('minimist');
 interface KeyPair {
     pvt: bigint,
     pub: Point,
+}
+
+export function generate_deterministic_balance(key_pair: KeyPair): bigint {
+    return key_pair.pvt % 1000n;
 }
 
 export function generate_pvt_pub_key_pairs(n: number = 128): KeyPair[] {
@@ -228,8 +232,8 @@ async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<Signa
 }
 
 // Constructs a json object with ECDSA* signatures, eth addresses, and balances
-async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<InputFileShape> {
-    let wallet_data: WalletData[] = [];
+async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<ProofOfAssetsInputFileShape> {
+    let account_data: AccountData[] = [];
 
     for (var i = 0; i < key_pairs.length; i++) {
         let pvt_hex = key_pairs[i].pvt.toString(16);
@@ -237,22 +241,24 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
         let address_dec: bigint = BigInt(address_hex);
         let signature = await ecdsa_star(msg_hash, key_pairs[i]);
 
-        wallet_data.push({
+        account_data.push({
             signature,
-            address: address_dec,
-            balance: Uint8Array_to_bigint(randomBytes(8)),
+            wallet_data: {
+                address: address_dec,
+                balance: generate_deterministic_balance(key_pairs[i]),
+            }
         });
     }
 
     // It's very important to sort by address, otherwise the circuits will fail.
-    wallet_data.sort((a, b) => {
-        if (a.address < b.address) return -1;
-        else if (a.address < b.address) return 1;
+    account_data.sort((a, b) => {
+        if (a.wallet_data.address < b.wallet_data.address) return -1;
+        else if (a.wallet_data.address < b.wallet_data.address) return 1;
         else return 0;
     });
 
     return {
-        wallet_data,
+        account_data,
         msg_hash,
     };
 }

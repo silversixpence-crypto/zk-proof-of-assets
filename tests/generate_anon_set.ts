@@ -1,9 +1,10 @@
 import { Wallet } from "ethers";
 import { randomBytes } from '@noble/hashes/utils';
 
-import { generate_pvt_pub_key_pairs } from "./generate_test_input";
+import { generate_pvt_pub_key_pairs, generate_deterministic_balance } from "./generate_test_input";
 import { Uint8Array_to_bigint } from "../scripts/lib/utils";
 import { jsonReplacer } from "../scripts/lib/json_serde";
+import { WalletData } from "../scripts/lib/interfaces";
 
 const parseArgs = require('minimist');
 const fs = require('fs');
@@ -18,13 +19,16 @@ let num_addreses = argv.num_addresses;
 let known_key_pairs = generate_pvt_pub_key_pairs();
 let num_known_addresses = num_addreses > known_key_pairs.length ? known_key_pairs.length : num_addreses;
 
-let addresses: bigint[] = [];
+let addresses: WalletData[] = [];
 
 for (let i = 0; i < num_known_addresses; i++) {
     let pvt_hex = known_key_pairs[i].pvt.toString(16);
     let address_hex = new Wallet(pvt_hex).address;
     let address_dec: bigint = BigInt(address_hex);
-    addresses.push(address_dec);
+    addresses.push({
+        address: address_dec,
+        balance: generate_deterministic_balance(known_key_pairs[i]),
+    });
 }
 
 if (num_addreses > num_known_addresses) {
@@ -32,7 +36,10 @@ if (num_addreses > num_known_addresses) {
 
     for (let i = 0; i < num_random_addresses; i++) {
         let address = Uint8Array_to_bigint(randomBytes(20));
-        addresses.push(address);
+        addresses.push({
+            address,
+            balance: Uint8Array_to_bigint(randomBytes(10)),
+        });
     }
 }
 

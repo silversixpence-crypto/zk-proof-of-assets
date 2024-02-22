@@ -1,6 +1,12 @@
 import { Point } from '@noble/secp256k1';
 import { interfaces } from 'mocha';
 
+// Main input for the system.
+export interface ProofOfAssetsInputFileShape {
+    account_data: AccountData[],
+    msg_hash: Uint8Array,
+}
+
 export interface Signature {
     r: bigint,
     s: bigint,
@@ -8,15 +14,14 @@ export interface Signature {
     pubkey: Point,
 }
 
-export interface WalletData {
+export interface AccountData {
     signature: Signature,
-    address: bigint,
-    balance: bigint,
+    wallet_data: WalletData,
 }
 
-export interface InputFileShape {
-    wallet_data: WalletData[],
-    msg_hash: Uint8Array,
+export interface WalletData {
+    address: bigint,
+    balance: bigint,
 }
 
 export interface Groth16ProofAsInput {

@@ -4,7 +4,7 @@
 import { Point, CURVE } from '@noble/secp256k1';
 
 import { jsonReviver } from "./lib/json_serde";
-import { Signature, InputFileShape } from "./lib/interfaces";
+import { Signature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
 import { bigint_to_array, Uint8Array_to_bigint } from "./lib/utils";
 
 const fs = require('fs');
@@ -42,24 +42,30 @@ function construct_input(sigs: Signature[], msg_hash: Uint8Array): LayerOneInput
 }
 
 var argv = require('minimist')(process.argv.slice(2), {
+    alias: {
+        poa_input_data_path: ['poa-input-data', 'i'],
+        layer_one_input_path: ['write-layer-one-data-to', 'o'],
+        x_coords_hash_path: ['write-x-coords-hash-to', 'h'],
+    },
     default: {
-        "s": path.join(__dirname, "../tests/signatures_2.json"),
-        "o": path.join(__dirname, "../tests/layer_one/input.json"),
+        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
+        layer_one_input_path: path.join(__dirname, "../tests/layer_one/input.json"),
+        x_coords_hash_path: "../tests/pubkey_x_coords_hash.txt",
     }
 });
 
-var signatures_path = argv.s;
-var layer_one_input_path = argv.o;
-var x_coord_hash_output_path = argv.h;
+var input_data_path = argv.poa_input_data_path;
+var layer_one_input_path = argv.layer_one_input_path;
+var x_coords_hash_output_path = argv.x_coords_hash_path;
 
-fs.readFile(signatures_path, function read(err: any, json_in: any) {
+fs.readFile(input_data_path, function read(err: any, json_in: any) {
     if (err) {
         throw err;
     }
 
-    var input_data: InputFileShape = JSON.parse(json_in, jsonReviver);
+    var input_data: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
     var layer_one_input: LayerOneInputFileShape = construct_input(
-        input_data.wallet_data.map(w => w.signature),
+        input_data.account_data.map(w => w.signature),
         input_data.msg_hash
     );
 
