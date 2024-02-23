@@ -4,6 +4,7 @@ import { ProofOfAssetsInputFileShape, WalletData, Proofs } from "./lib/interface
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
 const path = require('path');
+const JSONStream = require("JSONStream");
 
 // NOTE: picked this as the null field element arbitrarily
 const NULL_NODE: bigint = 1n;
@@ -16,16 +17,16 @@ interface Leaf {
 
 // Construct the Merkle tree and return all the data as a 2-dimensional array.
 // The first element of the array are the leaf nodes, and the last element of the array is the root node.
-async function build_tree(leaves: bigint[], depth: number = 0, null_node = NULL_NODE): Promise<bigint[][]> {
-    if (depth === 0) {
-        // Determine depth automatically.
-        depth = Math.ceil(Math.log2(leaves.length)) + 1;
+async function build_tree(leaves: bigint[], height: number = 0, null_node = NULL_NODE): Promise<bigint[][]> {
+    if (height === 0) {
+        // Determine height automatically.
+        height = Math.ceil(Math.log2(leaves.length)) + 1;
     }
 
-    let required_leaves = 2 ** (depth - 1);
+    let required_leaves = 2 ** (height - 1);
 
     if (required_leaves < leaves.length) {
-        throw new Error(`Depth ${depth} is not big enough for the amount of leaves ${leaves.length}`);
+        throw new Error(`Height ${height} is not big enough for the amount of leaves ${leaves.length}`);
     }
 
     // Pad with nullNode to guarantee a full tree.
@@ -160,24 +161,23 @@ var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         anonymity_set: ['anonymity-set', 'a'],
         poa_input_data_path: ['poa-input-data', 'i'],
-        merkle_tree_path: ['write-merkle-tree-to', 't'],
-        merkle_proofs_path: ['write-merkle-proofs-to', 'p'],
-        tree_depth: ['depth', 'd'],
+        output_dir: ['output-dir', 'o'],
+        tree_height: ['height', 'd'],
     },
     default: {
         anonymity_set: path.join(__dirname, "../tests/anonymity_set.json"),
         poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
-        merkle_tree_path: path.join(__dirname, "../tests/merkle_tree.json"),
-        merkle_proofs_path: path.join(__dirname, "../tests/merkle_proofs.json"),
-        tree_depth: 0, // automatically determine depth
+        output_dir: path.join(__dirname, "../tests"),
+        tree_height: 0, // automatically determine height based on number of leaves
     }
 });
 
 let anonymity_set_path = argv.anonymity_set;
 let poa_input_data_path = argv.poa_input_data_path;
-let merkle_tree_path = argv.merkle_tree_path;
-let merkle_proofs_path = argv.merkle_proofs_path;
-let depth = argv.tree_depth;
+let merkle_tree_path = path.join(argv.output_dir, "merkle_tree.json");
+let merkle_root_path = path.join(argv.output_dir, "merkle_root.json");
+let merkle_proofs_path = path.join(argv.output_dir, "merkle_proofs.json");
+let height = argv.tree_height;
 
 let anonymity_set_raw = fs.readFileSync(anonymity_set_path);
 let poa_input_data_raw = fs.readFileSync(poa_input_data_path);
@@ -190,13 +190,27 @@ convert_to_leaves(
     anonymity_set.map(a => a.balance),
     poa_input_data.account_data.map(a => a.wallet_data.address),
 ).then(({ leaves, owned_leaves }) => {
-    build_tree(leaves, depth).then((tree) => {
+    build_tree(leaves, height).then((tree) => {
+        // https://stackoverflow.com/questions/29175877/json-stringify-throws-rangeerror-invalid-string-length-for-huge-objects
+        let json =
+            "[" +
+            tree.map(i =>
+                "[" +
+                i.map(j =>
+                    JSON.stringify(j,
+                        (key, value) => typeof value === "bigint" ? value.toString() : value,
+                    )).join(",")
+                + "]"
+            ).join(",") +
+            "]";
 
-        let json = JSON.stringify(tree, jsonReplacer, 2);
         fs.writeFileSync(merkle_tree_path, json);
 
-        let proofs = generate_proofs(tree, owned_leaves);
+        let root = tree[tree.length - 1][0];
+        json = JSON.stringify(root, jsonReplacer, 2);
+        fs.writeFileSync(merkle_root_path, json);
 
+        let proofs = generate_proofs(tree, owned_leaves);
         json = JSON.stringify(
             proofs,
             (key, value) => typeof value === "bigint" ? value.toString() : value,

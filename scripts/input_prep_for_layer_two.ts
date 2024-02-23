@@ -59,7 +59,7 @@ function construct_input(proof_data: Groth16ProofAsInput, x_coords_hash: string,
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         poa_input_data_path: ['poa-input-data', 'i'],
-        merkle_tree_path: ['merkle-tree', 't'],
+        merkle_root_path: ['merkle-root', 't'],
         merkle_proofs_path: ['merkle-proofs', 'p'],
         x_coords_hash_path: ['write-x-coords-hash-to', 'h'],
         layer_one_sanitized_proof_path: ['layer-one-proof-dir', 'd'],
@@ -67,7 +67,7 @@ var argv = require('minimist')(process.argv.slice(2), {
     },
     default: {
         poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
-        merkle_tree_path: path.join(__dirname, "../tests/merkle_tree.json"),
+        merkle_root_path: path.join(__dirname, "../tests/merkle_root.json"),
         merkle_proofs_path: path.join(__dirname, "../tests/merkle_proofs.json"),
         x_coords_hash_path: path.join(__dirname, "../tests/pubkey_x_coords_hash.txt"),
         layer_one_sanitized_proof_path: path.join(__dirname, "../build/tests/layer_one/sanitized_proof.json"),
@@ -76,7 +76,7 @@ var argv = require('minimist')(process.argv.slice(2), {
 });
 
 let input_data_path = argv.poa_input_data_path;
-let merkle_tree_path = argv.merkle_tree_path;
+let merkle_root_path = argv.merkle_root_path;
 let merkle_proofs_path = argv.merkle_proofs_path;
 let x_coords_hash_path = argv.x_coords_hash_path;
 let layer_one_sanitized_proof_path = argv.layer_one_sanitized_proof_path;
@@ -87,9 +87,8 @@ let input_data: ProofOfAssetsInputFileShape = JSON.parse(input_data_raw, jsonRev
 
 write_pubkey_x_coords_hash(input_data.account_data.map(w => w.signature.pubkey), x_coords_hash_path)
     .then(x_coords_hash => {
-        let merkle_tree_raw = fs.readFileSync(merkle_tree_path);
-        let merkle_tree: bigint[][] = JSON.parse(merkle_tree_raw, jsonReviver);
-        let merkle_root: bigint = merkle_tree[merkle_tree.length - 1][0];
+        let merkle_root_raw = fs.readFileSync(merkle_root_path);
+        let merkle_root: bigint = JSON.parse(merkle_root_raw, jsonReviver);
 
         let merkle_proofs_raw = fs.readFileSync(merkle_proofs_path);
         let merkle_proofs: Proofs = JSON.parse(merkle_proofs_raw, jsonReviver);
