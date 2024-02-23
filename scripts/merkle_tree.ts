@@ -4,7 +4,6 @@ import { ProofOfAssetsInputFileShape, WalletData, Proofs } from "./lib/interface
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
 const path = require('path');
-const JSONStream = require("JSONStream");
 
 // NOTE: picked this as the null field element arbitrarily
 const NULL_NODE: bigint = 1n;
