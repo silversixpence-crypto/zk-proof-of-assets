@@ -4,3 +4,4 @@ __pycache__/
 
 *.ptau
 yarn.lock
+merkle_tree.json
