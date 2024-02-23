@@ -213,9 +213,9 @@ if [[ ! -d "$HOME/pyenv" ]]; then
 fi
 export PATH="$HOME/pyenv/bin:$PATH"
 eval "$(pyenv init -)"
-if ! pyenv global | grep 3.6; then
-    pyenv install 3.6
-    pyenv global 3.6
+if ! pyenv global | grep 3.10; then
+    pyenv install 3.10
+    pyenv global 3.10
 fi
 
 # Patched node
@@ -320,4 +320,4 @@ fi
 # This is the 2nd method mentioned here:
 # https://stackoverflow.com/questions/16618071/can-i-export-a-variable-to-the-environment-from-a-bash-script-without-sourcing-i/16619261#16619261
 # The 1st method in the above tends to break things, so try to avoid that.
-echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node && export PATH=$PATH:$HOME/pyenv/bin && eval \"$(pyenv init -)\""
+echo "export SNARKJS_PATH=$HOME/snarkjs/cli.js && export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover && export PATCHED_NODE_PATH=$HOME/node/out/Release/node && export PATH=$PATH:$HOME/pyenv/bin && eval \"$(pyenv init -)\" && export PNPM_HOME=$HOME/.local/share/pnpm && export PATH=$PNPM_HOME:$PATH && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && \. $NVM_DIR/nvm.sh && source $HOME/.cargo/env"
