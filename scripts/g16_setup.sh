@@ -174,7 +174,7 @@ MSG="COMPILING CIRCUIT"
 #
 # --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
 # the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
-execute circom "$CIRCUIT_PATH" --r1cs $COMPILE_FLAGS --sym --wat --output "$BUILD_DIR" -l ./node_modules
+execute circom "$CIRCUIT_PATH" --r1cs $COMPILE_FLAGS --sym --wat --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 if $BIG_CIRCUITS; then
     MSG="COMPILING C++ WITNESS GENERATION CODE"
