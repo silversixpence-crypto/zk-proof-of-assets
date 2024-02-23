@@ -4,6 +4,7 @@ import { ProofOfAssetsInputFileShape, WalletData, Proofs } from "./lib/interface
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
 const path = require('path');
+const JSONStream = require("JSONStream");
 
 // NOTE: picked this as the null field element arbitrarily
 const NULL_NODE: bigint = 1n;
@@ -156,6 +157,21 @@ async function convert_to_leaves(leaf_addresses: bigint[], leaf_balances: bigint
     };
 }
 
+// function write_large_object(large_object: any, path_to_write_to: string) {
+//     var transformStream = JSONStream.stringify();
+//     var outputStream = fs.createWriteStream(path_to_write_to);
+//     transformStream.pipe(outputStream);
+//     large_object.forEach(transformStream.write);
+//     transformStream.end();
+
+//     outputStream.on(
+//         "finish",
+//         function handleFinish() {
+//             console.log("Done writing large object");
+//         }
+//     );
+// }
+
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         anonymity_set: ['anonymity-set', 'a'],
@@ -191,22 +207,24 @@ convert_to_leaves(
 ).then(({ leaves, owned_leaves }) => {
     build_tree(leaves, height).then((tree) => {
         // https://stackoverflow.com/questions/29175877/json-stringify-throws-rangeerror-invalid-string-length-for-huge-objects
-        let json =
-            "[" +
-            tree.map(i =>
-                "[" +
-                i.map(j =>
-                    JSON.stringify(j,
-                        (key, value) => typeof value === "bigint" ? value.toString() : value,
-                    )).join(",")
-                + "]"
-            ).join(",") +
-            "]";
+        // let json =
+        //     "[" +
+        //     tree.map(i =>
+        //         "[" +
+        //         i.map(j =>
+        //             JSON.stringify(j,
+        //                 (key, value) => typeof value === "bigint" ? value.toString() : value,
+        //             )).join(",")
+        //         + "]"
+        //     ).join(",") +
+        //     "]";
 
-        fs.writeFileSync(merkle_tree_path, json);
+        // fs.writeFileSync(merkle_tree_path, json);
+        // let tree_string = tree.map(level => level.map(node => node.toString()));
+        // write_large_object(tree_string, merkle_tree_path);
 
         let root = tree[tree.length - 1][0];
-        json = JSON.stringify(root, jsonReplacer, 2);
+        let json = JSON.stringify(root, jsonReplacer, 2);
         fs.writeFileSync(merkle_root_path, json);
 
         let proofs = generate_proofs(tree, owned_leaves);
