@@ -4,4 +4,9 @@ __pycache__/
 
 *.ptau
 yarn.lock
+
 merkle_tree.json
+merkle_proofs.json
+merkle_root.json
+anonymity_set.json
+pubkey_x_coords_hash.txt
