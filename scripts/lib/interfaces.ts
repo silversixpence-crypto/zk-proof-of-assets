@@ -14,6 +14,7 @@ export interface Signature {
     pubkey: Point,
 }
 
+// TODO rename to AccountAttestation or something
 export interface AccountData {
     signature: Signature,
     wallet_data: WalletData,

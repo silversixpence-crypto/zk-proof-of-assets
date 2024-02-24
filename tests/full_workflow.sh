@@ -36,8 +36,18 @@ MSG="CONVERTING LAYER ONE PROOF TO LAYER TWO INPUT SIGNALS"
 execute python "$SCRIPTS"/sanitize_groth16_proof.py "$BUILD"/tests/layer_one
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER TWO CIRCUIT"
-npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-proof-dir "$BUILD"/tests/layer_one/sanitized_proof.json --write-layer-two-data-to "$TESTS"/layer_two/input.json
+npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$BUILD"/tests/layer_one/sanitized_proof.json --write-layer-two-data-to "$TESTS"/layer_two/input.json
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER TWO CIRCUIT"
 printf "\n================ $MSG ================\n"
 "$TESTS"/layer_two/layer_two.sh
+
+MSG="CONVERTING LAYER TWO PROOF TO LAYER THREE INPUT SIGNALS"
+execute python "$SCRIPTS"/sanitize_groth16_proof.py "$BUILD"/tests/layer_two
+
+MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
+npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$BUILD"/tests/layer_two/sanitized_proof.json --write-layer-three-data-to "$TESTS"/layer_three/input.json
+
+MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
+printf "\n================ $MSG ================\n"
+"$TESTS"/layer_three/layer_three.sh

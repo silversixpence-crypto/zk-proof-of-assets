@@ -62,7 +62,7 @@ var argv = require('minimist')(process.argv.slice(2), {
         merkle_root_path: ['merkle-root', 't'],
         merkle_proofs_path: ['merkle-proofs', 'p'],
         x_coords_hash_path: ['write-x-coords-hash-to', 'h'],
-        layer_one_sanitized_proof_path: ['layer-one-proof-dir', 'd'],
+        layer_one_sanitized_proof_path: ['layer-one-sanitized-proof', 'd'],
         layer_two_input_path: ['write-layer-two-data-to', 'o'],
     },
     default: {
