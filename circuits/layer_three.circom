@@ -9,12 +9,11 @@ template LayerThree(layer_two_count) {
     // Layer two has 2 public inputs: root of merkle tree, balance sum.
     var layer_two_pub_inputs = 2;
 
-    // Root hash of the anonymity address set Merkle tree.
-    signal input merkle_roots[layer_two_count];
-
     // Balance sum of the addresses from layer two.
     // This is a public input of the layer two circuit.
     signal input balances[layer_two_count];
+
+    signal input merkle_root;
 
     //////////////////////////////////////////////
     // G16 verification.
@@ -39,24 +38,12 @@ template LayerThree(layer_two_count) {
     signal verification_result[layer_two_count];
 
     for (var i = 0; i < layer_two_count; i++) {
-        log("balances i=", i, balances[i]);
-        log("merkle_roots i=", i, merkle_roots[i]);
-
         pub_input[i][0] <== balances[i];
-        pub_input[i][1] <== merkle_roots[i];
+        pub_input[i][1] <== merkle_root;
 
         verification_result[i] <== verifyProof(layer_two_pub_inputs)(negalfa1xbeta2[i], gamma2[i], delta2[i], IC[i], negpa[i], pb[i], pc[i], pub_input[i]);
 
         verification_result[i] === 1;
-    }
-
-    //////////////////////////////////////////////
-    // Check Merkle roots are the same.
-
-    signal input merkle_root;
-
-    for (var i = 0; i < layer_two_count; i++) {
-        merkle_root === merkle_roots[i];
     }
 
     //////////////////////////////////////////////
