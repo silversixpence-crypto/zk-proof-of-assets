@@ -46,7 +46,7 @@ MSG="CONVERTING LAYER TWO PROOF TO LAYER THREE INPUT SIGNALS"
 execute python "$SCRIPTS"/sanitize_groth16_proof.py "$BUILD"/tests/layer_two
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
-npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$BUILD"/tests/layer_two/sanitized_proof.json --write-layer-three-data-to "$TESTS"/layer_three/input.json
+execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$BUILD"/tests/layer_two/sanitized_proof.json --write-layer-three-data-to "$TESTS"/layer_three/input.json
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"

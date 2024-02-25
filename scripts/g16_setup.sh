@@ -4,6 +4,8 @@
 G16_SETUP_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 
+# Inspiration taken from
+# https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
 . "$G16_SETUP_DIRECTORY/lib/error_handling.sh"
 . "$G16_SETUP_DIRECTORY/lib/cmd_executor.sh"
 
