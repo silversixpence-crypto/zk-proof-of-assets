@@ -3,6 +3,7 @@ pragma circom 2.1.7;
 include "../git_modules/circom-pairing/circuits/bn254/groth16.circom";
 include "./eth.circom";
 include "./merkle.circom";
+include "./poseidon.circom";
 
 template LayerTwo(num_sigs, merkle_tree_height) {
     // Number of dimensions needed to describe a point on an EC curve.
@@ -52,12 +53,12 @@ template LayerTwo(num_sigs, merkle_tree_height) {
 
     signal input pubkey[num_sigs][ec_dimension][num_registers];
 
-    component hasher = Poseidon(num_sigs*num_registers);
+    component hasher = PoseidonSponge(num_sigs * num_registers);
 
     for (var i = 0; i < num_sigs; i++) {
         for (var j = 0; j < num_registers; j++) {
-            // Hash x-coords of pubkeys.
-            hasher.inputs[i*num_registers + j] <== pubkey[i][0][j];
+            // The x-coord lives at position 0.
+            hasher.inputs[i * num_registers + j] <== pubkey[i][0][j];
         }
     }
 
@@ -75,6 +76,7 @@ template LayerTwo(num_sigs, merkle_tree_height) {
         addresses[i] <== PubkeyToAddress()(pubkey_bits[i]);
 
         if (i > 0) {
+            // Prevents addresses being used more than once.
             assert(addresses[i] > addresses[i-1]);
         }
     }
