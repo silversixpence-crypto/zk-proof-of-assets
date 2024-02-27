@@ -1,19 +1,16 @@
 import { jsonReplacer, jsonReviver } from "./lib/json_serde";
-import { ProofOfAssetsInputFileShape, WalletData, Proofs } from "./lib/interfaces";
+import { ProofOfAssetsInputFileShape, AccountData, Proofs, Leaf } from "./lib/interfaces";
 
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
 const path = require('path');
 const JSONStream = require("JSONStream");
 
+// ================================================================
+// Tree building.
+
 // NOTE: picked this as the null field element arbitrarily
 const NULL_NODE: bigint = 1n;
-
-interface Leaf {
-    address: bigint,
-    balance: bigint,
-    hash: bigint,
-}
 
 // Construct the Merkle tree and return all the data as a 2-dimensional array.
 // The first element of the array are the leaf nodes, and the last element of the array is the root node.
@@ -34,11 +31,12 @@ async function build_tree(leaves: bigint[], height: number = 0, null_node = NULL
         leaves = leaves.concat(Array(required_leaves - leaves.length).fill(null_node));
     }
 
-    // It does not matter if the leaves are sorted or not, but this does offer some standardization.
+    // It does not matter if the leaves are sorted or not, but this does offer some standardization,
+    // and may make debugging easier.
     leaves.sort();
 
     const poseidon = await circomlibjs.buildPoseidon();
-    const F = poseidon.F; // poseidon finite field
+    const field = poseidon.F;
 
     let tree = [leaves];
     let cur_level = 0;
@@ -51,7 +49,7 @@ async function build_tree(leaves: bigint[], height: number = 0, null_node = NULL
             let right_child = tree[cur_level][i + 1];
 
             let poseidonRes = poseidon([left_child, right_child]);
-            let parent = F.toObject(poseidonRes);
+            let parent = field.toObject(poseidonRes);
 
             new_level.push(parent);
         }
@@ -63,6 +61,10 @@ async function build_tree(leaves: bigint[], height: number = 0, null_node = NULL
     return tree;
 }
 
+// ================================================================
+// Proofs.
+
+// Node indexing starts at 0, so left nodes are at '% 2 === 0' and right nodes at '% 2 === 1'.
 function path_element_index(node_index: number) {
     if (node_index % 2 === 0) {
         return node_index + 1;
@@ -71,6 +73,7 @@ function path_element_index(node_index: number) {
     }
 }
 
+// Node indexing starts at 0, so left nodes are at '% 2 === 0' and right nodes at '% 2 === 1'.
 function path_index(node_index: number) {
     if (node_index % 2 === 0) {
         return 0;
@@ -79,44 +82,81 @@ function path_index(node_index: number) {
     }
 }
 
+// Parent layer is always half the number of nodes because we have a full tree.
 function parent_node_index(node_index: number) {
     return Math.floor(node_index / 2);
 }
 
-function generate_proofs(tree: bigint[][], owned_leaves: Leaf[]): Proofs {
+async function verify_merkle_proof(root: bigint, leaf: bigint, path_elements: bigint[], path_indices: number[]): Promise<boolean> {
+    if (path_elements.length != path_indices.length) {
+        throw new Error(`[leaf: ${leaf}] Length of path_elements array ${path_elements.length} should equal length of path_indices array ${path_indices.length}`);
+    }
+
+    const poseidon = await circomlibjs.buildPoseidon();
+    const F = poseidon.F; // poseidon finite field
+
+    let hash: bigint = 0n;
+
+    for (let level = 0; level < path_elements.length; level++) {
+        if (path_indices[level] === 0) {
+            var left = level === 0 ? leaf : hash;
+            var right = path_elements[level];
+        } else {
+            var left = path_elements[level];
+            var right = level === 0 ? leaf : hash;
+        }
+
+        let poseidonRes = poseidon([left, right]);
+        hash = F.toObject(poseidonRes);
+    }
+
+    return hash === root;
+}
+
+async function generate_proofs(tree: bigint[][], owned_leaves: Leaf[]): Promise<Proofs> {
     let proofs: Proofs = {
+        leaves: [],
         path_elements: [],
         path_indices: [],
     };
+
+    proofs.leaves = owned_leaves;
 
     let node_index = 0;
 
     for (let owned_leaf_index = 0; owned_leaf_index < owned_leaves.length; owned_leaf_index++) {
         let owned_leaf = owned_leaves[owned_leaf_index];
-        let path_elements = [];
-        let path_indices = [];
+        let path_elements: bigint[] = [];
+        let path_indices: number[] = [];
 
+        // '-1' 'cause we don't need to add a path_element/path_index for the root node, which is at the top.
         for (let level = 0; level < tree.length - 1; level++) {
+            // Traverse the tree from bottom to top, adding all sibling nodes to the path_elements array.
+
             if (level === 0) {
                 // Find the owned leaf in the bottom layer of the tree.
+                node_index = tree[0].indexOf(owned_leaf.hash);
 
-                while (owned_leaf.hash != tree[0][node_index] && node_index <= tree[0].length) {
-                    node_index++;
-                }
-
-                if (node_index === tree[0].length) {
+                if (node_index === -1) {
                     throw new Error(`Cannot find owned leaf with address ${owned_leaf.address} in the tree`);
                 }
-
-                path_elements.push(tree[0][path_element_index(node_index)]);
-                path_indices.push(path_index(node_index));
             } else {
-                // Traverse the tree from bottom to top, adding all sibling nodes to the list.
-
                 node_index = parent_node_index(node_index);
-                path_elements.push(tree[level][path_element_index(node_index)]);
-                path_indices.push(path_index(node_index));
             }
+
+            path_elements.push(tree[level][path_element_index(node_index)]);
+            path_indices.push(path_index(node_index));
+        }
+
+        let root = tree[tree.length - 1][0];
+        let proof_is_good = verify_merkle_proof(root, owned_leaf.hash, path_elements, path_indices);
+        if (!proof_is_good) {
+            console.log("ERROR Merkle proof failed to verify");
+            console.log("    leaf: ", owned_leaf);
+            console.log("    root: ", root);
+            console.log("    path_elements: ", path_elements);
+            console.log("    path_indices: ", path_indices);
+            throw new Error("Merkle proof failed to verify");
         }
 
         proofs.path_elements.push(path_elements);
@@ -126,37 +166,38 @@ function generate_proofs(tree: bigint[][], owned_leaves: Leaf[]): Proofs {
     return proofs;
 }
 
-async function convert_to_leaves(leaf_addresses: bigint[], leaf_balances: bigint[], owned_leaf_addresses: bigint[]) {
-    let leaves: bigint[] = [];
-    let owned_leaves: Leaf[] = [];
+// ================================================================
+
+// Convert account data into leaf nodes by hashing address and balance.
+async function convert_to_leaves(account_data: AccountData[]): Promise<Leaf[]> {
+    let leaves: Leaf[] = [];
 
     const poseidon = await circomlibjs.buildPoseidon();
     const F = poseidon.F; // poseidon finite field
 
-    for (let i = 0; i < leaf_addresses.length; i++) {
-        let poseidonRes = poseidon([leaf_addresses[i], leaf_balances[i]]);
-        let leaf = F.toObject(poseidonRes);
+    for (let i = 0; i < account_data.length; i++) {
+        let address = account_data[i].address;
+        let balance = account_data[i].balance;
 
-        leaves.push(leaf);
+        let poseidon_result = poseidon([address, balance]);
+        let hash = F.toObject(poseidon_result);
 
-        for (let j = 0; j < owned_leaf_addresses.length; j++) {
-            if (leaf_addresses[i] === owned_leaf_addresses[j]) {
-                owned_leaves.push({
-                    address: leaf_addresses[i],
-                    balance: leaf_balances[i],
-                    hash: leaf,
-                });
-                continue;
-            }
-        }
+        leaves.push({
+            address,
+            balance,
+            hash,
+        });
     }
 
-    return {
-        leaves,
-        owned_leaves,
-    };
+    return leaves;
 }
 
+// ================================================================
+// Writing large json objects.
+
+// NOTE not working, so is commented out.
+
+// https://stackoverflow.com/questions/29175877/json-stringify-throws-rangeerror-invalid-string-length-for-huge-objects
 // function write_large_object(large_object: any, path_to_write_to: string) {
 //     var transformStream = JSONStream.stringify();
 //     var outputStream = fs.createWriteStream(path_to_write_to);
@@ -172,6 +213,9 @@ async function convert_to_leaves(leaf_addresses: bigint[], leaf_balances: bigint
 //     );
 // }
 
+// ================================================================
+// Execution flow.
+
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         anonymity_set: ['anonymity-set', 'a'],
@@ -181,7 +225,7 @@ var argv = require('minimist')(process.argv.slice(2), {
     },
     default: {
         anonymity_set: path.join(__dirname, "../tests/anonymity_set.json"),
-        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
+        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_32_accounts.json"),
         output_dir: path.join(__dirname, "../tests"),
         tree_height: 0, // automatically determine height based on number of leaves
     }
@@ -197,48 +241,50 @@ let height = argv.tree_height;
 let anonymity_set_raw = fs.readFileSync(anonymity_set_path);
 let poa_input_data_raw = fs.readFileSync(poa_input_data_path);
 
-let anonymity_set: WalletData[] = JSON.parse(anonymity_set_raw, jsonReviver);
+let anonymity_set: AccountData[] = JSON.parse(anonymity_set_raw, jsonReviver);
 let poa_input_data: ProofOfAssetsInputFileShape = JSON.parse(poa_input_data_raw, jsonReviver);
 
 convert_to_leaves(
-    anonymity_set.map(a => a.address),
-    anonymity_set.map(a => a.balance),
-    poa_input_data.account_data.map(a => a.wallet_data.address),
-).then(({ leaves, owned_leaves }) => {
-    build_tree(leaves, height).then((tree) => {
-        // https://stackoverflow.com/questions/29175877/json-stringify-throws-rangeerror-invalid-string-length-for-huge-objects
-        // let json =
-        //     "[" +
-        //     tree.map(i =>
-        //         "[" +
-        //         i.map(j =>
-        //             JSON.stringify(j,
-        //                 (key, value) => typeof value === "bigint" ? value.toString() : value,
-        //             )).join(",")
-        //         + "]"
-        //     ).join(",") +
-        //     "]";
+    anonymity_set,
+).then(leaves => {
+    convert_to_leaves(poa_input_data.account_data.map(a => a.account_data)).then(owned_leaves => {
+        build_tree(leaves.map(l => l.hash), height).then((tree) => {
+            // NOTE not working, so is commented out.
+            // https://stackoverflow.com/questions/29175877/json-stringify-throws-rangeerror-invalid-string-length-for-huge-objects
+            // let json =
+            //     "[" +
+            //     tree.map(i =>
+            //         "[" +
+            //         i.map(j =>
+            //             JSON.stringify(j,
+            //                 (key, value) => typeof value === "bigint" ? value.toString() : value,
+            //             )).join(",")
+            //         + "]"
+            //     ).join(",") +
+            //     "]";
 
-        // fs.writeFileSync(merkle_tree_path, json);
-        // let tree_string = tree.map(level => level.map(node => node.toString()));
-        // write_large_object(tree_string, merkle_tree_path);
+            // fs.writeFileSync(merkle_tree_path, json);
+            // let tree_string = tree.map(level => level.map(node => node.toString()));
+            // write_large_object(tree_string, merkle_tree_path);
 
-        let root = tree[tree.length - 1][0];
-        let json = JSON.stringify(root, jsonReplacer, 2);
-        fs.writeFileSync(merkle_root_path, json);
+            let root = tree[tree.length - 1][0];
+            let json = JSON.stringify(root, jsonReplacer, 2);
+            fs.writeFileSync(merkle_root_path, json);
 
-        let proofs = generate_proofs(tree, owned_leaves);
-        json = JSON.stringify(
-            proofs,
-            (key, value) => typeof value === "bigint" ? value.toString() : value,
-            2
-        );
-        fs.writeFileSync(merkle_proofs_path, json);
-    })
-})
+            generate_proofs(tree, owned_leaves).then((proofs: Proofs) => {
+                json = JSON.stringify(
+                    proofs,
+                    jsonReplacer,
+                    2
+                );
+                fs.writeFileSync(merkle_proofs_path, json);
+            });
+        })
+    });
+});
 
 // ================================================================
-// Some test data:
+// Some test data for converting private keys to Ethereum addresses.
 
 // Private keys (decimal) (from generate_test_input.ts)
 // 66938844460645107025781008991556355714625654511665288941412380224408210845354,
