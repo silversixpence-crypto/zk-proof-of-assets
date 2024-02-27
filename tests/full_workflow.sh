@@ -108,6 +108,10 @@ printf "\n================ $MSG ================\n"
 # ///////////////////////////////////////////////////////
 # Some constraints data
 
+# Constraints for layer one circuit with 2 sigs (-b flag):
+#   non-linear constraints: 1932908
+#   linear constraints: 161762
+
 # Constraints for layer one circuit with 37 sigs (-b flag):
 #   non-linear constraints: 17535746
 #   linear constraints: 1079817

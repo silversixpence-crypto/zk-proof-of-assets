@@ -208,18 +208,12 @@ fi
 # Pyenv
 ERR_MSG="Pyenv setup failed"
 cd "$HOME"
-if [[ ! -d "$HOME/pyenv" ]]; then
-    git clone https://github.com/pyenv/pyenv.git
-fi
+if [[ ! -d "$HOME/pyenv" ]]; then git clone https://github.com/pyenv/pyenv.git; fi
 export PATH="$HOME/pyenv/bin:$PATH"
 eval "$(pyenv init -)"
-if ! pyenv versions | grep "3\.10\."; then
-    pyenv install 3.10
-fi
+if ! pyenv versions | grep "3\.10\."; then pyenv install 3.10; fi
 pyenv global 3.10
-if ! pyenv versions | grep "3\.6\."; then
-    pyenv install 3.6
-fi
+if ! pyenv versions | grep "3\.6\."; then pyenv install 3.6; fi
 
 # Patched node
 ERR_MSG="Node setup failed"
