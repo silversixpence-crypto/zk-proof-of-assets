@@ -213,9 +213,12 @@ if [[ ! -d "$HOME/pyenv" ]]; then
 fi
 export PATH="$HOME/pyenv/bin:$PATH"
 eval "$(pyenv init -)"
-if ! pyenv global | grep 3.10; then
+if ! pyenv versions | grep "3\.10\."; then
     pyenv install 3.10
-    pyenv global 3.10
+fi
+pyenv global 3.10
+if ! pyenv versions | grep "3\.6\."; then
+    pyenv install 3.6
 fi
 
 # Patched node
@@ -224,6 +227,7 @@ cd "$HOME"
 if [[ ! -f "$HOME/node/out/Release/node" ]]; then
     git clone https://github.com/nodejs/node.git
     cd node
+    pyenv local 3.6
     git checkout 8beef5eeb82425b13d447b50beafb04ece7f91b1
     python configure.py
     make -j16
