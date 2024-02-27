@@ -35,16 +35,16 @@ var argv = parseArgs(process.argv.slice(2), {
     default: { num_addresses: 100 }
 });
 
-let num_addreses: number = argv.num_addresses;
+let num_addresses: number = argv.num_addresses;
 
-if (num_addreses > total_address_count) {
+if (num_addresses > total_address_count) {
     throw new Error(`Cannot generate anonymity set size greater than ${total_address_count}. Size requested was ${num_addresses}`);
 }
 
 let addresses: AccountData[] = [];
 let i = 0;
 
-while (i < known_key_pairs.length && i < num_addreses) {
+while (i < known_key_pairs.length && i < num_addresses) {
     let pvt_hex = known_key_pairs[i].pvt.toString(16);
     let address_hex = new Wallet(pvt_hex).address;
     let address_dec: bigint = BigInt(address_hex);
@@ -57,7 +57,7 @@ while (i < known_key_pairs.length && i < num_addreses) {
     i++;
 }
 
-if (num_addreses > i) {
+if (num_addresses > i) {
     for (let j = 0; j < random_address_set.length; j++) {
         let address: bigint = BigInt(random_address_set[j].address);
         let balance: bigint = BigInt(random_address_set[j].balance);
