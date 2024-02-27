@@ -37,6 +37,9 @@ FLAGS:
                        https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA#Install-patched-node
                        https://github.com/hermeznetwork/phase2ceremony_4/blob/main/VERIFY.md#adding-swap-and-tweeking-the-os-to-accept-high-amount-of-memory
 
+    -q               Quick commands only. This skips proving & verification key generation.
+                     Useful for testing when you only want to do compilation & witness generation.
+
     -r               Apply random beacon to get the final proving key (zkey)
 
     -z               Verify the final proving key (zkey)
@@ -74,6 +77,7 @@ BIG_CIRCUITS=false
 BEACON=false
 VERIFY_ZKEY=false
 VERBOSE=false
+QUICK=false
 
 # https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
 CIRCUIT_PATH="${@:(-2):1}"
@@ -83,12 +87,13 @@ PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
 BUILD_DIR="$PROJECT_ROOT_DIR"/build/
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbrzn:B:' flag; do
+while getopts 'vhbrqzn:B:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
         COMPILE_FLAGS="--O1 --c"
         ;;
+    q) QUICK=true ;;
     r) BEACON=true ;;
     z) VERIFY_ZKEY=true ;;
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
@@ -183,6 +188,11 @@ if $BIG_CIRCUITS; then
     cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
     execute make
     cd -
+fi
+
+if $QUICK; then
+    echo "================ SKIPPING ZKEY & VKEY GENERATION ================"
+    exit 0
 fi
 
 if $BIG_CIRCUITS; then
