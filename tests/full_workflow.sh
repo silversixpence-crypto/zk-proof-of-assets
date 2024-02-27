@@ -6,18 +6,19 @@ FULL_WORKFLOW_DIRECTORY="$(dirname "$FULL_WORKFLOW_PATH")"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/error_handling.sh"
 . "$FULL_WORKFLOW_DIRECTORY/../scripts/lib/cmd_executor.sh"
 
-SCRIPTS="$FULL_WORKFLOW_DIRECTORY"/../scripts
-TESTS="$FULL_WORKFLOW_DIRECTORY"/../tests
-BUILD="$FULL_WORKFLOW_DIRECTORY"/../build
-POA_INPUT="$FULL_WORKFLOW_DIRECTORY/input_data_for_2_wallets.json"
-MERKLE_ROOT="$TESTS"/merkle_root.json
-MERKLE_PROOFS="$TESTS"/merkle_proofs.json
-
+NUM_SIGS=32
 ANON_SET_SIZE=10000
 MERKLE_TREE_HEIGHT=25
 
-MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
-execute npx ts-node "$TESTS"/generate_test_input.ts --num-sigs 2 --message "message to sign"
+SCRIPTS="$FULL_WORKFLOW_DIRECTORY"/../scripts
+TESTS="$FULL_WORKFLOW_DIRECTORY"/../tests
+BUILD="$FULL_WORKFLOW_DIRECTORY"/../build
+POA_INPUT="$FULL_WORKFLOW_DIRECTORY"/input_data_for_"$NUM_SIGS"_accounts.json
+MERKLE_ROOT="$TESTS"/merkle_root.json
+MERKLE_PROOFS="$TESTS"/merkle_proofs.json
+
+MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL (number of signatures: $NUM_SIGS)"
+execute npx ts-node "$TESTS"/generate_test_input.ts --num-sigs $NUM_SIGS --message "message to sign"
 
 MSG="GENERATING ANONYMITY SET of size $ANON_SET_SIZE"
 execute npx ts-node "$TESTS"/generate_anon_set.ts --num-addresses $ANON_SET_SIZE
@@ -36,7 +37,7 @@ MSG="CONVERTING LAYER ONE PROOF TO LAYER TWO INPUT SIGNALS"
 execute python "$SCRIPTS"/sanitize_groth16_proof.py "$BUILD"/tests/layer_one
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER TWO CIRCUIT"
-npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$BUILD"/tests/layer_one/sanitized_proof.json --write-layer-two-data-to "$TESTS"/layer_two/input.json
+execute npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$BUILD"/tests/layer_one/sanitized_proof.json --write-layer-two-data-to "$TESTS"/layer_two/input.json
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER TWO CIRCUIT"
 printf "\n================ $MSG ================\n"
