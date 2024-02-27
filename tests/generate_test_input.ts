@@ -104,10 +104,10 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
         });
     }
 
-    // It's very important to sort by address, otherwise the circuits will fail.
+    // It's very important to sort by address, otherwise the layer 2 circuit will fail.
     account_data.sort((a, b) => {
         if (a.wallet_data.address < b.wallet_data.address) return -1;
-        else if (a.wallet_data.address < b.wallet_data.address) return 1;
+        else if (a.wallet_data.address > b.wallet_data.address) return 1;
         else return 0;
     });
 
