@@ -52,3 +52,15 @@ execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 "$TESTS"/layer_three/layer_three.sh
+
+# ===========================================
+# Some data.
+
+# Constraints for layer one circuit with 37 sigs (-b flag):
+#   non-linear constraints: 17535746
+#   linear constraints: 1079817
+
+# Constraints for layer one circuit with 128 sigs (no -b flag):
+#   non-linear constraints: 58099005
+#   linear constraints: 0
+
