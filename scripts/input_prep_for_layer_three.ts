@@ -32,7 +32,7 @@ var argv = require('minimist')(process.argv.slice(2), {
         layer_three_input_path: ['write-layer-three-data-to', 'o'],
     },
     default: {
-        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
+        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
         merkle_root_path: path.join(__dirname, "../tests/merkle_root.json"),
         layer_two_sanitized_proof_path: path.join(__dirname, "../build/tests/layer_two/sanitized_proof.json"),
         layer_three_input_path: path.join(__dirname, "../tests/layer_three/input.json"),
@@ -49,7 +49,7 @@ let input_data: ProofOfAssetsInputFileShape = JSON.parse(input_data_raw, jsonRev
 
 // TODO need to split up the accounts into pods/sections
 let balances: bigint[] = [input_data.account_data.reduce(
-    (accumulator, curr_value) => accumulator + curr_value.wallet_data.balance,
+    (accumulator, curr_value) => accumulator + curr_value.account_data.balance,
     0n
 )];
 

@@ -47,7 +47,7 @@ var argv = require('minimist')(process.argv.slice(2), {
         layer_one_input_path: ['write-layer-one-data-to', 'o'],
     },
     default: {
-        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_wallets.json"),
+        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
         layer_one_input_path: path.join(__dirname, "../tests/layer_one/input.json"),
     }
 });

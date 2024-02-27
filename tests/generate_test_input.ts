@@ -97,7 +97,7 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
 
         account_data.push({
             signature,
-            wallet_data: {
+            account_data: {
                 address: address_dec,
                 balance: generate_deterministic_balance(key_pairs[i]),
             }
@@ -106,8 +106,8 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
 
     // It's very important to sort by address, otherwise the layer 2 circuit will fail.
     account_data.sort((a, b) => {
-        if (a.wallet_data.address < b.wallet_data.address) return -1;
-        else if (a.wallet_data.address > b.wallet_data.address) return 1;
+        if (a.account_data.address < b.account_data.address) return -1;
+        else if (a.account_data.address > b.account_data.address) return 1;
         else return 0;
     });
 
@@ -128,7 +128,7 @@ var msg_hash: Uint8Array = sha256(msg);
 var pairs = generate_pvt_pub_key_pairs(argv.n);
 
 generate_input_data(msg_hash, pairs).then(data => {
-    var filename = "input_data_for_" + num_sigs + "_wallets.json";
+    var filename = "input_data_for_" + num_sigs + "_accounts.json";
 
     const json = JSON.stringify(data, jsonReplacer, 2);
 

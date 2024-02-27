@@ -16,7 +16,7 @@ export interface Signature {
 
 export interface AccountAttestation {
     signature: Signature,
-    wallet_data: AccountData,
+    account_data: AccountData,
 }
 
 export interface AccountData {
