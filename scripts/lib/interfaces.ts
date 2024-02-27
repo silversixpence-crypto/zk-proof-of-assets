@@ -3,7 +3,7 @@ import { interfaces } from 'mocha';
 
 // Main input for the system.
 export interface ProofOfAssetsInputFileShape {
-    account_data: AccountData[],
+    account_data: AccountAttestation[],
     msg_hash: Uint8Array,
 }
 
@@ -14,13 +14,12 @@ export interface Signature {
     pubkey: Point,
 }
 
-// TODO rename to AccountAttestation or something
-export interface AccountData {
+export interface AccountAttestation {
     signature: Signature,
-    wallet_data: WalletData,
+    wallet_data: AccountData,
 }
 
-export interface WalletData {
+export interface AccountData {
     address: bigint,
     balance: bigint,
 }
@@ -36,7 +35,14 @@ export interface Groth16ProofAsInput {
     pubInput: number[],
 }
 
+export interface Leaf {
+    address: bigint,
+    balance: bigint,
+    hash: bigint,
+}
+
 export interface Proofs {
+    leaves: Leaf[],
     path_elements: bigint[][],
     path_indices: number[][],
 }

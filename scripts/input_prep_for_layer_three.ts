@@ -1,6 +1,6 @@
 import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
-import { Signature, ProofOfAssetsInputFileShape, Groth16ProofAsInput, AccountData, Proofs } from "./lib/interfaces";
+import { Signature, ProofOfAssetsInputFileShape, Groth16ProofAsInput, AccountAttestation, Proofs } from "./lib/interfaces";
 import { bigint_to_array, bigint_to_Uint8Array } from "./lib/utils";
 
 const fs = require('fs');
