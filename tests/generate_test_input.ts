@@ -14,7 +14,7 @@ import { Wallet } from "ethers";
 import { Signature, ProofOfAssetsInputFileShape, AccountData, AccountAttestation } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
-import { generate_pvt_pub_key_pairs } from "./keys";
+import { generate_pvt_pub_key_pairs, KeyPair } from "./keys";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
