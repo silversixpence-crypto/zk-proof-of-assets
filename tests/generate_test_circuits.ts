@@ -8,18 +8,18 @@ var argv = parseArgs(process.argv.slice(2), {
         merkle_tree_height: ['tree-height', 'h'],
 
         // How many layer one & two proofs are done in parallel.
-        parallelism: ['parallelism', 'p'],
+        layer_parallelism: ['parallelism', 'p'],
     },
     default: {
         num_sigs: 2,
         merkle_tree_height: 25, // Enough for anon set of size 33M.
-        parallelism: 1, // Only need more than 1 if you go beyond ~600 sigs.
+        layer_parallelism: 1, // Only need more than 1 if you go beyond ~600 sigs.
     }
 });
 
 let num_sigs = argv.num_sigs;
 let merkle_tree_height = argv.merkle_tree_height;
-let parallelism = argv.paralellism;
+let parallelism: number = argv.layer_parallelism;
 
 let dir = path.join(__dirname, num_sigs + "_sigs");
 if (!fs.existsSync(dir)) {

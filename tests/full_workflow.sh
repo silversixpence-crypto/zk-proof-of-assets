@@ -9,7 +9,7 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 NUM_SIGS=2
 ANON_SET_SIZE=10000
 MERKLE_TREE_HEIGHT=25
-PARALELLISM=1
+PARALLELISM=1
 
 SCRIPTS="$THIS_DIR"/../scripts
 BUILD_DIR="$THIS_DIR"/../build
@@ -25,18 +25,16 @@ Initiating test for the following data:
 - Number of accounts/signatures:   $NUM_SIGS
 - Anonymity set size:              $ANON_SET_SIZE
 - Merkle tree height:              $MERKLE_TREE_HEIGHT
-- Parallelism:                     $PARALELLISM
+- Parallelism:                     $PARALLELISM
 
 /////////////////////////////////////////////////////////
 "
-
-set -x
 
 # ///////////////////////////////////////////////////////
 # Data generation
 
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $NUM_SIGS --tree-height $MERKLE_TREE_HEIGHT --parallelism $PARALELLISM
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $NUM_SIGS --tree-height $MERKLE_TREE_HEIGHT --parallelism $PARALLELISM
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $NUM_SIGS --message "message to sign"
@@ -119,3 +117,13 @@ printf "\n================ $MSG ================\n"
 # Constraints for layer one circuit with 128 sigs (no -b flag):
 #   non-linear constraints: 58099005
 #   linear constraints: 0
+
+# Compilation data for layer 2 (2 sigs):
+#   non-linear constraints: 19987876
+#   linear constraints: 1507532
+#   public inputs: 1
+#   private inputs: 309
+#   public outputs: 1
+#   wires: 21370467
+#   labels: 27532745
+
