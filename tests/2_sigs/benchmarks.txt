@@ -1,4 +1,4 @@
-Data was gathered by running full_workflow.sh for 2 signatures
+Data was gathered by running full_workflow.sh for 2 signatures, all layers using ptau 26 file
 
 Compilation data for layer 1:
 #   non-linear constraints: 1932908
