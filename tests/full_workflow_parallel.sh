@@ -59,13 +59,15 @@ fi
 # ///////////////////////////////////////////////////////
 # Layer-specific constants.
 
+L1_BUILD="$BUILD"/layer_one
 L1_CIRCUIT="$TESTS"/layer_one.circom
 L1_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
 
+L2_BUILD="$BUILD"/layer_two
 L2_CIRCUIT="$TESTS"/layer_two.circom
 L2_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
 
-L3_BUILD="$BUILD"/tests/layer_three
+L3_BUILD="$BUILD"/layer_three
 L3_CIRCUIT="$TESTS"/layer_three.circom
 L3_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
 L3_SIGNALS="$TESTS"/layer_three_input.json
@@ -125,10 +127,10 @@ prove_layers_one_two() {
 	i=$1
 
 	l1_signals_path="$TESTS"/layer_one_input_"$i".json
-	l1_build_path="$BUILD"/layer_one/"$i"
+	l1_build_path="$L1_BUILD"/proof_"$i"
 
 	l2_signals_path="$TESTS"/layer_two_input_"$i".json
-	l2_build_path="$BUILD"/layer_two/"$i"
+	l2_build_path="$L2_BUILD"/proof_"$i"
 
 	start_index=$((i * threshold))
 	if [[ $i -eq $((parallelism - 1)) ]]; then
