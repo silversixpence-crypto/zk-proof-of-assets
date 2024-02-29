@@ -145,6 +145,8 @@ var argv = require('minimist')(process.argv.slice(2), {
         x_coords_hash_path: ['write-x-coords-hash-to', 'h'],
         layer_one_sanitized_proof_path: ['layer-one-sanitized-proof', 'd'],
         layer_two_input_path: ['write-layer-two-data-to', 'o'],
+        account_start_index: ['account-start-index', 's'],
+        account_end_index: ['account-end-index', 'e'],
     },
     default: {
         poa_input_data_path: path.join(__dirname, "../tests/input_data_for_32_accounts.json"),
@@ -153,6 +155,8 @@ var argv = require('minimist')(process.argv.slice(2), {
         x_coords_hash_path: path.join(__dirname, "../tests/pubkey_x_coords_hash.txt"),
         layer_one_sanitized_proof_path: path.join(__dirname, "../build/tests/layer_one/sanitized_proof.json"),
         layer_two_input_path: path.join(__dirname, "../tests/layer_two/input.json"),
+        account_start_index: 0,
+        account_end_index: -1,
     }
 });
 
@@ -162,11 +166,23 @@ let merkle_proofs_path = argv.merkle_proofs_path;
 let x_coords_hash_path = argv.x_coords_hash_path;
 let layer_one_sanitized_proof_path = argv.layer_one_sanitized_proof_path;
 let layer_two_input_path = argv.layer_two_input_path;
+let start_index = argv.start_index;
+let end_index = argv.end_index;
 
 let input_data_raw = fs.readFileSync(input_data_path);
 let input_data: ProofOfAssetsInputFileShape = JSON.parse(input_data_raw, jsonReviver);
 
-write_pubkey_x_coords_hash(input_data.account_data.map(w => w.signature.pubkey), x_coords_hash_path)
+if (end_index === -1) {
+    end_index = input_data.account_data.length;
+}
+
+if (start_index >= end_index) {
+    throw new Error(`start_index ${start_index} must be less than end_index ${end_index}`);
+}
+
+let account_data = input_data.account_data.slice(start_index, end_index);
+
+write_pubkey_x_coords_hash(account_data.map(w => w.signature.pubkey), x_coords_hash_path)
     .then(x_coords_hash => {
         let merkle_root_raw = fs.readFileSync(merkle_root_path);
         let merkle_root: bigint = JSON.parse(merkle_root_raw, jsonReviver);
@@ -174,12 +190,18 @@ write_pubkey_x_coords_hash(input_data.account_data.map(w => w.signature.pubkey),
         let merkle_proofs_raw = fs.readFileSync(merkle_proofs_path);
         let merkle_proofs: Proofs = JSON.parse(merkle_proofs_raw, jsonReviver);
 
+        let merkle_proofs_slice: Proofs = {
+            leaves: merkle_proofs.leaves.slice(start_index, end_index),
+            path_elements: merkle_proofs.path_elements.slice(start_index, end_index),
+            path_indices: merkle_proofs.path_indices.slice(start_index, end_index),
+        }
+
         var proof_data_raw = fs.readFileSync(layer_one_sanitized_proof_path);
         var proof_data: Groth16ProofAsInput = JSON.parse(proof_data_raw, jsonReviver);
 
-        check_address_ordering(input_data.account_data, merkle_proofs.leaves);
+        check_address_ordering(account_data, merkle_proofs_slice.leaves);
 
-        var layer_two_input: LayerTwoInputFileShape = construct_input(proof_data, x_coords_hash, input_data.account_data, merkle_root, merkle_proofs);
+        var layer_two_input: LayerTwoInputFileShape = construct_input(proof_data, x_coords_hash, account_data, merkle_root, merkle_proofs_slice);
 
         const json_out = JSON.stringify(
             layer_two_input,
