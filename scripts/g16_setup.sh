@@ -175,13 +175,11 @@ ERR_MSG="UNKNOWN"
 # Commands were originally from 0xPARC/circom-ecdsa & https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA
 
 MSG="COMPILING CIRCUIT"
-# TODO what is --wat?
-#
 # sym: generates circuit.sym (a symbols file required for debugging and printing the constraint system in an annotated mode).
 #
 # --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
 # the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
-execute circom "$CIRCUIT_PATH" --r1cs $COMPILE_FLAGS --sym --wat --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
+execute circom "$CIRCUIT_PATH" --r1cs $COMPILE_FLAGS --sym --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
 
 if $BIG_CIRCUITS; then
     MSG="COMPILING C++ WITNESS GENERATION CODE"
