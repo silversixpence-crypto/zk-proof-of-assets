@@ -7,13 +7,41 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 . "$THIS_DIR/../scripts/lib/cmd_executor.sh"
 
 # ///////////////////////////////////////////////////////
-# General constants.
+# Variables.
+
+num_sigs=2
+anon_set_size=10000
+merkle_tree_height=25
+
+threshold=10
+parallelism=$((num_sigs / threshold))
+remainder=0
+
+if [[ $((parallelism * threshold)) < $num_sigs ]]; then
+    remainder=$((num_sigs - parallelism * threshold))
+    parallelism=$((parallelism + 1))
+fi
+
+printf "
+/////////////////////////////////////////////////////////
+Initiating test for the following data:
+
+- Number of accounts/signatures:   $num_sigs
+- Anonymity set size:              $anon_set_size
+- Merkle tree height:              $merkle_tree_height
+- Parallelism:                     $parallelism
+
+/////////////////////////////////////////////////////////
+"
+
+# ///////////////////////////////////////////////////////
+# Constants.
 
 SCRIPTS="$THIS_DIR"/../scripts
 BUILD="$THIS_DIR"/../build
-TESTS="$THIS_DIR"/"$NUM_SIGS"_sigs
+TESTS="$THIS_DIR"/"$num_sigs"_sigs
 LOGS="$TESTS"/logs
-POA_INPUT="$THIS_DIR"/input_data_for_"$NUM_SIGS"_accounts.json
+POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
 MERKLE_ROOT="$THIS_DIR"/merkle_root.json
 MERKLE_PROOFS="$THIS_DIR"/merkle_proofs.json
 
@@ -49,34 +77,6 @@ L3_BUILD="$BUILD"/tests/layer_three
 L3_CIRCUIT_PATH="$TESTS"/layer_three.circom
 L3_PTAU_PATH="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
 L3_SIGNALS="$TESTS"/layer_three_input.json
-
-# ///////////////////////////////////////////////////////
-# Variables.
-
-num_sigs=2
-anon_set_size=10000
-merkle_tree_height=25
-
-threshold=10
-parallelism=$((num_sigs / threshold))
-remainder=0
-
-if [[ $((parallelism * threshold)) < $num_sigs ]]; then
-    remainder=$((num_sigs - parallelism * threshold))
-    parallelism=$((parallelism + 1))
-fi
-
-printf "
-/////////////////////////////////////////////////////////
-Initiating test for the following data:
-
-- Number of accounts/signatures:   $num_sigs
-- Anonymity set size:              $anon_set_size
-- Merkle tree height:              $merkle_tree_height
-- Parallelism:                     $parallelism
-
-/////////////////////////////////////////////////////////
-"
 
 # ///////////////////////////////////////////////////////
 # Data generation
