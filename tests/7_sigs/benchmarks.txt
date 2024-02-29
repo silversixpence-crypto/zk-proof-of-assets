@@ -1,0 +1,49 @@
+Data was gathered by running full_workflow.sh for 7 signatures
+
+Compilation data for layer 1:
+#   non-linear constraints: 4161827
+#   linear constraints: 292877
+#   public inputs: 0
+#   private inputs: 168
+#   public outputs: 1
+#   wires: 4429047
+#   labels: 5953611
+
+Layer 1 timings:
+# Compile: 4m
+# zkey gen: 10m + 4m
+# vkey gen: 1s
+# witness gen: 1m
+# proof gen: 1m
+
+Compilation data for layer 2:
+#   non-linear constraints: 20784765
+#   linear constraints: 1976647
+#   public inputs: 1
+#   private inputs: 599
+#   public outputs: 1
+#   wires: 22636591
+#   labels: 38929818
+
+Layer 2 timings:
+# Compile: 12m
+# zkey gen: 6h + 15m
+# vkey gen: 1s
+# witness gen: 1m
+# proof gen: 1m
+
+Compilation data for layer 3:
+#   non-linear constraints: 22864588
+#   linear constraints: 1528712
+#   public inputs: 0
+#   private inputs: 206 (205 belong to witness)
+#   public outputs: 1
+#   wires: 24239032
+#   labels: 26698412
+
+Layer 3 timings:
+# Compile: 8m
+# zkey gen: 6.25h + 15m
+# vkey gen: 1s
+# witness gen: 1m
+# proof gen: 1m
