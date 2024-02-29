@@ -123,23 +123,28 @@ wait
 prove_layer_one() {
 	i=$1
 
-	start_index=$((i * threshold))
-	end_index=$((start_index + threshold - 1))
 	l1_signals_path="$TESTS"/layer_one_input_"$i".json
 
 	if [[ ! -d "$l1_signals_path" ]]; then
-		mkdir -p "$l1_signals_path"
+		  mkdir -p "$l1_signals_path"
+	fi
+
+	start_index=$((i * threshold))
+	end_index=$((start_index + threshold)) # not inclusive
+
+	if [[ end_index -gt num_sigs ]]; then
+		  end_index=$num_sigs
 	fi
 
 	MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT"
 	execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$l1_signals_path" --start-index $start_index --end-index $end_index
 
-  "$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$l1_signals_path"
+	"$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$l1_signals_path"
 }
 
 export -f input_prep_layer_one
 
-seq $((parallelism - 1)) | parallel input_prep_layer_one {} '>' "$LOGS"/layer_one_prove_{}.log 2>&1
+seq 0 $((parallelism - 1)) | parallel input_prep_layer_one {} '>' "$LOGS"/layer_one_prove_{}.log 2>&1
 
 exit 0
 
