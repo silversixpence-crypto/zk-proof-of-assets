@@ -13,7 +13,7 @@ num_sigs=2
 anon_set_size=10000
 merkle_tree_height=25
 
-threshold=10
+threshold=100
 parallelism=$((num_sigs / threshold))
 remainder=0
 
