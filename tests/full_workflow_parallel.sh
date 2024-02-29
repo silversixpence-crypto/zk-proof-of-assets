@@ -9,17 +9,17 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=2
+num_sigs=5
 anon_set_size=10000
 merkle_tree_height=25
 
-threshold=100
+threshold=2
 parallelism=$((num_sigs / threshold))
 remainder=0
 
 if [[ $((parallelism * threshold)) < $num_sigs ]]; then
-    remainder=$((num_sigs - parallelism * threshold))
-    parallelism=$((parallelism + 1))
+	remainder=$((num_sigs - parallelism * threshold))
+	parallelism=$((parallelism + 1))
 fi
 
 printf "
@@ -49,15 +49,15 @@ MERKLE_PROOFS="$THIS_DIR"/merkle_proofs.json
 # Create directories.
 
 if [[ ! -d "$BUILD" ]]; then
-	  mkdir -p "$BUILD"
+	mkdir -p "$BUILD"
 fi
 
 if [[ ! -d "$TESTS" ]]; then
-	  mkdir -p "$TESTS"
+	mkdir -p "$TESTS"
 fi
 
 if [[ ! -d "$LOGS" ]]; then
-	  mkdir -p "$LOGS"
+	mkdir -p "$LOGS"
 fi
 
 # ///////////////////////////////////////////////////////
@@ -66,7 +66,6 @@ fi
 L1_BUILD="$BUILD"/tests/layer_one
 L1_CIRCUIT="$TESTS"/layer_one.circom
 L1_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
-L1_SIGNALS="$TESTS"/layer_one_input.json
 
 L2_BUILD="$BUILD"/tests/layer_two
 L2_CIRCUIT="$TESTS"/layer_two.circom
@@ -117,10 +116,32 @@ wait
 # ///////////////////////////////////////////////////////
 # Layer 1 prove.
 
-MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT"
-execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$L1_SIGNALS"
+# Run provers in parallel using GNU's parallel.
+# https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
+# https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
 
-"$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_SIGNALS"
+prove_layer_one() {
+	i=$1
+
+	start_index=$((i * threshold))
+	end_index=$((start_index + threshold - 1))
+	l1_signals_path="$TESTS"/layer_one_input_"$i".json
+
+	if [[ ! -d "$l1_signals_path" ]]; then
+		mkdir -p "$l1_signals_path"
+	fi
+
+	MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT"
+	execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$l1_signals_path" --start-index $start_index --end-index $end_index
+
+  "$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$l1_signals_path"
+}
+
+export -f input_prep_layer_one
+
+seq $((parallelism - 1)) | parallel input_prep_layer_one {} '>' "$LOGS"/layer_one_prove_{}.log 2>&1
+
+exit 0
 
 # ///////////////////////////////////////////////////////
 # Layer 2 prove.
@@ -149,27 +170,3 @@ MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
 "$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" "$L3_CIRCUIT_PATH" "$L3_SIGNALS"
-
-# ///////////////////////////////////////////////////////
-# Some constraints data
-
-# Constraints for layer one circuit with 2 sigs (-b flag):
-#   non-linear constraints: 1932908
-#   linear constraints: 161762
-
-# Constraints for layer one circuit with 37 sigs (-b flag):
-#   non-linear constraints: 17535746
-#   linear constraints: 1079817
-
-# Constraints for layer one circuit with 128 sigs (no -b flag):
-#   non-linear constraints: 58099005
-#   linear constraints: 0
-
-# Compilation data for layer 2 (2 sigs):
-#   non-linear constraints: 19987876
-#   linear constraints: 1507532
-#   public inputs: 1
-#   private inputs: 309
-#   public outputs: 1
-#   wires: 21370467
-#   labels: 27532745

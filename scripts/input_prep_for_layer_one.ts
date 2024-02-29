@@ -45,15 +45,21 @@ var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         poa_input_data_path: ['poa-input-data', 'i'],
         layer_one_input_path: ['write-layer-one-data-to', 'o'],
+        account_start_index: ['account-start-index', 's'],
+        account_end_index: ['account-end-index', 'e'],
     },
     default: {
         poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
         layer_one_input_path: path.join(__dirname, "../tests/layer_one/input.json"),
+        account_start_index: 0,
+        account_end_index: -1,
     }
 });
 
 var input_data_path = argv.poa_input_data_path;
 var layer_one_input_path = argv.layer_one_input_path;
+var start_index = argv.start_index;
+var end_index = argv.end_index;
 
 fs.readFile(input_data_path, function read(err: any, json_in: any) {
     if (err) {
@@ -61,9 +67,18 @@ fs.readFile(input_data_path, function read(err: any, json_in: any) {
     }
 
     var input_data: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
+
+    if (end_index === -1) {
+        end_index = input_data.account_data.length;
+    }
+
+    if (start_index >= end_index) {
+        throw new Error(`start_index ${start_index} must be less than end_index ${end_index}`);
+    }
+
     var layer_one_input: LayerOneInputFileShape = construct_input(
-        input_data.account_data.map(w => w.signature),
-        input_data.msg_hash
+        input_data.account_data.map(w => w.signature).slice(start_index, end_index),
+        input_data.msg_hash,
     );
 
     const json_out = JSON.stringify(
