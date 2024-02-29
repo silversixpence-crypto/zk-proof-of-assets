@@ -206,7 +206,7 @@ else
 fi
 
 if $QUICK; then
-    echo "================ SKIPPING PROOF GENERATION ================"
+    printf "\n================ DONE, SKIPPING PROOF GENERATION ================"
     exit 0
 fi
 
@@ -225,3 +225,5 @@ fi
 
 MSG="VERIFYING PROOF"
 execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+
+printf "\n================ DONE ================"

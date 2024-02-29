@@ -191,7 +191,7 @@ if $BIG_CIRCUITS; then
 fi
 
 if $QUICK; then
-    echo "================ SKIPPING ZKEY & VKEY GENERATION ================"
+    printf "\n================ DONE, SKIPPING ZKEY & VKEY GENERATION ================"
     exit 0
 fi
 
@@ -230,3 +230,5 @@ if $BIG_CIRCUITS; then
 else
     execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 fi
+
+printf "\n================ DONE ================"
