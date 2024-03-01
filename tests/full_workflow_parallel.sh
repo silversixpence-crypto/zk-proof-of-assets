@@ -69,7 +69,7 @@ L2_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
 
 L3_BUILD="$BUILD"/layer_three
 L3_CIRCUIT="$TESTS"/layer_three.circom
-L3_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
+L3_PTAU="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 L3_SIGNALS="$TESTS"/layer_three_input.json
 
 # ///////////////////////////////////////////////////////
@@ -131,6 +131,7 @@ prove_layers_one_two() {
 
 	l2_signals_path="$TESTS"/layer_two_input_"$i".json
 	l2_build_path="$L2_BUILD"/proof_"$i"
+  # TODO fix python script to look in the right place for proof data, and remove check in layer two prep script that errors when a file is found as opposed to just dirs
 
 	start_index=$((i * threshold))
 	if [[ $i -eq $((parallelism - 1)) ]]; then
