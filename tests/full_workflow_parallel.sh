@@ -92,7 +92,7 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 		--poa-input-data "$POA_INPUT" \
 		--output-dir "$THIS_DIR" \
 		--height $merkle_tree_height \
-		>"$LOGS"/merkle_tree.log 2>&1
+		>"$LOGS"/merkle_tree.log
 ) &
 
 # ///////////////////////////////////////////////////////
@@ -101,17 +101,17 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
 (
 	printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT (SEE $LOGS/layer_one_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_PTAU" >"$LOGS"/layer_one_setup.log 2>&1
+		"$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_PTAU" >"$LOGS"/layer_one_setup.log
 ) &
 
 (
 	printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT (SEE $LOGS/layer_two_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" "$L2_CIRCUIT" "$L2_PTAU" >"$LOGS"/layer_two_setup.log 2>&1
+		"$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" "$L2_CIRCUIT" "$L2_PTAU" >"$LOGS"/layer_two_setup.log
 ) &
 
 (
 	printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT (SEE $LOGS/layer_three_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_PTAU" >"$LOGS"/layer_three_setup.log 2>&1
+		"$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_PTAU" >"$LOGS"/layer_three_setup.log
 )
 
 wait
@@ -159,7 +159,7 @@ prove_layers_one_two() {
 
 export -f prove_layers_one_two
 
-seq 0 $((parallelism - 1)) | parallel prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_{}.log 2>&1
+seq 0 $((parallelism - 1)) | parallel prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_{}.log
 
 exit 0
 
