@@ -1,33 +1,33 @@
-Data was gathered by running full_workflow.sh for 2 signatures, all layers using ptau 26 file
+Data was gathered by running full_workflow.sh for 128 signatures, layer 2 using ptau 26 file, layers 1 & 3 using max ptau file
 
 Compilation data for layer 1:
-#   non-linear constraints: 1932908
-#   linear constraints: 161762
+#   non-linear constraints: 58102853
+#   linear constraints: 3466590
 #   public inputs: 0
-#   private inputs: 48
+#   private inputs: 3072
 #   public outputs: 1
-#   wires: 2083343
-#   labels: 2760073
+#   wires: 61197000
+#   labels: 83239493
 
 Layer 1 timings:
-# Compile: 2m
-# zkey gen: 3.5m + 1.5m
+# Compile: 48m
+# zkey gen: 34h + 30m
 # vkey gen: 1s
-# witness gen: 0.5m
+# witness gen: 10m
 # proof gen: 1m
 
 Compilation data for layer 2:
-#   non-linear constraints: 19987876
-#   linear constraints: 1507532
+#   non-linear constraints: 40070665
+#   linear constraints: 13329960
 #   public inputs: 1
-#   private inputs: 309
+#   private inputs: 7617
 #   public outputs: 1
-#   wires: 21370467
-#   labels: 27532745
+#   wires: 53278708
+#   labels: 314741247
 
 Layer 2 timings:
-# Compile: 12m
-# zkey gen: 5.25h + 20m
+# Compile: 11m
+# zkey gen: 7h + 31m
 # vkey gen: 1s
 # witness gen: 1m
 # proof gen: 1m
@@ -43,7 +43,7 @@ Compilation data for layer 3:
 
 Layer 3 timings:
 # Compile: 14.5m
-# zkey gen: 3.5h + 15m
+# zkey gen: 2.75h + 15m
 # vkey gen: 1s
 # witness gen: 1m
 # proof gen: 1m

@@ -226,4 +226,4 @@ fi
 MSG="VERIFYING PROOF"
 execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
 
-printf "\n================ DONE ================"
+printf "\n================ DONE G16 PROVE ================"
