@@ -8,8 +8,7 @@
 import { Wallet } from "ethers";
 import { randomBytes } from '@noble/hashes/utils';
 
-import { generate_deterministic_balance } from "./generate_test_input";
-import { generate_pvt_pub_key_pairs, KeyPair } from "./keys";
+import { generate_pvt_pub_key_pairs, KeyPair, generate_deterministic_balance } from "./keys";
 import { Uint8Array_to_bigint } from "../scripts/lib/utils";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { AccountData } from "../scripts/lib/interfaces";
@@ -24,18 +23,18 @@ interface AccountDataRaw {
     balance: string,
 }
 
-let random_address_set_path = path.join(__dirname, "random_ethereum_addresses.json");
-let random_address_set_raw = fs.readFileSync(random_address_set_path);
-let random_address_set: AccountDataRaw[] = JSON.parse(random_address_set_raw);
-let known_key_pairs: KeyPair[] = generate_pvt_pub_key_pairs();
-let total_address_count = known_key_pairs.length + random_address_set.length;
-
 var argv = parseArgs(process.argv.slice(2), {
     alias: { num_addresses: ['num-addresses', 'n'] },
     default: { num_addresses: 100 }
 });
 
 let num_addresses: number = argv.num_addresses;
+
+let random_address_set_path = path.join(__dirname, "random_ethereum_addresses.json");
+let random_address_set_raw = fs.readFileSync(random_address_set_path);
+let random_address_set: AccountDataRaw[] = JSON.parse(random_address_set_raw);
+let known_key_pairs: KeyPair[] = generate_pvt_pub_key_pairs(-1);
+let total_address_count = known_key_pairs.length + random_address_set.length;
 
 if (num_addresses > total_address_count) {
     throw new Error(`Cannot generate anonymity set size greater than ${total_address_count}. Size requested was ${num_addresses}`);

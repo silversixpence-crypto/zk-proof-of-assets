@@ -14,16 +14,12 @@ import { Wallet } from "ethers";
 import { Signature, ProofOfAssetsInputFileShape, AccountData, AccountAttestation } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
-import { generate_pvt_pub_key_pairs, KeyPair } from "./keys";
+import { generate_pvt_pub_key_pairs, generate_deterministic_balance, KeyPair } from "./keys";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
-
-export function generate_deterministic_balance(key_pair: KeyPair): bigint {
-    return key_pair.pvt % 1000n;
-}
 
 // Calculates a modulo b
 function mod(a: bigint, b: bigint = CURVE.P): bigint {
