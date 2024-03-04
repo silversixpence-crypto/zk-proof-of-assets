@@ -63,6 +63,9 @@ OPTIONS:
     -n <PATH>        Path to the patched node binary (needed for '-b')
                      Can also be set with the env var PATCHED_NODE_PATH
 
+    -p <DIR>         Proof directory, where the witness & g16 proof will be written to
+                     Default is the same as the build directory
+
     -r <PATH>        Path to the rapidsnark binary (needed for '-b')
                      Can also be set with the env var RAPIDSNARK_PATH
 
@@ -93,7 +96,7 @@ SIGNALS_PATH="${@: -1}"
 BUILD_DIR="$G16_PROVE_DIRECTORY"/../build
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbqwzn:r:B:' flag; do
+while getopts 'vhbqwzn:r:B:p:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
@@ -105,6 +108,7 @@ while getopts 'vhbqwzn:r:B:' flag; do
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
     r) RAPIDSNARK_PATH="${OPTARG}" ;;
     B) BUILD_DIR="${OPTARG}" ;;
+    p) PROOF_DIR="${OPTARG}" ;;
     v) VERBOSE=true ;;
     h)
         print_usage
@@ -141,6 +145,16 @@ fi
 if [[ ! -d "$BUILD_DIR" ]]; then
     echo "Creating build directory $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
+fi
+
+if [[ -z "$PROOF_DIR" ]]; then
+    echo "Proof directory not set, defaulting to build directory: $BUILD_DIR"
+    PROOF_DIR="$BUILD_DIR"
+fi
+
+if [[ ! -d "$PROOF_DIR" ]]; then
+    echo "Creating proof directory $PROOF_DIR"
+    mkdir -p "$PROOF_DIR"
 fi
 
 if [[ "${SIGNALS_PATH##*.}" != "json" ]] || [[ ! -f "$SIGNALS_PATH" ]]; then
@@ -192,6 +206,12 @@ ERR_MSG="UNKNOWN"
 
 # Commands were originally from 0xPARC/circom-ecdsa & https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA
 
+# TOOD we should have a better naming scheme for zkeys.
+# Should include the number of signatures or input size or something
+# since the zkey is specific to the circuit + parameters, not just circuit
+# e.g. layer_one_128_sigs.zkey
+# e.g. layer_three_1_proof.zkey
+
 MSG="VERIFYING FINAL ZKEY"
 if $VERIFY_ZKEY; then
     execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
@@ -199,10 +219,10 @@ fi
 
 if $BIG_CIRCUITS; then
     MSG="GENERATING WITNESS USING C++ CODE"
-    execute "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME" "$SIGNALS_PATH" "$BUILD_DIR"/witness.wtns
+    execute "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME" "$SIGNALS_PATH" "$PROOF_DIR"/witness.wtns
 else
     MSG="GENERATING WITNESS USING WASM CODE"
-    execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS_PATH" "$BUILD_DIR"/witness.wtns
+    execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS_PATH" "$PROOF_DIR"/witness.wtns
 fi
 
 if $QUICK; then
@@ -212,18 +232,18 @@ fi
 
 MSG="VERIFYING WITNESS"
 if $VERIFY_WITNESS; then
-    execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
+    execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PROOF_DIR"/witness.wtns
 fi
 
 if $BIG_CIRCUITS; then
     MSG="GENERATING PROOF USING RAPIDSNARK"
-    execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+    execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
 else
     MSG="GENERATING PROOF USING SNARKJS"
-    execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
+    execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
 fi
 
 MSG="VERIFYING PROOF"
-execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$PROOF_DIR"/public.json "$PROOF_DIR"/proof.json
 
 printf "\n================ DONE G16 PROVE ================"
