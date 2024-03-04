@@ -1,0 +1,51 @@
+Data was gathered by running full_workflow.sh for 6 signatures, where:
+- threshold=2 => parallelism=3
+- layer 1 & 2 ptau 26 file, layer 3 using final ptau file
+
+Compilation data for layer 1:
+#   non-linear constraints: 3270338
+#   linear constraints: 240489
+#   public inputs: 0
+#   private inputs: 120
+#   public outputs: 1
+#   wires: 3490902
+#   labels: 4676365
+
+Layer 1 timings:
+# Compile: 2.5m
+# zkey gen: 5m + 2.5m
+# vkey gen: 1s
+# witness gen:
+# proof gen:
+
+Compilation data for layer 2:
+#   non-linear constraints: 20466088
+#   linear constraints: 1789059
+#   public inputs: 1
+#   private inputs: 483
+#   public outputs: 1
+#   wires: 22130278
+#   labels: 34371158
+
+Layer 2 timings:
+# Compile: 12m
+# zkey gen: 3.75h + 14m
+# vkey gen: 1s
+# witness gen:
+# proof gen:
+
+Compilation data for layer 3:
+#   non-linear constraints: 68593764
+#   linear constraints: 4586137
+#   public inputs: 0
+#   private inputs: 616
+#   public outputs: 1
+#   wires: 72717093
+#   labels: 80095230
+
+Layer 3 timings:
+# Compile: 46m
+# zkey gen: 43h + 50m
+# vkey gen: 1s
+# witness gen: 
+# proof gen: 
