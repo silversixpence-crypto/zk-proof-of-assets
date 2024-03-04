@@ -58,8 +58,8 @@ var argv = require('minimist')(process.argv.slice(2), {
 
 var input_data_path = argv.poa_input_data_path;
 var layer_one_input_path = argv.layer_one_input_path;
-var start_index = argv.start_index;
-var end_index = argv.end_index;
+var start_index = argv.account_start_index;
+var end_index = argv.account_end_index;
 
 fs.readFile(input_data_path, function read(err: any, json_in: any) {
     if (err) {

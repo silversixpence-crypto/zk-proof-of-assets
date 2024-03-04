@@ -166,8 +166,8 @@ let merkle_proofs_path = argv.merkle_proofs_path;
 let x_coords_hash_path = argv.x_coords_hash_path;
 let layer_one_sanitized_proof_path = argv.layer_one_sanitized_proof_path;
 let layer_two_input_path = argv.layer_two_input_path;
-let start_index = argv.start_index;
-let end_index = argv.end_index;
+let start_index = argv.account_start_index;
+let end_index = argv.account_end_index;
 
 let input_data_raw = fs.readFileSync(input_data_path);
 let input_data: ProofOfAssetsInputFileShape = JSON.parse(input_data_raw, jsonReviver);
