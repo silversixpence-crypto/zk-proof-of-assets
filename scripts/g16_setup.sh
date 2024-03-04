@@ -168,6 +168,9 @@ fi
 
 ERR_MSG="UNKNOWN"
 
+# NOTE the script seems to work without these set.
+NODE_CLI_OPTIONS="--max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
+
 ############################################
 ################ COMMANDS ##################
 ############################################
