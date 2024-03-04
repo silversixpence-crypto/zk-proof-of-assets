@@ -9,7 +9,7 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=5
+num_sigs=6
 anon_set_size=10000
 merkle_tree_height=25
 
@@ -22,6 +22,12 @@ if [[ $((parallelism * threshold)) < $num_sigs ]]; then
 	parallelism=$((parallelism + 1))
 fi
 
+if [[ parallelism -eq 1 ]]; then
+	num_sigs_per_batch=$num_sigs
+else
+	num_sigs_per_batch=$threshold
+fi
+
 printf "
 /////////////////////////////////////////////////////////
 Initiating test for the following data:
@@ -30,6 +36,7 @@ Initiating test for the following data:
 - Anonymity set size:              $anon_set_size
 - Merkle tree height:              $merkle_tree_height
 - Parallelism:                     $parallelism
+- Batch size:                      $num_sigs_per_batch
 
 /////////////////////////////////////////////////////////
 "
@@ -76,43 +83,43 @@ L3_SIGNALS="$TESTS"/layer_three_input.json
 # Data generation
 
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs --tree-height $merkle_tree_height --parallelism $parallelism
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS"
 
-MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
-execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
+# MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
+# execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
 
-MSG="GENERATING ANONYMITY SET"
-execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
+# MSG="GENERATING ANONYMITY SET"
+# execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
 
-# Run in parallel to the next commands, 'cause it takes long
-(
-	MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/layer_one_setup.log)" \
-		execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
-		--anonymity-set "$THIS_DIR"/anonymity_set.json \
-		--poa-input-data "$POA_INPUT" \
-		--output-dir "$THIS_DIR" \
-		--height $merkle_tree_height \
-		>"$LOGS"/merkle_tree.log
-) &
+# # Run in parallel to the next commands, 'cause it takes long
+# (
+# 	MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" \
+# 		execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
+# 		--anonymity-set "$THIS_DIR"/anonymity_set.json \
+# 		--poa-input-data "$POA_INPUT" \
+# 		--output-dir "$THIS_DIR" \
+# 		--height $merkle_tree_height \
+# 		>"$LOGS"/merkle_tree.log
+# ) &
 
-# ///////////////////////////////////////////////////////
-# G16 setup for all layers, in parallel.
+# # ///////////////////////////////////////////////////////
+# # G16 setup for all layers, in parallel.
 
 # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
 (
 	printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT (SEE $LOGS/layer_one_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_PTAU" >"$LOGS"/layer_one_setup.log
+		"$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_PTAU" >"$LOGS"/layer_one_setup.log 2>&1
 ) &
 
 (
 	printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT (SEE $LOGS/layer_two_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" "$L2_CIRCUIT" "$L2_PTAU" >"$LOGS"/layer_two_setup.log
-) &
+		"$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" "$L2_CIRCUIT" "$L2_PTAU" >"$LOGS"/layer_two_setup.log 2>&1
+) #&
 
-(
-	printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT (SEE $LOGS/layer_three_setup.log) ================\n" &&
-		"$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_PTAU" >"$LOGS"/layer_three_setup.log
-)
+# (
+# 	printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT (SEE $LOGS/layer_three_setup.log) ================\n" &&
+# 		"$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_PTAU" >"$LOGS"/layer_three_setup.log 2>&1
+# )
 
 wait
 
@@ -126,12 +133,13 @@ wait
 prove_layers_one_two() {
 	i=$1
 
+	# TODO add some more identifying information to the filename, or batch dir name (like number of sigs)
 	l1_signals_path="$TESTS"/layer_one_input_"$i".json
-	l1_build_path="$L1_BUILD"/proof_"$i"
+	l1_proof_dir="$L1_BUILD"/batch_"$i"
 
 	l2_signals_path="$TESTS"/layer_two_input_"$i".json
-	l2_build_path="$L2_BUILD"/proof_"$i"
-  # TODO fix python script to look in the right place for proof data, and remove check in layer two prep script that errors when a file is found as opposed to just dirs
+	l2_proof_dir="$L2_BUILD"/batch_"$i"
+	# TODO fix python script to look in the right place for proof data, and remove check in layer two prep script that errors when a file is found as opposed to just dirs
 
 	start_index=$((i * threshold))
 	if [[ $i -eq $((parallelism - 1)) ]]; then
@@ -140,26 +148,29 @@ prove_layers_one_two() {
 		end_index=$((start_index + threshold)) # not inclusive
 	fi
 
-	MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT"
-	execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$l1_signals_path" --start-index $start_index --end-index $end_index
+	MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH $i"
+	execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$l1_signals_path" --account-start-index $start_index --account-end-index $end_index
 
-	"$SCRIPTS"/g16_prove.sh -b -B "$l1_build_path" "$L1_CIRCUIT" "$l1_signals_path"
+	"$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" -p "$l1_proof_dir" "$L1_CIRCUIT" "$l1_signals_path"
 
-	MSG="CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS"
-	execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l1_build_path"
+	# MSG="CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS BATCH $i"
+	# execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l1_proof_dir"
 
-	MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT"
-	execute npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$l1_build_path"/sanitized_proof.json --write-layer-two-data-to "$l2_signals_path" --start-index $start_index --end-index $end_index
+	# MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH $i"
+	# execute npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json --write-layer-two-data-to "$l2_signals_path" --account-start-index $start_index --account-end-index $end_index
 
-	MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT"
-	printf "\n================ $MSG ================\n"
+	# MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
+	# printf "\n================ $MSG ================\n"
 
-	"$SCRIPTS"/g16_prove.sh -b -B "$l2_build_path" "$L2_CIRCUIT" "$l2_signals_path"
+	# "$SCRIPTS"/g16_prove.sh -b -B "$L2_BUILD" -p "$l2_proof_dir" "$L2_CIRCUIT" "$l2_signals_path"
 }
 
 export -f prove_layers_one_two
+export -f execute
+export TESTS L1_BUILD L1_CIRCUIT L2_BUILD L2_CIRCUIT POA_INPUT SCRIPTS MERKLE_ROOT MERKLE_PROOFS
+export threshold parallelism num_sigs
 
-seq 0 $((parallelism - 1)) | parallel prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_{}.log
+seq 0 $((parallelism - 1)) | parallel --keep-order prove_layers_one_two {} >"$LOGS"/layers_one_two_prove.log 2>&1
 
 exit 0
 
