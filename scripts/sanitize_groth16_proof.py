@@ -148,9 +148,18 @@ def cli(proofdir):
     publicFile = Path(proofdir, 'public.json')
     outputFile = Path(proofdir, 'sanitized_proof.json')
 
+    vkeyFile = None
+
     for file in os.listdir(proofdir):
         if file.endswith("_vkey.json"):
             vkeyFile = Path(proofdir, file)
+
+    if not vkeyFile:
+        parentdir = Path(proofdir, '..')
+        for file in os.listdir(parentdir):
+            if file.endswith("_vkey.json"):
+                vkeyFile = Path(parentdir, file)
+
     if not vkeyFile:
         raise Exception("Cannot find vkey file")
 
