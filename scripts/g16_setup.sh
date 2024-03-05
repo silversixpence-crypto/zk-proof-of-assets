@@ -232,4 +232,4 @@ else
     execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 fi
 
-printf "\n================ DONE G16 SETUP ================"
+printf "\n================ DONE G16 SETUP ================\n"
