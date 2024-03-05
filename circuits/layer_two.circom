@@ -3,6 +3,7 @@ pragma circom 2.1.7;
 include "../git_modules/circom-pairing/circuits/bn254/groth16.circom";
 include "./eth.circom";
 include "./merkle.circom";
+include "./poseidon.circom";
 
 template LayerTwo(num_sigs, merkle_tree_height) {
     // Number of dimensions needed to describe a point on an EC curve.
@@ -52,12 +53,12 @@ template LayerTwo(num_sigs, merkle_tree_height) {
 
     signal input pubkey[num_sigs][ec_dimension][num_registers];
 
-    component hasher = Poseidon(num_sigs*num_registers);
+    component hasher = PoseidonSponge(num_sigs * num_registers);
 
     for (var i = 0; i < num_sigs; i++) {
         for (var j = 0; j < num_registers; j++) {
-            // Hash x-coords of pubkeys.
-            hasher.inputs[i*num_registers + j] <== pubkey[i][0][j];
+            // The x-coord lives at position 0.
+            hasher.inputs[i * num_registers + j] <== pubkey[i][0][j];
         }
     }
 
@@ -73,16 +74,24 @@ template LayerTwo(num_sigs, merkle_tree_height) {
     for (var i = 0; i < num_sigs; i++) {
         pubkey_bits[i] <== FlattenPubkey(register_bit_length, num_registers)(pubkey[i]);
         addresses[i] <== PubkeyToAddress()(pubkey_bits[i]);
+
+        if (i > 0) {
+            // Prevents addresses being used more than once.
+            assert(addresses[i] > addresses[i-1]);
+        }
     }
 
     //////////////////////////////////////////////
     // Merkle proof verification.
 
+    // We only check the layers below the root.
+    var levels = merkle_tree_height - 1;
+
     signal input merkle_root;
     signal input leaf_addresses[num_sigs];
     signal input leaf_balances[num_sigs];
-    signal input path_elements[num_sigs][merkle_tree_height];
-    signal input path_indices[num_sigs][merkle_tree_height];
+    signal input path_elements[num_sigs][levels];
+    signal input path_indices[num_sigs][levels];
 
     component leaf_hashers[num_sigs];
     signal leaves[num_sigs];
@@ -95,7 +104,7 @@ template LayerTwo(num_sigs, merkle_tree_height) {
         leaf_hashers[i].inputs[1] <== leaf_balances[i];
         leaves[i] <== leaf_hashers[i].out;
 
-        MerkleProofVerify(merkle_tree_height)(leaves[i], merkle_root, path_elements[i], path_indices[i]);
+        MerkleProofVerify(levels)(leaves[i], merkle_root, path_elements[i], path_indices[i]);
     }
 
     //////////////////////////////////////////////

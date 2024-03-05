@@ -8,8 +8,8 @@
 G16_PROVE_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 
-. "$G16_PROVE_DIRECTORY/error_handling.sh"
-. "$G16_PROVE_DIRECTORY/cmd_executor.sh"
+. "$G16_PROVE_DIRECTORY/lib/error_handling.sh"
+. "$G16_PROVE_DIRECTORY/lib/cmd_executor.sh"
 
 ############################################
 ################## SETUP ###################
@@ -43,10 +43,13 @@ FLAGS:
                      - Use rapidsnark (path to this must be set with '-r'), see this for more info
                        https://hackmd.io/V-7Aal05Tiy-ozmzTGBYPA#Install-rapidsnark-from-source
 
-    -z               Verify the final proving key (zkey)
-                     WARN: this takes long for large circuits
+    -q               Quick commands only. This skips proving & verification key generation.
+                     Useful for testing when you only want to do compilation & witness generation.
 
     -w               Verify the witness
+
+    -z               Verify the final proving key (zkey)
+                     WARN: this takes long for large circuits
 
     -v               Print commands that are run (set -x)
 
@@ -81,6 +84,7 @@ BIG_CIRCUITS=false
 VERIFY_ZKEY=false
 VERIFY_WITNESS=false
 VERBOSE=false
+QUICK=false
 
 # https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
 CIRCUIT_PATH="${@:(-2):1}"
@@ -89,14 +93,15 @@ SIGNALS_PATH="${@: -1}"
 BUILD_DIR="$G16_PROVE_DIRECTORY"/../build
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbzwn:r:B:' flag; do
+while getopts 'vhbqwzn:r:B:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
         COMPILE_FLAGS="--01 --c"
         ;;
-    z) VERIFY_ZKEY=true ;;
+    q) QUICK=true ;;
     w) VERIFY_WITNESS=true ;;
+    z) VERIFY_ZKEY=true ;;
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
     r) RAPIDSNARK_PATH="${OPTARG}" ;;
     B) BUILD_DIR="${OPTARG}" ;;
@@ -200,6 +205,11 @@ else
     execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS_PATH" "$BUILD_DIR"/witness.wtns
 fi
 
+if $QUICK; then
+    printf "\n================ DONE, SKIPPING PROOF GENERATION ================"
+    exit 0
+fi
+
 MSG="VERIFYING WITNESS"
 if $VERIFY_WITNESS; then
     execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$BUILD_DIR"/witness.wtns
@@ -212,3 +222,8 @@ else
     MSG="GENERATING PROOF USING SNARKJS"
     execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
 fi
+
+MSG="VERIFYING PROOF"
+execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+
+printf "\n================ DONE G16 PROVE ================"
