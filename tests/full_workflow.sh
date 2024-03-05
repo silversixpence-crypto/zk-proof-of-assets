@@ -34,7 +34,7 @@ Initiating test for the following data:
 # Data generation
 
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $NUM_SIGS --tree-height $MERKLE_TREE_HEIGHT --parallelism $PARALLELISM
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $NUM_SIGS --tree-height $MERKLE_TREE_HEIGHT --parallelism $PARALLELISM  --write-circuits-to "$TESTS"
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $NUM_SIGS --message "message to sign"

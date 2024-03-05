@@ -79,6 +79,7 @@ let merkle_root: bigint = JSON.parse(merkle_root_raw, jsonReviver);
 let proof_data_array: Groth16ProofAsInput[] = [];
 let balances: bigint[] = [];
 
+// TODO is this multiple_proofs mechanism the best way of doing this? It's very wonky
 if (multiple_proofs === true) {
     // NOTE assumes layer-two-sanitized-proof cli option points to a directory
     if (!fs.lstatSync(layer_two_sanitized_proof_path).isDirectory()) {
