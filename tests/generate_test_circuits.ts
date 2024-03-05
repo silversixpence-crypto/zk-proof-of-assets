@@ -6,6 +6,7 @@ var argv = parseArgs(process.argv.slice(2), {
     alias: {
         num_sigs: ['num-sigs', 'n'],
         merkle_tree_height: ['tree-height', 'h'],
+        circuits_dir: ['write-circuits-to', 'o'],
 
         // How many layer one & two proofs are done in parallel.
         layer_parallelism: ['parallelism', 'p'],
@@ -13,6 +14,7 @@ var argv = parseArgs(process.argv.slice(2), {
     default: {
         num_sigs: 2,
         merkle_tree_height: 25, // Enough for anon set of size 33M.
+        circuits_dir: __dirname,
         layer_parallelism: 1, // Only need more than 1 if you go beyond ~600 sigs.
     }
 });
@@ -20,10 +22,12 @@ var argv = parseArgs(process.argv.slice(2), {
 let num_sigs = argv.num_sigs;
 let merkle_tree_height = argv.merkle_tree_height;
 let parallelism: number = argv.layer_parallelism;
+let circuits_dir = argv.circuits_dir;
 
-let dir = path.join(__dirname, num_sigs + "_sigs");
-if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
+// TODO ensure all the above values are the expected type
+
+if (!fs.existsSync(circuits_dir)) {
+    fs.mkdirSync(circuits_dir);
 }
 
 let circuits = {
@@ -49,6 +53,6 @@ component main = LayerThree(${parallelism});
 `};
 
 for (const [name, code] of Object.entries(circuits)) {
-    let filepath = path.join(dir, "layer_" + name + ".circom");
+    let filepath = path.join(circuits_dir, "layer_" + name + ".circom");
     fs.writeFileSync(filepath, code);
 }

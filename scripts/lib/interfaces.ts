@@ -32,7 +32,7 @@ export interface Groth16ProofAsInput {
     negpa: number[][][],
     pb: number[][][],
     pc: number[][],
-    pubInput: number[],
+    pubInput: bigint[],
 }
 
 export interface Leaf {

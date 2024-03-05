@@ -3,6 +3,7 @@ node_modules/
 __pycache__/
 
 *.ptau
+*.log
 yarn.lock
 
 merkle_tree.json
