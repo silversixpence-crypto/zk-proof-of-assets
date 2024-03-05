@@ -75,6 +75,11 @@ template LayerTwo(num_sigs, merkle_tree_height) {
         pubkey_bits[i] <== FlattenPubkey(register_bit_length, num_registers)(pubkey[i]);
         addresses[i] <== PubkeyToAddress()(pubkey_bits[i]);
 
+        // TODO when we split up the address set into chunks that can be done in parallel,
+        //      there is a leftover chunk at the end of different sized input to the others.
+        //      This makes it impossible to reuse the same zkey for all chunks, so either we
+        //      need to gen 2 zkeys for layer 1 & 2, or we allow 0-values for inputs to be accepted,
+        //      but do not add up balances or do checks for those inputs.
         if (i > 0) {
             // Prevents addresses being used more than once.
             assert(addresses[i] > addresses[i-1]);
