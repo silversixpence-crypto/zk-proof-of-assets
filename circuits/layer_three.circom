@@ -1,6 +1,8 @@
 pragma circom 2.1.7;
 
 include "../git_modules/circom-pairing/circuits/bn254/groth16.circom";
+include "../git_modules/ed25519-circom/circuits/scalarmul.circom";
+include "../git_modules/ed25519-circom/circuits/point-addition.circom";
 
 template LayerThree(layer_two_count) {
     //////////////////////////////////////////////
@@ -55,7 +57,26 @@ template LayerThree(layer_two_count) {
         sum += balances[i];
     }
 
-    signal output balance_sum <== sum;
+    signal balance_sum <== sum;
 
-    // TODO make Pedersen commitment from sum
+    //////////////////////////////////////////////
+    // Pedersen commitment for balance sum.
+
+    var num_coords = 4;
+    var num_registers = 3;
+
+    signal input ped_com_generator_g[num_coords][num_registers];
+    signal input ped_com_generator_h[num_coords][num_registers];
+
+    signal ped_com_secret[255] <== Num2Bits(255)(balance_sum);
+    signal input ped_com_blinding_factor[255];
+
+    signal output ped_com_result[num_coords][num_registers];
+
+    signal first_exp[num_coords][num_registers];
+    signal second_exp[num_coords][num_registers];
+
+    first_exp <== ScalarMul()(ped_com_secret, ped_com_generator_g);
+    second_exp <== ScalarMul()(ped_com_blinding_factor, ped_com_generator_h);
+    ped_com_result <== PointAdd()(first_exp, second_exp);
 }
