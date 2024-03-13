@@ -172,9 +172,10 @@ ERR_MSG="System config setup failed"
 # NOTE this may not work if you are using a Docker container, and will give message (exit code 0)
 # `sysctl: setting key "vm.max_map_count", ignoring: Read-only file system`
 # https://stackoverflow.com/questions/23537560/docker-build-read-only-file-system
-sudo sysctl -w vm.max_map_count=655300
+# 65530000 is enough for at least 256 signatures in a layer one circuit
+sudo sysctl -w vm.max_map_count=6553000
 # TODO do not add this if it has already been added
-sudo sh -c 'echo "vm.max_map_count=655300" >>/etc/sysctl.conf'
+sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
 
 if $SWAP; then
     # Increase swap memory, and persist after reboot
