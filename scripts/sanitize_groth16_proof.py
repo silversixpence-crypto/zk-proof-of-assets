@@ -148,6 +148,8 @@ def cli(proofdir):
     publicFile = Path(proofdir, 'public.json')
     outputFile = Path(proofdir, 'sanitized_proof.json')
 
+    # TODO this whole mechanism for finding vkeys is a bit wonky.
+    # We should at least log out what the program is doing.
     vkeyFile = None
 
     for file in os.listdir(proofdir):
