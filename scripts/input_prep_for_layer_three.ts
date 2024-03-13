@@ -2,13 +2,16 @@ import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
 import { Signature, ProofOfAssetsInputFileShape, Groth16ProofAsInput, AccountAttestation, Proofs } from "./lib/interfaces";
 import { bigint_to_array, bigint_to_Uint8Array } from "./lib/utils";
+import { generator_g_formatted, generator_h_formatted, format_scalar_power } from "./lib/pedersen_commitment";
 
 const fs = require('fs');
 const circomlibjs = require("circomlibjs");
 const path = require('path');
 
 interface LayerThreeInputFileShape {
-    // Like Groth16ProofAsInput but each field has 1 extra array dimension.
+    // We need the groth16 proof data for all the layer 2 circuits.
+    // It looks like Groth16ProofAsInput, but each field has 1 extra array dimension
+    // to account for the fact that there may be more than 1 proof to verify.
     gamma2: number[][][][],
     delta2: number[][][][],
     negalfa1xbeta2: number[][][][],
@@ -17,8 +20,15 @@ interface LayerThreeInputFileShape {
     pb: number[][][][],
     pc: number[][][],
 
+    // Public inputs for the layer 2s.
+    // Note that the merkle_root is not an array, because the values are the same for all layer 2s.
     balances: bigint[],
     merkle_root: bigint,
+
+    // Pedersen commitment values.
+    ped_com_generator_g: bigint[][],
+    ped_com_generator_h: bigint[][],
+    ped_com_blinding_factor: bigint[],
 }
 
 function construct_input(proof_data: Groth16ProofAsInput[], balances: bigint[], merkle_root: bigint): LayerThreeInputFileShape {
@@ -32,6 +42,10 @@ function construct_input(proof_data: Groth16ProofAsInput[], balances: bigint[], 
         pc: [],
         balances,
         merkle_root,
+        ped_com_generator_g: generator_g_formatted,
+        ped_com_generator_h: generator_h_formatted,
+        // TODO this value needs to be given as input
+        ped_com_blinding_factor: format_scalar_power(4869643893319708471955165214975585939793846505679808910535986866633137979160n),
     };
 
     for (let i = 0; i < proof_data.length; i++) {
@@ -90,7 +104,7 @@ if (multiple_proofs === true) {
 
     for (const item of ls) {
         // TODO we need to have a better way of centralising names like "batch", 'cause now what happens if we change this name in the shell script?
-        if (item.isDirectory() && item.name.substring(0,6) === "batch_") {
+        if (item.isDirectory() && item.name.substring(0, 6) === "batch_") {
             console.log(`Found directory ${layer_two_sanitized_proof_path}/${item.name}. Assuming it contains sanitized_proof.json`);
 
             let file_path = path.join(layer_two_sanitized_proof_path, item.name, "sanitized_proof.json");
