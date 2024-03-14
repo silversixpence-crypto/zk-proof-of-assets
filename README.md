@@ -20,4 +20,13 @@ Todo:
 
 ## Testing
 
+```bash
+> id=$(docker run --privileged -d -ti --rm ubuntu /bin/bash)
+> docker cp ./scripts/machine_initialization.sh $id:/home
+> docker cp ./powersOfTau28_hez_final_XX.ptau $id:/root
+> docker attach $id
+root@xyz: apt update -y && apt upgrade -y && apt install -y sudo vim
+root@xyz: cd /home && ./machine_initialization.sh -h
+```
+
 
