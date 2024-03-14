@@ -2,7 +2,6 @@ pragma circom 2.1.7;
 
 include "../git_modules/circom-pairing/circuits/bn254/groth16.circom";
 include "../git_modules/ed25519-circom/circuits/scalarmul.circom";
-include "../git_modules/ed25519-circom/circuits/point-addition.circom";
 
 template LayerThree(layer_two_count) {
     //////////////////////////////////////////////
