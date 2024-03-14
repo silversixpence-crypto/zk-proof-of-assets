@@ -100,27 +100,27 @@ fi
 # Required args.
 
 # https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
-CIRCUIT_PATH="${@:(-2):1}"
-SIGNALS_PATH="${@: -1}"
+circuit_path="${@:(-2):1}"
+signals_path="${@: -1}"
 
-if [[ ! -f "$CIRCUIT_PATH" ]]; then
+if [[ ! -f "$circuit_path" ]]; then
     echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
     print_usage
     exit 1
 fi
 
 # https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-CIRCUIT_FILE=$(basename $CIRCUIT_PATH)
-CIRCUIT_NAME="${CIRCUIT_FILE%.*}"
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
 
-if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
+if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
     echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
     print_usage
     exit 1
 fi
 
-if [[ "${SIGNALS_PATH##*.}" != "json" ]] || [[ ! -f "$SIGNALS_PATH" ]]; then
-    echo "ERROR: <signals_path> '$SIGNALS_PATH' does not point to an existing json file."
+if [[ "${signals_path##*.}" != "json" ]] || [[ ! -f "$signals_path" ]]; then
+    echo "ERROR: <signals_path> '$signals_path' does not point to an existing json file."
     print_usage
     exit 1
 fi
@@ -128,37 +128,39 @@ fi
 ############################################
 # Parse flags & optional args.
 
-BIG_CIRCUITS=false
-BUILD_DIR="$G16_PROVE_DIRECTORY"/../build
-QUICK=false
-VERBOSE=false
-VERIFY_WITNESS=false
-VERIFY_ZKEY=false
-ZKEY_HAS_CUSTOM_PATH=false
+big_circuits=false
+build_dir="$G16_PROVE_DIRECTORY"/../build
+patched_node_path=$PATCHED_NODE_PATH
+rapidsnark_path=$RAPIDSNARK_PATH
+quick=false
+verbose=false
+verify_witness=false
+verify_zkey=false
+zkey_has_custom_path=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'bB:hn:p:qr:t:vwzZ:' flag; do
     case "${flag}" in
     b)
-        BIG_CIRCUITS=true
-        COMPILE_FLAGS="--01 --c"
+        big_circuits=true
+        compile_flags="--01 --c"
         ;;
-    B) BUILD_DIR="${OPTARG}" ;;
+    B) build_dir="${OPTARG}" ;;
     h)
         print_usage
         exit 1
         ;;
-    n) PATCHED_NODE_PATH="${OPTARG}" ;;
-    p) PROOF_DIR="${OPTARG}" ;;
-    q) QUICK=true ;;
-    r) RAPIDSNARK_PATH="${OPTARG}" ;;
-    t) PTAU_PATH="${OPTARG}" ;;
-    v) VERBOSE=true ;;
-    w) VERIFY_WITNESS=true ;;
-    z) VERIFY_ZKEY=true ;;
+    n) patched_node_path="${OPTARG}" ;;
+    p) proof_dir="${OPTARG}" ;;
+    q) quick=true ;;
+    r) rapidsnark_path="${OPTARG}" ;;
+    t) ptau_path="${OPTARG}" ;;
+    v) verbose=true ;;
+    w) verify_witness=true ;;
+    z) verify_zkey=true ;;
     Z)
-        ZKEY_HAS_CUSTOM_PATH=true
-        ZKEY_PATH="${OPTARG}"
+        zkey_has_custom_path=true
+        zkey_path="${OPTARG}"
         ;;
     *)
         print_usage
@@ -169,16 +171,16 @@ done
 
 ############################################
 
-if $VERBOSE; then
+if $verbose; then
     # print commands before executing
     set -x
 fi
 
 ############################################
 
-if $VERIFY_ZKEY; then
-    if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
-        echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
+if $verify_zkey; then
+    if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
+        echo "ERROR: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
         print_usage
         exit 1
         # elif
@@ -190,78 +192,78 @@ fi
 ############################################
 # Verify build directory exists.
 
-if [[ ! -d "$BUILD_DIR" ]]; then
-    echo "Build directory $BUILD_DIR does not exist"
+if [[ ! -d "$build_dir" ]]; then
+    echo "Build directory $build_dir does not exist"
     exit 1
 fi
 
 ############################################
 # Make sure proof directory exists.
 
-if [[ -z "$PROOF_DIR" ]]; then
-    echo "Proof directory not set, defaulting to build directory: $BUILD_DIR"
-    PROOF_DIR="$BUILD_DIR"
+if [[ -z "$proof_dir" ]]; then
+    echo "Proof directory not set, defaulting to build directory: $build_dir"
+    proof_dir="$build_dir"
 fi
 
-if [[ ! -d "$PROOF_DIR" ]]; then
-    echo "Creating proof directory $PROOF_DIR"
-    mkdir -p "$PROOF_DIR"
+if [[ ! -d "$proof_dir" ]]; then
+    echo "Creating proof directory $proof_dir"
+    mkdir -p "$proof_dir"
 fi
 
 ############################################
 # Verify custom zkey path.
 
-if $ZKEY_HAS_CUSTOM_PATH; then
-    if [[ -z $ZKEY_PATH ]]; then
-        echo "ERROR: Path to zkey not set, but -Z option was given."
+if $zkey_has_custom_path; then
+    if [[ -z $zkey_path ]]; then
+        echo "ERROR: Path to zkey not set, but '-Z' option was given."
         print_usage
         exit 1
     fi
 
-    if [[ "${ZKEY_PATH##*.}" != "zkey" ]] || [[ ! -f "$ZKEY_PATH" ]]; then
-        echo "ERROR: <zkey_path> '$ZKEY_PATH' does not point to an existing zkey file."
+    if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
+        echo "ERROR: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         print_usage
         exit 1
     fi
 else
-    ZKEY_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+    zkey_path="$build_dir"/"$circuit_name"_final.zkey
 fi
 
 ############################################
 # Setup for big circuits.
 
-if $BIG_CIRCUITS; then
-    if [[ -z $PATCHED_NODE_PATH ]]; then
-        echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
+if $big_circuits; then
+    if [[ -z $patched_node_path ]]; then
+        echo "ERROR: Path to patched node binary not set. This must be set if using '-b' (see '-n')."
         print_usage
         exit 1
     fi
 
-    PATCHED_NODE_FILE=$(basename $PATCHED_NODE_PATH)
-    if [[ ! -f "$PATCHED_NODE_PATH" ]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
-        echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
+    patched_node_file=$(basename $patched_node_path)
+    if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
+        echo "ERROR: $patched_node_path must point to a file with name 'node'"
         exit 1
     fi
 
-    if [[ -z "$RAPIDSNARK_PATH" ]]; then
+    if [[ -z "$rapidsnark_path" ]]; then
         echo "ERROR: Path to rapidsnark binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
-    RAPIDSNARK_FILE=$(basename "$RAPIDSNARK_PATH")
-    if [[ ! -f "$RAPIDSNARK_PATH" ]] || [[ $RAPIDSNARK_FILE != "prover" ]]; then
-        echo "ERROR: $RAPIDSNARK_PATH must point to a file with name 'prover'"
+    rapidsnark_file=$(basename "$rapidsnark_path")
+    if [[ ! -f "$rapidsnark_path" ]] || [[ $rapidsnark_file != "prover" ]]; then
+        echo "ERROR: $rapidsnark_path must point to a file with name 'prover'"
         exit 1
     fi
 
-    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME"
+    expected_wtns_gen_path="$build_dir"/"$circuit_name"_cpp/"$circuit_name"
 else
-    EXPECTED_WTNS_GEN_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js
+    expected_wtns_gen_path="$build_dir"/"$circuit_name"_js/generate_witness.js
 fi
 
-if [[ ! -f "$EXPECTED_WTNS_GEN_PATH" ]]; then
-    echo "ERROR: The witness generation code does not exist at the expected path $EXPECTED_WTNS_GEN_PATH"
+if [[ ! -f "$expected_wtns_gen_path" ]]; then
+    echo "ERROR: The witness generation code does not exist at the expected path $expected_wtns_gen_path"
     exit 1
 fi
 
@@ -283,16 +285,16 @@ ERR_MSG="UNKNOWN"
 # e.g. layer_three_1_proof.zkey
 
 MSG="VERIFYING FINAL ZKEY"
-if $VERIFY_ZKEY; then
-    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$ZKEY_PATH"
+if $verify_zkey; then
+    execute npx snarkjs zkey verify "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$zkey_path"
 fi
 
-if $BIG_CIRCUITS; then
+if $big_circuits; then
     MSG="GENERATING WITNESS USING C++ CODE"
-    execute "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp/"$CIRCUIT_NAME" "$SIGNALS_PATH" "$PROOF_DIR"/witness.wtns
+    execute "$build_dir"/"$circuit_name"_cpp/"$circuit_name" "$signals_path" "$proof_dir"/witness.wtns
 else
     MSG="GENERATING WITNESS USING WASM CODE"
-    execute npx node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm "$SIGNALS_PATH" "$PROOF_DIR"/witness.wtns
+    execute npx node "$build_dir"/"$circuit_name"_js/generate_witness.js "$build_dir"/"$circuit_name"_js/"$circuit_name".wasm "$signals_path" "$proof_dir"/witness.wtns
 fi
 
 if $QUICK; then
@@ -301,19 +303,19 @@ if $QUICK; then
 fi
 
 MSG="VERIFYING WITNESS"
-if $VERIFY_WITNESS; then
-    execute snarkjs wtns check "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PROOF_DIR"/witness.wtns
+if $verify_witness; then
+    execute snarkjs wtns check "$build_dir"/"$circuit_name".r1cs "$proof_dir"/witness.wtns
 fi
 
-if $BIG_CIRCUITS; then
+if $big_circuits; then
     MSG="GENERATING PROOF USING RAPIDSNARK"
-    execute "$RAPIDSNARK_PATH" "$ZKEY_PATH" "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
+    execute "$rapidsnark_path" "$zkey_path" "$proof_dir"/witness.wtns "$proof_dir"/proof.json "$proof_dir"/public.json
 else
     MSG="GENERATING PROOF USING SNARKJS"
-    execute npx snarkjs groth16 prove "$ZKEY_PATH" "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
+    execute npx snarkjs groth16 prove "$zkey_path" "$proof_dir"/witness.wtns "$proof_dir"/proof.json "$proof_dir"/public.json
 fi
 
 MSG="VERIFYING PROOF"
-execute npx snarkjs groth16 verify "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json "$PROOF_DIR"/public.json "$PROOF_DIR"/proof.json
+execute npx snarkjs groth16 verify "$build_dir"/"$circuit_name"_vkey.json "$proof_dir"/public.json "$proof_dir"/proof.json
 
 printf "\n================ DONE G16 PROVE ================\n"

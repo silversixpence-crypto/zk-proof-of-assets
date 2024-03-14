@@ -30,6 +30,9 @@ if [[ ! -f "$SNARKJS_CLI" ]]; then
     exit 1
 fi
 
+# NOTE the script seems to work without these set.
+NODE_CLI_OPTIONS="--max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
+
 ############################################
 ################## SETUP ###################
 ############################################
@@ -98,20 +101,20 @@ fi
 ############################################
 # Required args.
 
-CIRCUIT_PATH="${@: -1}"
+circuit_path="${@: -1}"
 
-if [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
+if [[ ! -f "$circuit_path" ]]; then
+    echo "ERROR: <circuit_path> '$circuit_path' does not point to a file."
     print_usage
     exit 1
 fi
 
 # https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-CIRCUIT_FILE=$(basename $CIRCUIT_PATH)
-CIRCUIT_NAME="${CIRCUIT_FILE%.*}"
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
 
-if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
-    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
+if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
+    echo "ERROR: <circuit_path> '$circuit_path' does not point to an existing circom file."
     print_usage
     exit 1
 fi
@@ -119,34 +122,35 @@ fi
 ############################################
 # Parse flags & optional args.
 
-BEACON=false
-BIG_CIRCUITS=false
-BUILD_DIR="$PROJECT_ROOT_DIR"/build/
-COMPILE_FLAGS="--wasm"
-QUICK=false
-SKIP_ZKEY_GEN=false
-VERBOSE=false
+beacon=false
+big_circuits=false
+build_dir="$PROJECT_ROOT_DIR"/build/
+compile_flags="--wasm"
+patched_node_path=$PATCHED_NODE_PATH
+quick=false
+skip_zkey_gen=false
+verbose=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
 while getopts 'bB:hn:qr:t:vZ:' flag; do
     case "${flag}" in
     b)
-        BIG_CIRCUITS=true
-        COMPILE_FLAGS="--O1 --c"
+        big_circuits=true
+        compile_flags="--O1 --c"
         ;;
-    B) BUILD_DIR="${OPTARG}" ;;
+    B) build_dir="${OPTARG}" ;;
     h)
         print_usage
         exit 1
         ;;
-    n) PATCHED_NODE_PATH="${OPTARG}" ;;
-    q) QUICK=true ;;
-    r) BEACON=true ;;
-    t) PTAU_PATH="${OPTARG}" ;;
-    v) VERBOSE=true ;;
+    n) patched_node_path="${OPTARG}" ;;
+    q) quick=true ;;
+    r) beacon=true ;;
+    t) ptau_path="${OPTARG}" ;;
+    v) verbose=true ;;
     Z)
-        SKIP_ZKEY_GEN=true
-        ZKEY_PATH="${OPTARG}"
+        skip_zkey_gen=true
+        zkey_path="${OPTARG}"
         ;;
     *)
         print_usage
@@ -157,7 +161,7 @@ done
 
 ############################################
 
-if $VERBOSE; then
+if $verbose; then
     # print commands before executing
     set -x
 fi
@@ -165,24 +169,24 @@ fi
 ############################################
 # Make sure build directory exists.
 
-if [[ ! -d "$BUILD_DIR" ]]; then
-    echo "Creating build directory $BUILD_DIR"
-    mkdir -p "$BUILD_DIR"
+if [[ ! -d "$build_dir" ]]; then
+    echo "Creating build directory $build_dir"
+    mkdir -p "$build_dir"
 fi
 
 ############################################
 # Setup for big circuits.
 
-if $BIG_CIRCUITS; then
-    if [[ -z "$PATCHED_NODE_PATH" ]]; then
+if $big_circuits; then
+    if [[ -z "$patched_node_path" ]]; then
         echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
-    PATCHED_NODE_FILE=$(basename $PATCHED_NODE_PATH)
-    if [[ ! -f "$PATCHED_NODE_PATH" ]] || [[ $PATCHED_NODE_FILE != "node" ]]; then
-        echo "ERROR: $PATCHED_NODE_PATH must point to a file with name 'node'"
+    patched_node_file=$(basename $patched_node_path)
+    if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
+        echo "ERROR: $patched_node_path must point to a file with name 'node'"
         exit 1
     fi
 fi
@@ -190,21 +194,21 @@ fi
 ############################################
 # Verify any provided zkey.
 
-if $SKIP_ZKEY_GEN; then
-    if [[ -z "$ZKEY_PATH" ]]; then
+if $skip_zkey_gen; then
+    if [[ -z "$zkey_path" ]]; then
         echo "ERROR: Path to zkey not set, but -Z option was given."
         print_usage
         exit 1
     fi
 
-    if [[ "${ZKEY_PATH##*.}" != "zkey" ]] || [[ ! -f "$ZKEY_PATH" ]]; then
-        echo "ERROR: <zkey_path> '$ZKEY_PATH' does not point to an existing zkey file."
+    if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
+        echo "ERROR: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         print_usage
         exit 1
     fi
 else
-    if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
-        echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
+    if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
+        echo "ERROR: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
         print_usage
         exit 1
         # elif
@@ -214,12 +218,9 @@ else
 fi
 
 ############################################
-
 # Reset error message.
-ERR_MSG="UNKNOWN"
 
-# NOTE the script seems to work without these set.
-NODE_CLI_OPTIONS="--max-old-space-size=2048000 --initial-old-space-size=2048000 --no-global-gc-scheduling --no-incremental-marking --max-semi-space-size=1024 --initial-heap-size=2048000 --expose-gc"
+ERR_MSG="UNKNOWN"
 
 ############################################
 ################ COMMANDS ##################
@@ -232,53 +233,53 @@ MSG="COMPILING CIRCUIT"
 #
 # --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
 # the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
-execute circom "$CIRCUIT_PATH" --r1cs $COMPILE_FLAGS --sym --output "$BUILD_DIR" -l ./node_modules -l ./git_modules
+execute circom "$circuit_path" --r1cs $compile_flags --sym --output "$build_dir" -l ./node_modules -l ./git_modules
 
-if $BIG_CIRCUITS; then
+if $big_circuits; then
     MSG="COMPILING C++ WITNESS GENERATION CODE"
-    cd "$BUILD_DIR"/"$CIRCUIT_NAME"_cpp
+    cd "$build_dir"/"$circuit_name"_cpp
     execute make
     cd -
 fi
 
-if $QUICK; then
+if $quick; then
     printf "\n================ DONE, SKIPPING ZKEY & VKEY GENERATION ================"
     exit 0
 fi
 
-if ! $SKIP_ZKEY_GEN; then
-    if $BIG_CIRCUITS; then
+if ! $skip_zkey_gen; then
+    if $big_circuits; then
         MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
-        execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+        execute "$patched_node_path" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$build_dir"/"$circuit_name"_0.zkey
     else
         MSG="GENERATING ZKEY FOR CIRCUIT"
-        execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+        execute npx snarkjs groth16 setup "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$build_dir"/"$circuit_name"_0.zkey
     fi
 
     MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
-    if $BEACON; then
-        SUFFIX="1"
+    if $beacon; then
+        suffix="1"
     else
-        SUFFIX="final"
+        suffix="final"
     fi
     # TODO allow cli to give random text for entropy
-    execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey --name="First contributor" -e="random text for entropy"
+    execute npx snarkjs zkey contribute "$build_dir"/"$circuit_name"_0.zkey "$build_dir"/"$circuit_name"_"$suffix".zkey --name="First contributor" -e="random text for entropy"
 
     # TODO allow cli to give randomness
-    if $BEACON; then
+    if $beacon; then
         MSG="GENERATING FINAL ZKEY USING RANDOM BEACON"
         # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
-        execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+        execute npx snarkjs zkey beacon "$build_dir"/"$circuit_name"_"$suffix".zkey "$build_dir"/"$circuit_name"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
     fi
 
-    ZKEY_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+    zkey_path="$build_dir"/"$circuit_name"_final.zkey
 fi
 
 MSG="EXPORTING VKEY"
-if $BIG_CIRCUITS; then
-    execute "$PATCHED_NODE_PATH" "$SNARKJS_CLI" zkey export verificationkey "$ZKEY_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
+if $big_circuits; then
+    execute "$patched_node_path" "$SNARKJS_CLI" zkey export verificationkey "$zkey_path" "$build_dir"/"$circuit_name"_vkey.json
 else
-    execute npx snarkjs zkey export verificationkey "$ZKEY_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+    execute npx snarkjs zkey export verificationkey "$zkey_path" "$build_dir"/"$circuit_name"_vkey.json -v
 fi
 
 printf "\n================ DONE G16 SETUP ================\n"
