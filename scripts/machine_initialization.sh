@@ -309,6 +309,8 @@ if $REPO; then
     git submodule init
     git submodule update
 
+    # Workaround for a problem in the circom compiler
+    # https://github.com/iden3/circom/issues/230
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
 
