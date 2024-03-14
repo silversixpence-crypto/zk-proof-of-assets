@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO change variable names to lower case, keep constants upper
+
 # Get the path to the directory this script is in.
 G16_SETUP_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
@@ -57,6 +59,9 @@ OPTIONS:
     -n <PATH>        Path to the patched node binary (needed for '-b')
                      Can also be set with the env var PATCHED_NODE_PATH
 
+    -Z <PATH>        Path to an already-generated proving key (zkey)
+                     This will skip the lengthy zkey generation
+
 ARGS:
 
     <circuit_path>   Path to a the circom circuit to be compiled & have key generation done for
@@ -76,6 +81,7 @@ COMPILE_FLAGS="--wasm"
 BIG_CIRCUITS=false
 BEACON=false
 VERIFY_ZKEY=false
+SKIP_ZKEY_GEN=false
 VERBOSE=false
 QUICK=false
 
@@ -87,7 +93,7 @@ PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
 BUILD_DIR="$PROJECT_ROOT_DIR"/build/
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbrqzn:B:' flag; do
+while getopts 'vhbrqzZ:n:B:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
@@ -96,6 +102,10 @@ while getopts 'vhbrqzn:B:' flag; do
     q) QUICK=true ;;
     r) BEACON=true ;;
     z) VERIFY_ZKEY=true ;;
+    Z)
+        SKIP_ZKEY_GEN=true
+        ZKEY_PATH="${OPTARG}"
+        ;;
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
     B) BUILD_DIR="${OPTARG}" ;;
     v) VERBOSE=true ;;
@@ -110,6 +120,8 @@ while getopts 'vhbrqzn:B:' flag; do
     esac
 done
 
+############################################
+
 SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
 SNARKJS_FILE=$(basename $SNARKJS_CLI)
 if [[ ! -f "$SNARKJS_CLI" ]]; then
@@ -117,10 +129,14 @@ if [[ ! -f "$SNARKJS_CLI" ]]; then
     exit 1
 fi
 
+############################################
+
 if $VERBOSE; then
     # print commands before executing
     set -x
 fi
+
+############################################
 
 if [[ ! -f "$CIRCUIT_PATH" ]]; then
     echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
@@ -138,10 +154,14 @@ if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
     exit 1
 fi
 
+############################################
+
 if [[ ! -d "$BUILD_DIR" ]]; then
     echo "Creating build directory $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
 fi
+
+############################################
 
 if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
     echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file."
@@ -151,6 +171,8 @@ if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
     # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
     # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
 fi
+
+############################################
 
 if $BIG_CIRCUITS; then
     if [[ -z "$PATCHED_NODE_PATH" ]]; then
@@ -165,6 +187,24 @@ if $BIG_CIRCUITS; then
         exit 1
     fi
 fi
+
+############################################
+
+if $SKIP_ZKEY_GEN; then
+    if [[ -z "$ZKEY_PATH" ]]; then
+        echo "ERROR: Path to zkey not set, but -Z option was given."
+        print_usage
+        exit 1
+    fi
+
+    if [[ "${ZKEY_PATH##*.}" != "zkey" ]] || [[ ! -f "$ZKEY_PATH" ]]; then
+        echo "ERROR: <zkey_path> '$ZKEY_PATH' does not point to an existing zkey file."
+        print_usage
+        exit 1
+    fi
+fi
+
+############################################
 
 ERR_MSG="UNKNOWN"
 
@@ -196,40 +236,44 @@ if $QUICK; then
     exit 0
 fi
 
-if $BIG_CIRCUITS; then
-    MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
-    execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
-else
-    MSG="GENERATING ZKEY FOR CIRCUIT"
-    execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
-fi
+if $SKIP_ZKEY_GEN; then
+    if $BIG_CIRCUITS; then
+        MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
+        execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+    else
+        MSG="GENERATING ZKEY FOR CIRCUIT"
+        execute npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
+    fi
 
-MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
-if $BEACON; then
-    SUFFIX="1"
-else
-    SUFFIX="final"
-fi
-# TODO allow cli to give random text for entropy
-execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey --name="First contributor" -e="random text for entropy"
+    MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
+    if $BEACON; then
+        SUFFIX="1"
+    else
+        SUFFIX="final"
+    fi
+    # TODO allow cli to give random text for entropy
+    execute npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey --name="First contributor" -e="random text for entropy"
 
-# TODO allow cli to give randomness
-if $BEACON; then
-    MSG="GENERATING FINAL ZKEY USING RANDOM BEACON"
-    # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
-    execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+    # TODO allow cli to give randomness
+    if $BEACON; then
+        MSG="GENERATING FINAL ZKEY USING RANDOM BEACON"
+        # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
+        execute npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_"$SUFFIX".zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+    fi
+
+    ZKEY_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
 fi
 
 MSG="VERIFYING FINAL ZKEY"
 if $VERIFY_ZKEY; then
-    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$ZKEY_PATH"
 fi
 
 MSG="EXPORTING VKEY"
 if $BIG_CIRCUITS; then
-    execute "$PATCHED_NODE_PATH" "$SNARKJS_CLI" zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
+    execute "$PATCHED_NODE_PATH" "$SNARKJS_CLI" zkey export verificationkey "$ZKEY_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json
 else
-    execute npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
+    execute npx snarkjs zkey export verificationkey "$ZKEY_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_vkey.json -v
 fi
 
 printf "\n================ DONE G16 SETUP ================\n"

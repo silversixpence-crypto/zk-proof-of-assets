@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO change variable names to lower case, keep constants upper
+
 # This script does the following:
 # 1. Compile the circom circuit at $CIRCUITS_DIR/$CIRCUIT_NAME
 # 2. Generate the proving key for groth16 (.zkey)
@@ -69,6 +71,9 @@ OPTIONS:
     -r <PATH>        Path to the rapidsnark binary (needed for '-b')
                      Can also be set with the env var RAPIDSNARK_PATH
 
+    -Z <PATH>        Path to an already-generated proving key (zkey)
+                     This will skip the lengthy zkey generation
+
 ARGS:
 
     <circuit_path>   Path to a the circom circuit to generate a witness for
@@ -88,6 +93,7 @@ VERIFY_ZKEY=false
 VERIFY_WITNESS=false
 VERBOSE=false
 QUICK=false
+ZKEY_HAS_CUSTOM_PATH=false
 
 # https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
 CIRCUIT_PATH="${@:(-2):1}"
@@ -96,7 +102,7 @@ SIGNALS_PATH="${@: -1}"
 BUILD_DIR="$G16_PROVE_DIRECTORY"/../build
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbqwzn:r:B:p:' flag; do
+while getopts 'vhbqwzZ:n:r:B:p:' flag; do
     case "${flag}" in
     b)
         BIG_CIRCUITS=true
@@ -105,6 +111,10 @@ while getopts 'vhbqwzn:r:B:p:' flag; do
     q) QUICK=true ;;
     w) VERIFY_WITNESS=true ;;
     z) VERIFY_ZKEY=true ;;
+    Z)
+        ZKEY_HAS_CUSTOM_PATH=true
+        ZKEY_PATH="${OPTARG}"
+        ;;
     n) PATCHED_NODE_PATH="${OPTARG}" ;;
     r) RAPIDSNARK_PATH="${OPTARG}" ;;
     B) BUILD_DIR="${OPTARG}" ;;
@@ -126,6 +136,8 @@ if $VERBOSE; then
     set -x
 fi
 
+############################################
+
 if [[ ! -f "$CIRCUIT_PATH" ]]; then
     echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
     print_usage
@@ -142,10 +154,14 @@ if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
     exit 1
 fi
 
+############################################
+
 if [[ ! -d "$BUILD_DIR" ]]; then
     echo "Creating build directory $BUILD_DIR"
     mkdir -p "$BUILD_DIR"
 fi
+
+############################################
 
 if [[ -z "$PROOF_DIR" ]]; then
     echo "Proof directory not set, defaulting to build directory: $BUILD_DIR"
@@ -157,11 +173,33 @@ if [[ ! -d "$PROOF_DIR" ]]; then
     mkdir -p "$PROOF_DIR"
 fi
 
+############################################
+
 if [[ "${SIGNALS_PATH##*.}" != "json" ]] || [[ ! -f "$SIGNALS_PATH" ]]; then
     echo "ERROR: <signals_path> '$SIGNALS_PATH' does not point to an existing json file."
     print_usage
     exit 1
 fi
+
+############################################
+
+if $ZKEY_HAS_CUSTOM_PATH; then
+    if [[ -z $ZKEY_PATH ]]; then
+        echo "ERROR: Path to zkey not set, but -Z option was given."
+        print_usage
+        exit 1
+    fi
+
+    if [[ "${ZKEY_PATH##*.}" != "zkey" ]] || [[ ! -f "$ZKEY_PATH" ]]; then
+        echo "ERROR: <zkey_path> '$ZKEY_PATH' does not point to an existing zkey file."
+        print_usage
+        exit 1
+    fi
+else
+    ZKEY_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+fi
+
+############################################
 
 if $BIG_CIRCUITS; then
     if [[ -z $PATCHED_NODE_PATH ]]; then
@@ -198,6 +236,8 @@ if [[ ! -f "$EXPECTED_WTNS_GEN_PATH" ]]; then
     exit 1
 fi
 
+############################################
+
 ERR_MSG="UNKNOWN"
 
 ############################################
@@ -214,7 +254,7 @@ ERR_MSG="UNKNOWN"
 
 MSG="VERIFYING FINAL ZKEY"
 if $VERIFY_ZKEY; then
-    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
+    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$ZKEY_PATH"
 fi
 
 if $BIG_CIRCUITS; then
@@ -237,10 +277,10 @@ fi
 
 if $BIG_CIRCUITS; then
     MSG="GENERATING PROOF USING RAPIDSNARK"
-    execute "$RAPIDSNARK_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
+    execute "$RAPIDSNARK_PATH" "$ZKEY_PATH" "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
 else
     MSG="GENERATING PROOF USING SNARKJS"
-    execute npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
+    execute npx snarkjs groth16 prove "$ZKEY_PATH" "$PROOF_DIR"/witness.wtns "$PROOF_DIR"/proof.json "$PROOF_DIR"/public.json
 fi
 
 MSG="VERIFYING PROOF"
