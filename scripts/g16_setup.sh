@@ -2,6 +2,13 @@
 
 # TODO change variable names to lower case, keep constants upper
 
+############################################
+################### INIT ###################
+############################################
+
+############################################
+# Imports
+
 # Get the path to the directory this script is in.
 G16_SETUP_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
@@ -10,6 +17,18 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 # https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
 . "$G16_SETUP_DIRECTORY/lib/error_handling.sh"
 . "$G16_SETUP_DIRECTORY/lib/cmd_executor.sh"
+
+############################################
+# Constants.
+
+PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
+SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
+SNARKJS_FILE=$(basename $SNARKJS_CLI)
+
+if [[ ! -f "$SNARKJS_CLI" ]]; then
+    echo "ERROR: snarkjs not present in node_modules. Run 'pnpm i'."
+    exit 1
+fi
 
 ############################################
 ################## SETUP ###################
@@ -22,7 +41,7 @@ print_usage() {
 Groth16 setup for circom circuits.
 
 USAGE:
-    ./g16_setup.sh [FLAGS] [OPTIONS] <circuit_path> <ptau_file>
+    ./g16_setup.sh [FLAGS] [OPTIONS] <circuit_path>
 
 DESCRIPTION:
     This script does the following:
@@ -44,9 +63,6 @@ FLAGS:
 
     -r               Apply random beacon to get the final proving key (zkey)
 
-    -z               Verify the final proving key (zkey)
-                     WARN: this takes long for large circuits
-
     -v               Print commands that are run (set -x)
 
     -h               Help
@@ -59,15 +75,17 @@ OPTIONS:
     -n <PATH>        Path to the patched node binary (needed for '-b')
                      Can also be set with the env var PATCHED_NODE_PATH
 
+    -t <PATH>        Powers of tau (ptau) file path
+                     Can be downloaded from here: https://github.com/iden3/snarkjs#7-prepare-phase-2
+                     This is required unless you provide a pre-generated zkey (see '-Z')
+                     If '-t' & '-Z' are set then '-Z' is preferred
+
     -Z <PATH>        Path to an already-generated proving key (zkey)
                      This will skip the lengthy zkey generation
 
 ARGS:
 
     <circuit_path>   Path to a the circom circuit to be compiled & have key generation done for
-
-    <ptau_path>      Path to the powers of tau file.
-                     Can be downloaded from here: https://github.com/iden3/snarkjs#7-prepare-phase-2
 "
 }
 
@@ -77,66 +95,10 @@ if [ "$#" -lt 2 ]; then
     exit 1
 fi
 
-COMPILE_FLAGS="--wasm"
-BIG_CIRCUITS=false
-BEACON=false
-VERIFY_ZKEY=false
-SKIP_ZKEY_GEN=false
-VERBOSE=false
-QUICK=false
-
-# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
-CIRCUIT_PATH="${@:(-2):1}"
-PTAU_PATH="${@: -1}"
-
-PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
-BUILD_DIR="$PROJECT_ROOT_DIR"/build/
-
-# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'vhbrqzZ:n:B:' flag; do
-    case "${flag}" in
-    b)
-        BIG_CIRCUITS=true
-        COMPILE_FLAGS="--O1 --c"
-        ;;
-    q) QUICK=true ;;
-    r) BEACON=true ;;
-    z) VERIFY_ZKEY=true ;;
-    Z)
-        SKIP_ZKEY_GEN=true
-        ZKEY_PATH="${OPTARG}"
-        ;;
-    n) PATCHED_NODE_PATH="${OPTARG}" ;;
-    B) BUILD_DIR="${OPTARG}" ;;
-    v) VERBOSE=true ;;
-    h)
-        print_usage
-        exit 1
-        ;;
-    *)
-        print_usage
-        exit 1
-        ;;
-    esac
-done
-
 ############################################
+# Required args.
 
-SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
-SNARKJS_FILE=$(basename $SNARKJS_CLI)
-if [[ ! -f "$SNARKJS_CLI" ]]; then
-    echo "ERROR: snarkjs not present in node_modules. Run 'pnpm i'."
-    exit 1
-fi
-
-############################################
-
-if $VERBOSE; then
-    # print commands before executing
-    set -x
-fi
-
-############################################
+CIRCUIT_PATH="${@: -1}"
 
 if [[ ! -f "$CIRCUIT_PATH" ]]; then
     echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
@@ -155,6 +117,53 @@ if [[ "${CIRCUIT_PATH##*.}" != "circom" ]] || [[ ! -f "$CIRCUIT_PATH" ]]; then
 fi
 
 ############################################
+# Parse flags & optional args.
+
+BEACON=false
+BIG_CIRCUITS=false
+BUILD_DIR="$PROJECT_ROOT_DIR"/build/
+COMPILE_FLAGS="--wasm"
+QUICK=false
+SKIP_ZKEY_GEN=false
+VERBOSE=false
+
+# https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
+while getopts 'bB:hn:qr:t:vZ:' flag; do
+    case "${flag}" in
+    b)
+        BIG_CIRCUITS=true
+        COMPILE_FLAGS="--O1 --c"
+        ;;
+    B) BUILD_DIR="${OPTARG}" ;;
+    h)
+        print_usage
+        exit 1
+        ;;
+    n) PATCHED_NODE_PATH="${OPTARG}" ;;
+    q) QUICK=true ;;
+    r) BEACON=true ;;
+    t) PTAU_PATH="${OPTARG}" ;;
+    v) VERBOSE=true ;;
+    Z)
+        SKIP_ZKEY_GEN=true
+        ZKEY_PATH="${OPTARG}"
+        ;;
+    *)
+        print_usage
+        exit 1
+        ;;
+    esac
+done
+
+############################################
+
+if $VERBOSE; then
+    # print commands before executing
+    set -x
+fi
+
+############################################
+# Make sure build directory exists.
 
 if [[ ! -d "$BUILD_DIR" ]]; then
     echo "Creating build directory $BUILD_DIR"
@@ -162,17 +171,7 @@ if [[ ! -d "$BUILD_DIR" ]]; then
 fi
 
 ############################################
-
-if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
-    echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file."
-    print_usage
-    exit 1
-    # elif
-    # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
-    # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
-fi
-
-############################################
+# Setup for big circuits.
 
 if $BIG_CIRCUITS; then
     if [[ -z "$PATCHED_NODE_PATH" ]]; then
@@ -189,6 +188,7 @@ if $BIG_CIRCUITS; then
 fi
 
 ############################################
+# Verify any provided zkey.
 
 if $SKIP_ZKEY_GEN; then
     if [[ -z "$ZKEY_PATH" ]]; then
@@ -202,10 +202,20 @@ if $SKIP_ZKEY_GEN; then
         print_usage
         exit 1
     fi
+else
+    if [[ "${PTAU_PATH##*.}" != "ptau" ]] || [[ ! -f "$PTAU_PATH" ]]; then
+        echo "ERROR: <ptau_path> '$PTAU_PATH' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
+        print_usage
+        exit 1
+        # elif
+        # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
+        # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
+    fi
 fi
 
 ############################################
 
+# Reset error message.
 ERR_MSG="UNKNOWN"
 
 # NOTE the script seems to work without these set.
@@ -236,7 +246,7 @@ if $QUICK; then
     exit 0
 fi
 
-if $SKIP_ZKEY_GEN; then
+if ! $SKIP_ZKEY_GEN; then
     if $BIG_CIRCUITS; then
         MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
         execute "$PATCHED_NODE_PATH" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
@@ -262,11 +272,6 @@ if $SKIP_ZKEY_GEN; then
     fi
 
     ZKEY_PATH="$BUILD_DIR"/"$CIRCUIT_NAME"_final.zkey
-fi
-
-MSG="VERIFYING FINAL ZKEY"
-if $VERIFY_ZKEY; then
-    execute npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PTAU_PATH" "$ZKEY_PATH"
 fi
 
 MSG="EXPORTING VKEY"
