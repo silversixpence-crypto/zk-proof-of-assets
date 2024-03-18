@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-# TODO change variable names to lower case, keep constants upper
-
 ############################################
 ################### INIT ###################
 ############################################
