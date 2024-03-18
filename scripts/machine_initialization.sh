@@ -314,6 +314,12 @@ if $REPO; then
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
 
+    # Naming conflict resolution between ed25519-circom & circom-pairing
+    ED25519_CIRCOM_DIR="$REPO_DIR/git_modules/ed25519-circom"
+    cd "$ED25519_CIRCOM_DIR"
+    git apply ../../ed25519-circom.patch
+    cd -
+
     pip install -r requirements.txt
 fi
 
