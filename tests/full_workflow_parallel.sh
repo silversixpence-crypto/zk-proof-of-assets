@@ -55,6 +55,8 @@ TESTS="$THIS_DIR"/$IDENTIFIER
 
 LOGS="$TESTS"/logs
 
+BLINDING_FACTOR="4869643893319708471955165214975585939793846505679808910535986866633137979160"
+
 # ///////////////////////////////////////////////////////
 # Create directories.
 
@@ -221,9 +223,11 @@ seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS/layers_one_two_prove.log" 
 # Layer 3 prove.
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
-execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$L2_BUILD" --multiple-proofs --write-layer-three-data-to "$L3_SIGNALS"
+execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$L2_BUILD" --multiple-proofs --write-layer-three-data-to "$L3_SIGNALS" --blinding-factor $BLINDING_FACTOR
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
 "$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" $L3_ZKEY_ARG  "$L3_CIRCUIT" "$L3_SIGNALS"
+
+"$SCRIPTS"/pedersen_commitment_checker.ts --layer-three-public-inputs "$L3_BUILD"/public.json --blinding-factor $BLINDING_FACTOR
