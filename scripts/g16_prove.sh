@@ -302,11 +302,6 @@ else
     execute npx node "$build_dir"/"$circuit_name"_js/generate_witness.js "$build_dir"/"$circuit_name"_js/"$circuit_name".wasm "$signals_path" "$proof_dir"/witness.wtns
 fi
 
-if $QUICK; then
-    printf "\n================ DONE, SKIPPING PROOF GENERATION ================"
-    exit 0
-fi
-
 MSG="VERIFYING WITNESS"
 if $verify_witness; then
     execute snarkjs wtns check "$build_dir"/"$circuit_name".r1cs "$proof_dir"/witness.wtns
