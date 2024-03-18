@@ -42,7 +42,7 @@ component main = LayerOne(${num_sigs});
 
 include "../../circuits/layer_two.circom";
 
-component main {public [merkle_root]} = LayerTwo(${num_sigs}, {${merkle_tree_height}});
+component main {public [merkle_root]} = LayerTwo(${num_sigs}, ${merkle_tree_height});
 `,
 
     three: `pragma circom 2.1.7;
