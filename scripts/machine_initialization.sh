@@ -172,9 +172,10 @@ ERR_MSG="System config setup failed"
 # NOTE this may not work if you are using a Docker container, and will give message (exit code 0)
 # `sysctl: setting key "vm.max_map_count", ignoring: Read-only file system`
 # https://stackoverflow.com/questions/23537560/docker-build-read-only-file-system
-sudo sysctl -w vm.max_map_count=655300
+# 6553000 is enough for at least 256 signatures in layer 1 circuit
+sudo sysctl -w vm.max_map_count=6553000
 # TODO do not add this if it has already been added
-sudo sh -c 'echo "vm.max_map_count=655300" >>/etc/sysctl.conf'
+sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
 
 if $SWAP; then
     # Increase swap memory, and persist after reboot
@@ -308,6 +309,8 @@ if $REPO; then
     git submodule init
     git submodule update
 
+    # Workaround for a problem in the circom compiler
+    # https://github.com/iden3/circom/issues/230
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
 

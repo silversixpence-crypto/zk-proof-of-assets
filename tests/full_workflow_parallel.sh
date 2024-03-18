@@ -44,13 +44,16 @@ Initiating test with the following parameters:
 # ///////////////////////////////////////////////////////
 # Constants.
 
-SCRIPTS="$THIS_DIR"/../scripts
-BUILD="$THIS_DIR"/../build/tests/"$num_sigs"_sigs
-TESTS="$THIS_DIR"/"$num_sigs"_sigs
-LOGS="$TESTS"/logs
-POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
-MERKLE_ROOT="$THIS_DIR"/merkle_root.json
+IDENTIFIER="$num_sigs"_sigs_"$parallelism"_batches_"$merkle_tree_height"_height
+
+BUILD="$THIS_DIR"/../build/tests/$IDENTIFIER
 MERKLE_PROOFS="$THIS_DIR"/merkle_proofs.json
+MERKLE_ROOT="$THIS_DIR"/merkle_root.json
+POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
+SCRIPTS="$THIS_DIR"/../scripts
+TESTS="$THIS_DIR"/$IDENTIFIER
+
+LOGS="$TESTS"/logs
 
 # ///////////////////////////////////////////////////////
 # Create directories.
@@ -69,15 +72,27 @@ fi
 L1_BUILD="$BUILD"/layer_one
 L1_CIRCUIT="$TESTS"/layer_one.circom
 L1_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
+L1_EXISTING_ZKEY="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+if [[ -f "$L1_EXISTING_ZKEY" ]]; then
+    L1_ZKEY_ARG="-Z $L1_EXISTING_ZKEY"
+fi
 
 L2_BUILD="$BUILD"/layer_two
 L2_CIRCUIT="$TESTS"/layer_two.circom
 L2_PTAU="$THIS_DIR"/../powersOfTau28_hez_final_26.ptau
+L2_EXISTING_ZKEY="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+if [[ -f "$L2_EXISTING_ZKEY" ]]; then
+    L2_ZKEY_ARG="-Z $L2_EXISTING_ZKEY"
+fi
 
 L3_BUILD="$BUILD"/layer_three
 L3_CIRCUIT="$TESTS"/layer_three.circom
 L3_PTAU="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 L3_SIGNALS="$TESTS"/layer_three_input.json
+L3_EXISTING_ZKEY="$TESTS"/layer_three_"$parallelism"_batches.zkey
+if [[ -f "$L3_EXISTING_ZKEY" ]]; then
+    L3_ZKEY_ARG="-Z $L3_EXISTING_ZKEY"
+fi
 
 # ///////////////////////////////////////////////////////
 # Data generation
@@ -93,13 +108,14 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 
 # Run in parallel to the next commands, 'cause it takes long
 (
-    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" \
+    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
+        printf "\n================ $MSG ================ \n" &&
         execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
-        --anonymity-set "$THIS_DIR"/anonymity_set.json \
-        --poa-input-data "$POA_INPUT" \
-        --output-dir "$THIS_DIR" \
-        --height $merkle_tree_height \
-        >"$LOGS"/merkle_tree.log
+            --anonymity-set "$THIS_DIR"/anonymity_set.json \
+            --poa-input-data "$POA_INPUT" \
+            --output-dir "$THIS_DIR" \
+            --height $merkle_tree_height \
+            >"$LOGS"/merkle_tree.log
 ) &
 
 # ///////////////////////////////////////////////////////
@@ -107,21 +123,39 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 
 # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
 (
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT (SEE $LOGS/layer_one_setup.log) ================\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" "$L1_CIRCUIT" "$L1_PTAU" >"$LOGS"/layer_one_setup.log 2>&1
+    printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
+        "$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" -t "$L1_PTAU" $L1_ZKEY_ARG "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
 ) &
 
 (
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT (SEE $LOGS/layer_two_setup.log) ================\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" "$L2_CIRCUIT" "$L2_PTAU" >"$LOGS"/layer_two_setup.log 2>&1
+    printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
+        "$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" -t "$L2_PTAU" $L2_ZKEY_ARG "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
 ) &
 
 (
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT (SEE $LOGS/layer_three_setup.log) ================\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_PTAU" >"$LOGS"/layer_three_setup.log 2>&1
+    printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
+        "$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
 )
 
 wait
+
+# ///////////////////////////////////////////////////////
+# Move zkeys to test dir.
+
+l1_zkey_path="$L1_BUILD"/layer_one_final.zkey
+if [[ -f "$l1_zkey_path" ]]; then
+    mv "$l1_zkey_path" "$L1_EXISTING_ZKEY"
+fi
+
+l2_zkey_path="$L2_BUILD"/layer_two_final.zkey
+if [[ -f "$l2_zkey_path" ]]; then
+    mv "$l2_zkey_path" "$L2_EXISTING_ZKEY"
+fi
+
+l3_zkey_path="$L3_BUILD"/layer_three_final.zkey
+if [[ -f "$l3_zkey_path" ]]; then
+    mv "$l3_zkey_path" "$L3_EXISTING_ZKEY"
+fi
 
 # ///////////////////////////////////////////////////////
 # Layer 1 & 2 prove in parallel.
@@ -133,12 +167,20 @@ wait
 prove_layers_one_two() {
     i=$1
 
-    # TODO add some more identifying information to the filename, or batch dir name (like number of sigs)
+    . "$THIS_DIR/../scripts/lib/error_handling.sh"
+    . "$THIS_DIR/../scripts/lib/cmd_executor.sh"
+
     l1_signals_path="$TESTS"/layer_one_input_"$i".json
     l1_proof_dir="$L1_BUILD"/batch_"$i"
+    if [[ ! -d "$l1_proof_dir" ]]; then
+        mkdir -p "$l1_proof_dir"
+    fi
 
     l2_signals_path="$TESTS"/layer_two_input_"$i".json
     l2_proof_dir="$L2_BUILD"/batch_"$i"
+    if [[ ! -d "$l2_proof_dir" ]]; then
+        mkdir -p "$l2_proof_dir"
+    fi
 
     start_index=$((i * threshold))
     if [[ $i -eq $((parallelism - 1)) ]]; then
@@ -150,7 +192,7 @@ prove_layers_one_two() {
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH $i"
     execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$l1_signals_path" --account-start-index $start_index --account-end-index $end_index
 
-    "$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" -p "$l1_proof_dir" "$L1_CIRCUIT" "$l1_signals_path"
+    "$SCRIPTS"/g16_prove.sh -b -B "$L1_BUILD" -p "$l1_proof_dir" $L1_ZKEY_ARG "$L1_CIRCUIT" "$l1_signals_path"
 
     MSG="CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS BATCH $i"
     execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l1_proof_dir"
@@ -161,7 +203,7 @@ prove_layers_one_two() {
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
 
-    "$SCRIPTS"/g16_prove.sh -b -B "$L2_BUILD" -p "$l2_proof_dir" "$L2_CIRCUIT" "$l2_signals_path"
+    "$SCRIPTS"/g16_prove.sh -b -B "$L2_BUILD" -p "$l2_proof_dir" $L2_ZKEY_ARG "$L2_CIRCUIT" "$l2_signals_path"
 
     MSG="CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS"
     execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l2_proof_dir"
@@ -169,12 +211,11 @@ prove_layers_one_two() {
 
 # these need to be exported for the parallel command
 export -f prove_layers_one_two
-export -f execute
-export TESTS L1_BUILD L1_CIRCUIT L2_BUILD L2_CIRCUIT POA_INPUT SCRIPTS MERKLE_ROOT MERKLE_PROOFS
+export TESTS L1_BUILD L1_CIRCUIT L1_ZKEY_ARG L2_BUILD L2_CIRCUIT L2_ZKEY_ARG POA_INPUT SCRIPTS MERKLE_ROOT MERKLE_PROOFS THIS_DIR
 export threshold parallelism num_sigs
 
-printf "\n================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL (SEE $LOGS/layers_one_two_prove_\$i.log) ================\n"
-seq 0 $((parallelism - 1)) | parallel prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_{}.log '2>&1'
+printf "\n================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================\nSEE $LOGS/layers_one_two_prove_batch_\$i.log\n"
+seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS/layers_one_two_prove.log" prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_batch_{}.log '2>&1'
 
 # ///////////////////////////////////////////////////////
 # Layer 3 prove.
@@ -185,4 +226,4 @@ execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
-"$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" "$L3_CIRCUIT" "$L3_SIGNALS"
+"$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" $L3_ZKEY_ARG  "$L3_CIRCUIT" "$L3_SIGNALS"

@@ -57,7 +57,8 @@ while (i < known_key_pairs.length && i < num_addresses) {
 }
 
 if (num_addresses > i) {
-    for (let j = 0; j < random_address_set.length; j++) {
+    num_addresses = num_addresses - i;
+    for (let j = 0; j < num_addresses; j++) {
         let address: bigint = BigInt(random_address_set[j].address);
         let balance: bigint = BigInt(random_address_set[j].balance);
         addresses.push({ address, balance });
