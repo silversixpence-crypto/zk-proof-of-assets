@@ -180,6 +180,8 @@ for (let i = 0; i < 4; i++) {
 // Format scalars.
 
 export function format_scalar_power(k: bigint) {
+    // This LE is a bit misleading, see:
+    // https://github.com/silversixpence-crypto/zk-proof-of-assets/issues/38#issuecomment-1995667384
     const k_buf = bigIntToLEBuffer(k);
     const k_asBits = pad(buffer2bits(k_buf), 255);
 

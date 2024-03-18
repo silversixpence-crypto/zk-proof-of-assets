@@ -44,7 +44,6 @@ function constructInput(proofData: Groth16ProofAsInput[], balances: bigint[], me
         merkleRoot: merkleRoot,
         pedComGeneratorG: generator_g_formatted,
         pedComGeneratorH: generator_h_formatted,
-        // TODO this value needs to be given as input
         pedComBlindingFactor: format_scalar_power(blindingFactor),
     };
 
