@@ -172,9 +172,10 @@ ERR_MSG="System config setup failed"
 # NOTE this may not work if you are using a Docker container, and will give message (exit code 0)
 # `sysctl: setting key "vm.max_map_count", ignoring: Read-only file system`
 # https://stackoverflow.com/questions/23537560/docker-build-read-only-file-system
-sudo sysctl -w vm.max_map_count=655300
+# 6553000 is enough for at least 256 signatures in layer 1 circuit
+sudo sysctl -w vm.max_map_count=6553000
 # TODO do not add this if it has already been added
-sudo sh -c 'echo "vm.max_map_count=655300" >>/etc/sysctl.conf'
+sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
 
 if $SWAP; then
     # Increase swap memory, and persist after reboot
@@ -308,16 +309,30 @@ if $REPO; then
     git submodule init
     git submodule update
 
+    # Workaround for a problem in the circom compiler
+    # https://github.com/iden3/circom/issues/230
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
+
+    # Naming conflict resolution between ed25519-circom & circom-pairing
+    ED25519_CIRCOM_DIR="$REPO_DIR/git_modules/ed25519-circom"
+    cd "$ED25519_CIRCOM_DIR"
+    git apply "$REPO_DIR"/ed25519-circom.patch
+    cd -
 
     pip install -r requirements.txt
 fi
 
 # TODO instead of checking if the file exists rather check its checksum,
 # because the download might have only gotten partway
-if [[ ! -f "./powersOfTau28_hez_final_"$PTAU_SIZE".ptau" ]] && $PTAU; then
-    wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau -P "$HOME/zk-proof-of-assets"
+if $PTAU; then
+    if [[ $PTAU_SIZE -gt 27 ]]; then
+        ptau_url=https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final.ptau
+    else
+        ptau_url=https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
+    fi
+
+    wget "$ptau_url"
 fi
 
 # This is so that the user can set these env vars in their shell.

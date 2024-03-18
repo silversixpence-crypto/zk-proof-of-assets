@@ -10,3 +10,6 @@
 [submodule "git_modules/batch-ecdsa"]
 	path = git_modules/batch-ecdsa
 	url = https://github.com/puma314/batch-ecdsa
+[submodule "git_modules/ed25519-circom"]
+	path = git_modules/ed25519-circom
+	url = https://github.com/Electron-Labs/ed25519-circom
