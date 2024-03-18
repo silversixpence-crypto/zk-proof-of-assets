@@ -230,4 +230,4 @@ printf "\n================ $MSG ================\n"
 
 "$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" $L3_ZKEY_ARG  "$L3_CIRCUIT" "$L3_SIGNALS"
 
-"$SCRIPTS"/pedersen_commitment_checker.ts --layer-three-public-inputs "$L3_BUILD"/public.json --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS"/pedersen_commitment_checker.ts --layer-three-public-inputs "$L3_BUILD"/public.json --blinding-factor $BLINDING_FACTOR
