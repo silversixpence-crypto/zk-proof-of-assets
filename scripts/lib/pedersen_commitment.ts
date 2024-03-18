@@ -138,7 +138,7 @@ function dechunk(x: bigint[], mod = BigInt(2 ** 51)): bigint {
     return sum;
 }
 
-function point_equal(P: bigint[], Q: bigint[]): boolean {
+export function point_equal(P: bigint[], Q: bigint[]): boolean {
     //  x1 / z1 == x2 / z2  <==>  x1 * z2 == x2 * z1
     if (modulus((P[0] * Q[2] - Q[0] * P[2]), p) != 0n) {
         return false
@@ -147,7 +147,6 @@ function point_equal(P: bigint[], Q: bigint[]): boolean {
         return false
     }
     return true
-
 }
 
 function point_compress(P: bigint[]): bigint[] {
@@ -198,24 +197,41 @@ export function format_scalar_power(k: bigint) {
 ////////////////////////////////////////////////
 // Calculate Pedersen commitment.
 
-export function pedersen_commitment(secret: bigint, blinding_factor: bigint) {
+export function pedersen_commitment(secret: bigint, blinding_factor: bigint): bigint[] {
     const first = point_mul(secret, generator_g);
     for (let i = 0; i < 4; i++) {
         first[i] = modulus(first[i], p);
     }
-    console.log("g^q", first);
+    // console.log("g^q", first);
 
     const second = point_mul(blinding_factor, generator_h);
     for (let i = 0; i < 4; i++) {
         second[i] = modulus(second[i], p);
     }
-    console.log("h^r", second);
+    // console.log("h^r", second);
 
     const final = point_add(first, second);
     for (let i = 0; i < 4; i++) {
         final[i] = modulus(final[i], p);
     }
-    console.log("g^q * h^r", final);
+    // console.log("g^q * h^r", final);
 
     return final;
+}
+
+////////////////////////////////////////////////
+// Converting g16 signal data to an Edwards point.
+
+export function dechunk_to_point(g16_signal: bigint[]): bigint[] {
+    const chunks = [];
+    for (let i = 0; i < 4; i++) {
+        chunks.push(g16_signal.slice(3 * i, 3 * i + 3));
+    }
+
+    const dechunked = [];
+    for (let i = 0; i < 4; i++) {
+        dechunked.push(dechunk(chunks[i], BigInt(2 ** 85)));
+    }
+
+    return dechunked;
 }
