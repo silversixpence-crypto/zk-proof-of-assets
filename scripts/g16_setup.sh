@@ -21,12 +21,13 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 ############################################
 # Constants.
 
+ERR_PREFIX="G16 SETUP ERROR"
 PROJECT_ROOT_DIR="$G16_SETUP_DIRECTORY"/..
 SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
 SNARKJS_FILE=$(basename $SNARKJS_CLI)
 
 if [[ ! -f "$SNARKJS_CLI" ]]; then
-    echo "ERROR: snarkjs not present in node_modules. Run 'pnpm i'."
+    echo "$ERR_PREFIX: snarkjs not present in node_modules. Maybe run 'pnpm i'?."
     exit 1
 fi
 
@@ -93,7 +94,7 @@ ARGS:
 }
 
 if [ "$#" -lt 2 ]; then
-    echo "ERROR: Not enough arguments"
+    echo "$ERR_PREFIX: Not enough arguments"
     print_usage
     exit 1
 fi
@@ -104,8 +105,7 @@ fi
 circuit_path="${@: -1}"
 
 if [[ ! -f "$circuit_path" ]]; then
-    echo "ERROR: <circuit_path> '$circuit_path' does not point to a file."
-    print_usage
+    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
     exit 1
 fi
 
@@ -114,8 +114,7 @@ circuit_file=$(basename $circuit_path)
 circuit_name="${circuit_file%.*}"
 
 if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    echo "ERROR: <circuit_path> '$circuit_path' does not point to an existing circom file."
-    print_usage
+    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
     exit 1
 fi
 
@@ -179,14 +178,14 @@ fi
 
 if $big_circuits; then
     if [[ -z "$patched_node_path" ]]; then
-        echo "ERROR: Path to patched node binary not set. This must be set if using '-b'."
+        echo "$ERR_PREFIX: Path to patched node binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
     patched_node_file=$(basename $patched_node_path)
     if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
-        echo "ERROR: $patched_node_path must point to a file with name 'node'"
+        echo "$ERR_PREFIX: $patched_node_path must point to a file with name 'node'"
         exit 1
     fi
 fi
@@ -196,19 +195,18 @@ fi
 
 if $skip_zkey_gen; then
     if [[ -z "$zkey_path" ]]; then
-        echo "ERROR: Path to zkey not set, but -Z option was given."
+        echo "$ERR_PREFIX: Path to zkey not set, but -Z option was given."
         print_usage
         exit 1
     fi
 
     if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
-        echo "ERROR: <zkey_path> '$zkey_path' does not point to an existing zkey file."
-        print_usage
+        echo "$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         exit 1
     fi
 else
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
-        echo "ERROR: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
+        echo "$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
         print_usage
         exit 1
         # elif

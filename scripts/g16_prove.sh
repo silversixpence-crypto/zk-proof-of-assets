@@ -19,6 +19,11 @@ G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 . "$G16_PROVE_DIRECTORY/lib/cmd_executor.sh"
 
 ############################################
+# Constants.
+
+ERR_PREFIX="G16 PROVE ERROR"
+
+############################################
 ################## SETUP ###################
 ############################################
 
@@ -91,7 +96,7 @@ ARGS:
 }
 
 if [ "$#" -lt 2 ]; then
-    echo "ERROR: Not enough arguments"
+    echo "$ERR_PREFIX: Not enough arguments"
     print_usage
     exit 1
 fi
@@ -104,7 +109,7 @@ circuit_path="${@:(-2):1}"
 signals_path="${@: -1}"
 
 if [[ ! -f "$circuit_path" ]]; then
-    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
+    echo "$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
     print_usage
     exit 1
 fi
@@ -114,13 +119,13 @@ circuit_file=$(basename $circuit_path)
 circuit_name="${circuit_file%.*}"
 
 if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    echo "ERROR: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
+    echo "$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
     print_usage
     exit 1
 fi
 
 if [[ "${signals_path##*.}" != "json" ]] || [[ ! -f "$signals_path" ]]; then
-    echo "ERROR: <signals_path> '$signals_path' does not point to an existing json file."
+    echo "$ERR_PREFIX: <signals_path> '$signals_path' does not point to an existing json file."
     print_usage
     exit 1
 fi
@@ -180,7 +185,7 @@ fi
 
 if $verify_zkey; then
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
-        echo "ERROR: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
+        echo "$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
         print_usage
         exit 1
         # elif
@@ -215,13 +220,13 @@ fi
 
 if $zkey_has_custom_path; then
     if [[ -z $zkey_path ]]; then
-        echo "ERROR: Path to zkey not set, but '-Z' option was given."
+        echo "$ERR_PREFIX: Path to zkey not set, but '-Z' option was given."
         print_usage
         exit 1
     fi
 
     if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
-        echo "ERROR: <zkey_path> '$zkey_path' does not point to an existing zkey file."
+        echo "$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         print_usage
         exit 1
     fi
@@ -234,26 +239,26 @@ fi
 
 if $big_circuits; then
     if [[ -z $patched_node_path ]]; then
-        echo "ERROR: Path to patched node binary not set. This must be set if using '-b' (see '-n')."
+        echo "$ERR_PREFIX: Path to patched node binary not set. This must be set if using '-b' (see '-n')."
         print_usage
         exit 1
     fi
 
     patched_node_file=$(basename $patched_node_path)
     if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
-        echo "ERROR: $patched_node_path must point to a file with name 'node'"
+        echo "$ERR_PREFIX: $patched_node_path must point to a file with name 'node'"
         exit 1
     fi
 
     if [[ -z "$rapidsnark_path" ]]; then
-        echo "ERROR: Path to rapidsnark binary not set. This must be set if using '-b'."
+        echo "$ERR_PREFIX: Path to rapidsnark binary not set. This must be set if using '-b'."
         print_usage
         exit 1
     fi
 
     rapidsnark_file=$(basename "$rapidsnark_path")
     if [[ ! -f "$rapidsnark_path" ]] || [[ $rapidsnark_file != "prover" ]]; then
-        echo "ERROR: $rapidsnark_path must point to a file with name 'prover'"
+        echo "$ERR_PREFIX: $rapidsnark_path must point to a file with name 'prover'"
         exit 1
     fi
 
@@ -263,7 +268,7 @@ else
 fi
 
 if [[ ! -f "$expected_wtns_gen_path" ]]; then
-    echo "ERROR: The witness generation code does not exist at the expected path $expected_wtns_gen_path"
+    echo "$ERR_PREFIX: The witness generation code does not exist at the expected path $expected_wtns_gen_path"
     exit 1
 fi
 
