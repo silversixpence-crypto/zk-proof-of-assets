@@ -23,12 +23,12 @@ interface LayerThreeInputFileShape {
     // Public inputs for the layer 2s.
     // Note that the merkleRoot is not an array, because the values are the same for all layer 2s.
     balances: bigint[],
-    merkleRoot: bigint,
+    merkle_root: bigint,
 
     // Pedersen commitment values.
-    pedComGeneratorG: bigint[][],
-    pedComGeneratorH: bigint[][],
-    pedComBlindingFactor: bigint[],
+    ped_com_generator_g: bigint[][],
+    ped_com_generator_h: bigint[][],
+    ped_com_blinding_factor: bigint[],
 }
 
 function constructInput(proofData: Groth16ProofAsInput[], balances: bigint[], merkleRoot: bigint, blindingFactor: bigint): LayerThreeInputFileShape {
@@ -41,10 +41,10 @@ function constructInput(proofData: Groth16ProofAsInput[], balances: bigint[], me
         pb: [],
         pc: [],
         balances,
-        merkleRoot: merkleRoot,
-        pedComGeneratorG: generator_g_formatted,
-        pedComGeneratorH: generator_h_formatted,
-        pedComBlindingFactor: format_scalar_power(blindingFactor),
+        merkle_root: merkleRoot,
+        ped_com_generator_g: generator_g_formatted,
+        ped_com_generator_h: generator_h_formatted,
+        ped_com_blinding_factor: format_scalar_power(blindingFactor),
     };
 
     for (let i = 0; i < proofData.length; i++) {

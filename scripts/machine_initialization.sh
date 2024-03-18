@@ -314,13 +314,25 @@ if $REPO; then
     BATCH_ECDSA_DIR="$REPO_DIR/git_modules/batch-ecdsa"
     patch -u "$BATCH_ECDSA_DIR/circuits/batch_ecdsa.circom" -i ./batch-ecdsa.patch
 
+    # Naming conflict resolution between ed25519-circom & circom-pairing
+    ED25519_CIRCOM_DIR="$REPO_DIR/git_modules/ed25519-circom"
+    cd "$ED25519_CIRCOM_DIR"
+    git apply "$REPO_DIR"/ed25519-circom.patch
+    cd -
+
     pip install -r requirements.txt
 fi
 
 # TODO instead of checking if the file exists rather check its checksum,
 # because the download might have only gotten partway
-if [[ ! -f "./powersOfTau28_hez_final_"$PTAU_SIZE".ptau" ]] && $PTAU; then
-    wget https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau -P "$HOME/zk-proof-of-assets"
+if $PTAU; then
+    if [[ $PTAU_SIZE -gt 27 ]]; then
+        ptau_url=https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final.ptau
+    else
+        ptau_url=https://storage.googleapis.com/zkevm/ptau/powersOfTau28_hez_final_"$PTAU_SIZE".ptau
+    fi
+
+    wget "$ptau_url"
 fi
 
 # This is so that the user can set these env vars in their shell.
