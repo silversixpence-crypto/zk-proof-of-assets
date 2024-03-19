@@ -9,23 +9,18 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=6
+num_sigs=5770
 anon_set_size=10000
 merkle_tree_height=25
+ideal_num_sigs_per_batch=263
 
-threshold=2
-parallelism=$((num_sigs / threshold))
-remainder=0
+output=$(python "$THIS_DIR"/../scripts/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
+num_sigs_per_batch=$(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
+remainder=$(echo $output| grep -o -e "[0-9]*" | sed -n 2p)
 
-if [[ $((parallelism * threshold)) < $num_sigs ]]; then
-    remainder=$((num_sigs - parallelism * threshold))
+parallelism=$((num_sigs / num_sigs_per_batch))
+if [[ $remainder -gt 0 ]]; then
     parallelism=$((parallelism + 1))
-fi
-
-if [[ parallelism -eq 1 ]]; then
-    num_sigs_per_batch=$num_sigs
-else
-    num_sigs_per_batch=$threshold
 fi
 
 printf "
@@ -35,11 +30,14 @@ Initiating test with the following parameters:
 - Number of accounts/signatures:   $num_sigs
 - Anonymity set size:              $anon_set_size
 - Merkle tree height:              $merkle_tree_height
-- Parallelism:                     $parallelism
+- Number of batches:               $parallelism
 - Batch size:                      $num_sigs_per_batch
+- Final batch size:                $remainder
 
 /////////////////////////////////////////////////////////
 "
+
+exit 0
 
 # ///////////////////////////////////////////////////////
 # Constants.
