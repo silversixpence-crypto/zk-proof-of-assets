@@ -37,8 +37,6 @@ Initiating test with the following parameters:
 /////////////////////////////////////////////////////////
 "
 
-exit 0
-
 # ///////////////////////////////////////////////////////
 # Constants.
 
@@ -50,6 +48,7 @@ MERKLE_ROOT="$THIS_DIR"/merkle_root.json
 POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
 SCRIPTS="$THIS_DIR"/../scripts
 TESTS="$THIS_DIR"/$IDENTIFIER
+CIRCUITS="$THIS_DIR"/../circuits
 
 LOGS="$TESTS"/logs
 
@@ -97,8 +96,12 @@ fi
 # ///////////////////////////////////////////////////////
 # Data generation
 
+circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
+
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS"
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
+
+exit 0
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
