@@ -208,7 +208,7 @@ setup_layers() {
 }
 
 # these need to be exported for the parallel command
-export -f setup_layers build_dir ptau_path zkey_arg circuit_path
+export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
 export TESTS SCRIPTS LOGS naming_map
 export threshold parallelism num_sigs
 
