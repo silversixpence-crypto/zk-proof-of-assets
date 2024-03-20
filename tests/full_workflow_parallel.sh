@@ -96,12 +96,12 @@ fi
 naming_map=(zero one two three)
 
 parse_layer_name() {
-    declare -n parse_layer_name_RET=$2
+    declare -n ret=$2
 
     if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
-        parse_layer_name_RET=${naming_map[$1]}
+        ret=${naming_map[$1]}
     elif [[ $1 == one || $1 == two || $1 == three ]]; then
-        parse_layer_name_RET=$1
+        ret=$1
     else
         ERR_MSG="[likely a bug] Invalid layer selection: $1"
         exit 1
@@ -109,45 +109,51 @@ parse_layer_name() {
 }
 
 build_dir() {
-    declare -n build_dir_RET=$2
-    parse_layer_name $1 build_dir_NAME
-    build_dir_RET="$BUILD"/layer_"$build_dir_NAME"
+    declare -n ret=$2
+    local name
+    parse_layer_name $1 name
+    ret="$BUILD"/layer_"$name"
 }
 
 circuit_path() {
-    declare -n circuit_path_RET=$2
-    parse_layer_name $1 circuit_path_NAME
-    circuit_path_RET="$TESTS"/layer_"$circuit_path_NAME".circom
+    declare -n ret=$2
+    local name
+    parse_layer_name $1 name
+    ret="$TESTS"/layer_"$name".circom
 }
 
 ptau_path() {
-    declare -n ptau_path_RET=$2
-    parse_layer_name $1 ptau_path_NAME
-    ptau_path_RET="$THIS_DIR"/../powersOfTau28_hez_final.ptau
+    declare -n ret=$2
+    local name
+    parse_layer_name $1 name
+    ret="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
 signals_path() {
-    declare -n signals_path_RET=$2
-    parse_layer_name $1 signals_path_NAME
-    signals_path_RET="$TESTS"/layer_"$signals_path_NAME"_input.json
+    declare -n ret=$2
+    local name
+    parse_layer_name $1 name
+    ret="$TESTS"/layer_"$name"_input.json
 }
 
 exitsting_zkey_path() {
-    declare -n exitsting_zkey_path_RET=$2
+    declare -n ret=$2
+    local name
 
-    parse_layer_name $1 exitsting_zkey_path_NAME
+    parse_layer_name $1 name
 
     if [[ $1 == 1 ]]; then
-        exitsting_zkey_path_RET="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+        ret="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
     elif [[ $1 == 2 ]]; then
-        exitsting_zkey_path_RET="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+        ret="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
     else
-        exitsting_zkey_path_RET="$TESTS"/layer_three_"$parallelism"_batches.zkey
+        ret="$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
 }
 
 zkey_arg() {
-    declare -n zkey_arg_RET=$2
+    declare -n ret=$2
+    local zkey_path
 
     exitsting_zkey_path $1 zkey_path
 
@@ -157,7 +163,7 @@ zkey_arg() {
         zkey_arg=""
     fi
 
-    zkey_arg_RET="$zkey_arg"
+    ret="$zkey_arg"
 }
 
 # ///////////////////////////////////////////////////////
@@ -189,35 +195,21 @@ circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
 # ///////////////////////////////////////////////////////
 # G16 setup for all layers, in parallel.
 
-# TODO check number of sigs and only do the -b flag if there are more than 10M constraints
-# TODO STENT this should all be done with parallel cmd
-# (
-#     printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
-#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$(ptau_path 1)" $(zkey_arg 1) "$(circuit_path 1)" >"$LOGS"/layer_one_setup.log 2>&1
-# ) &
-
-# (
-#     printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
-#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$(ptau_path 2)" $(zkey_arg 2) "$(circuit_path 2)" >"$LOGS"/layer_two_setup.log 2>&1
-# ) &
-
-# (
-#     printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
-#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$(circuit_path 3)" >"$LOGS"/layer_three_setup.log 2>&1
-# )
-
 setup_layers() {
-    parse_layer_name $1 setup_layers_NAME
+    local name build circuit ptau zkey
 
-    printf "\n================ RUNNING G16 SETUP FOR LAYER $setup_layers_NAME CIRCUIT ================\n"
-    printf "SEE $LOGS/layer_${setup_layers_NAME}_setup.log\n"
+    parse_layer_name $1 name
 
-    build_dir $setup_layers_NAME _build
-    circuit_path $setup_layers_NAME _circuit
-    ptau_path $setup_layers_NAME _ptau
-    zkey_arg $setup_layers_NAME _zkey
+    printf "\n================ RUNNING G16 SETUP FOR LAYER $name CIRCUIT ================\n"
+    printf "SEE $LOGS/layer_${name}_setup.log\n"
 
-    "$SCRIPTS"/g16_setup.sh -b -B "$_build" -t "$_ptau" $_zkey "$_circuit"
+    build_dir $name build
+    circuit_path $name circuit
+    ptau_path $name ptau
+    zkey_arg $name zkey
+
+    # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
+    "$SCRIPTS"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
 }
 
 # these need to be exported for the parallel command
@@ -225,7 +217,10 @@ export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_nam
 export TESTS SCRIPTS LOGS BUILD THIS_DIR
 export threshold parallelism num_sigs naming_map
 
-parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three 
+# TODO logs & echo
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
+
+echo "_name $_name"
 
 #wait
 
