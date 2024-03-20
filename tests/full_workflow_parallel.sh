@@ -160,6 +160,8 @@ execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --me
 MSG="GENERATING ANONYMITY SET"
 execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
 
+set -x
+
 # Run in parallel to the next commands, 'cause it takes long
 (
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
@@ -179,17 +181,17 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 # TODO STENT this should all be done with parallel cmd
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$L1_PTAU" $L1_ZKEY_ARG "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$(ptau_path 1)" $(zkey_arg 1) "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
 ) &
 
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$L2_PTAU" $L2_ZKEY_ARG "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$(ptau_path 2)" $(zkey_arg 2) "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
 ) &
 
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
 )
 
 setup_layers() {
@@ -198,7 +200,7 @@ setup_layers() {
     printf "\n================ RUNNING G16 SETUP FOR LAYER $i CIRCUIT ================\n"
     printf "SEE $LOGS/layer_${naming_map[$i]}_setup.log\n"
 
-    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_"${naming_map[$i]}"_setup.log 2>&1
+    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$L3_CIRCUIT" >"$LOGS"/layer_"${naming_map[$i]}"_setup.log 2>&1
 }
 
 wait
