@@ -25,14 +25,24 @@ template LayerOne(num_sigs) {
     //////////////////////////////////////////////
     // Verify ECDSA signatures.
 
-    signal verification_result <==
-        BatchECDSAVerifyNoPubkeyCheck(
-           register_bit_length,
-           num_registers,
-           num_sigs
-        )(r, rprime, s, msghash, pubkey);
+    assert(num_sigs > 0);
 
-    verification_result === 1;
+    if (num_sigs == 1) {
+        signal verification_result <==
+            ECDSAVerifyNoPubkeyCheck(register_bit_length, num_registers)
+            (r[0], s[0], msghash[0], pubkey[0]);
+
+        verification_result === 1;
+    } else {
+        signal verification_result <==
+            BatchECDSAVerifyNoPubkeyCheck(
+               register_bit_length,
+               num_registers,
+               num_sigs
+            )(r, rprime, s, msghash, pubkey);
+
+        verification_result === 1;
+    }
 
     //////////////////////////////////////////////
     // Hash x-coords of pubkeys.

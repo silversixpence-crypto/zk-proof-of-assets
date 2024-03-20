@@ -202,7 +202,7 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
-    printf "\n================ $MSG ================\nSEE $LOGS/merkle_tree.log"
+    printf "\n================ $MSG ================\nSEE $LOGS/merkle_tree.log\n"
 
     execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
         --anonymity-set "$THIS_DIR"/anonymity_set.json \
