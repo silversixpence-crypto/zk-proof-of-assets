@@ -124,8 +124,8 @@ circuit_path() {
 
 ptau_path() {
     declare -n ret=$2
-    local name
-    parse_layer_name $1 name
+    local _name
+    parse_layer_name $1 _name
     ret="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
@@ -138,9 +138,9 @@ signals_path() {
 
 exitsting_zkey_path() {
     declare -n ret=$2
-    local name
+    local _name
 
-    parse_layer_name $1 name
+    parse_layer_name $1 _name
 
     if [[ $1 == 1 ]]; then
         ret="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
@@ -149,6 +149,16 @@ exitsting_zkey_path() {
     else
         ret="$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
+}
+
+generated_zkey_path() {
+    declare -n ret=$2
+    local name build
+
+    parse_layer_name $1 name
+    build_dir $1 build
+
+    ret="$build"/layer_"$name"_final.zkey
 }
 
 zkey_arg() {
@@ -182,28 +192,27 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
-    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
-        printf "\n================ $MSG ================ \n" &&
-        execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
-            --anonymity-set "$THIS_DIR"/anonymity_set.json \
-            --poa-input-data "$POA_INPUT" \
-            --output-dir "$THIS_DIR" \
-            --height $merkle_tree_height \
-            >"$LOGS"/merkle_tree.log
+    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
+    printf "\n================ $MSG ================\nSEE $LOGS/merkle_tree.log"
+
+    execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
+        --anonymity-set "$THIS_DIR"/anonymity_set.json \
+        --poa-input-data "$POA_INPUT" \
+        --output-dir "$THIS_DIR" \
+        --height $merkle_tree_height \
+        >"$LOGS"/merkle_tree.log
 }
 
 # ///////////////////////////////////////////////////////
 # G16 setup for all layers, in parallel.
 
 setup_layers() {
-    local name build circuit ptau zkey
+    local build circuit ptau zkey
 
-    parse_layer_name $1 name
-
-    build_dir $name build
-    circuit_path $name circuit
-    ptau_path $name ptau
-    zkey_arg $name zkey
+    build_dir $1 build
+    circuit_path $1 circuit
+    ptau_path $1 ptau
+    zkey_arg $1 zkey
 
     # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
     "$SCRIPTS"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
@@ -219,7 +228,9 @@ printf "
 SEE $LOGS/layer_\$layer_setup.log
 ================
 "
-generate_merkle_tree & \
+
+# TODO add remainder setups
+generate_merkle_tree &
 parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
 
 wait
@@ -229,20 +240,21 @@ exit 0
 # ///////////////////////////////////////////////////////
 # Move zkeys to test dir.
 
-l1_zkey_path="$L1_BUILD"/layer_one_final.zkey
-if [[ -f "$l1_zkey_path" ]]; then
-    mv "$l1_zkey_path" "$L1_EXISTING_ZKEY"
-fi
+move_zkey() {
+    local _name zkey_path_build zkey_path_save
 
-l2_zkey_path="$L2_BUILD"/layer_two_final.zkey
-if [[ -f "$l2_zkey_path" ]]; then
-    mv "$l2_zkey_path" "$L2_EXISTING_ZKEY"
-fi
+    parse_layer_name $1 _name
+    generated_zkey_path $1 zkey_path
+    exitsting_zkey_path $1 zkey_path_save
 
-l3_zkey_path="$L3_BUILD"/layer_three_final.zkey
-if [[ -f "$l3_zkey_path" ]]; then
-    mv "$l3_zkey_path" "$L3_EXISTING_ZKEY"
-fi
+    if [[ -f "$zkey_path" ]]; then
+        mv "$zkey_path" "$zkey_path_save"
+    fi
+}
+
+export -f move_zkey generated_zkey_path
+# TODO remainders
+parallel move_zkey ::: one two three
 
 # ///////////////////////////////////////////////////////
 # Layer 1 & 2 prove in parallel.
