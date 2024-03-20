@@ -12,6 +12,9 @@ import math
 
 
 def batch_size(num_sigs, ideal_batch_size):
+    if num_sigs < ideal_batch_size:
+        return num_sigs
+
     batch_size_diff_pos = math.ceil(ideal_batch_size - num_sigs / (math.floor(num_sigs / ideal_batch_size) + 1))
     batch_size_diff_neg = math.ceil(ideal_batch_size - num_sigs / math.floor(num_sigs / ideal_batch_size))
 
