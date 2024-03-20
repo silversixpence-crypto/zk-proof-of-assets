@@ -95,42 +95,46 @@ fi
 
 naming_map=(zero one two three)
 
-check_valid_layer() {
-    if ! [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
-        ERR_MSG="[likely a bug] Invalid layer selection: $1"
-        exit 1
+parse_layer_name() {
+    if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
+        return ${naming_map[$1]}
+    elif [[ $1 == one || $1 == two || $1 == three ]]; then
+        return $1
     fi
+
+    ERR_MSG="[likely a bug] Invalid layer selection: $1"
+    exit 1
 }
 
 build_dir() {
-    check_valid_layer $1
-    echo "$BUILD"/layer_"${naming_map[$1]}"
+    name=$(parse_layer_name $1)
+    return "$BUILD"/layer_"$name"
 }
 
 circuit_path() {
-    check_valid_layer $1
-    echo "$TESTS"/layer_"${naming_map[$1]}".circom
+    name=$(parse_layer_name $1)
+    return "$TESTS"/layer_"$name".circom
 }
 
 ptau_path() {
-    check_valid_layer $1
-    echo "$THIS_DIR"/../powersOfTau28_hez_final.ptau
+    name=$(parse_layer_name $1)
+    return "$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
 signals_path() {
-    check_valid_layer $1
-    echo "$TESTS"/layer_"${naming_map[$1]}"_input.json
+    name=$(parse_layer_name $1)
+    return "$TESTS"/layer_"$name"_input.json
 }
 
 exitsting_zkey_path() {
-    check_valid_layer $1
+    name=$(parse_layer_name $1)
 
     if [[ $1 == 1 ]]; then
-        echo "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+        return "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
     elif [[ $1 == 2 ]]; then
-        echo "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+        return "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
     else
-        echo "$TESTS"/layer_three_"$parallelism"_batches.zkey
+        return "$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
 }
 
@@ -195,10 +199,10 @@ set -x
 # )
 
 setup_layers() {
-    i=$1
+    name=$(parse_layer_name $1)
 
-    printf "\n================ RUNNING G16 SETUP FOR LAYER $i CIRCUIT ================\n"
-    printf "SEE $LOGS/layer_${naming_map[$i]}_setup.log\n"
+    printf "\n================ RUNNING G16 SETUP FOR LAYER $name CIRCUIT ================\n"
+    printf "SEE $LOGS/layer_${name}_setup.log\n"
 
     "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir $i)" -t "$(ptau_path $i)" $(zkey_arg $i) "$(circuit_path $i)"
 }
@@ -208,7 +212,7 @@ export -f setup_layers build_dir ptau_path zkey_arg circuit_path
 export TESTS SCRIPTS LOGS naming_map
 export threshold parallelism num_sigs
 
-parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: 1 2 3
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
 
 #wait
 
