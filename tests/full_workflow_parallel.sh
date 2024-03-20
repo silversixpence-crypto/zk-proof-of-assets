@@ -9,10 +9,10 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=2
+num_sigs=4
 anon_set_size=1000
 merkle_tree_height=14
-ideal_num_sigs_per_batch=263
+ideal_num_sigs_per_batch=2
 
 output=$(python "$THIS_DIR"/../scripts/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
 num_sigs_per_batch=$(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
@@ -42,12 +42,14 @@ Initiating test with the following parameters:
 
 IDENTIFIER="$num_sigs"_sigs_"$parallelism"_batches_"$merkle_tree_height"_height
 
+# TODO change names to contain path or dir
 BUILD="$THIS_DIR"/../build/tests/$IDENTIFIER
 MERKLE_PROOFS="$THIS_DIR"/merkle_proofs.json
 MERKLE_ROOT="$THIS_DIR"/merkle_root.json
 POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
 SCRIPTS="$THIS_DIR"/../scripts
 TESTS="$THIS_DIR"/$IDENTIFIER
+ZKEY_DIR="$THIS_DIR"/../zkeys
 CIRCUITS="$THIS_DIR"/../circuits
 
 LOGS="$TESTS"/logs
@@ -63,6 +65,10 @@ fi
 
 if [[ ! -d "$LOGS" ]]; then
     mkdir -p "$LOGS"
+fi
+
+if [[ ! -d "$ZKEY_DIR" ]]; then
+    mkdir -p "$ZKEY_DIR"
 fi
 
 # ///////////////////////////////////////////////////////
@@ -100,7 +106,7 @@ parse_layer_name() {
 
     if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
         ret=${naming_map[$1]}
-    elif [[ $1 == one || $1 == two || $1 == three ]]; then
+    elif [[ $1 == one || $1 == two || $1 == three || $1 == one_remainder || $1 == two_remainder ]]; then
         ret=$1
     else
         ERR_MSG="[likely a bug] Invalid layer selection: $1"
@@ -138,16 +144,19 @@ signals_path() {
 
 exitsting_zkey_path() {
     declare -n ret=$2
-    local _name
+    local name
 
-    parse_layer_name $1 _name
+    parse_layer_name $1 name
 
-    if [[ $1 == 1 ]]; then
-        ret="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
-    elif [[ $1 == 2 ]]; then
-        ret="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    if [[ $name == one || $name == one_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$num_sigs"_sigs.zkey
+    elif [[ $name == two || $name == two_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    elif [[ $name == three ]]; then
+        ret="$ZKEY_DIR"/layer_three_"$parallelism"_batches.zkey
     else
-        ret="$TESTS"/layer_three_"$parallelism"_batches.zkey
+        ERR_MSG="[likely a bug] Invalid layer selection for existing zkey path: $name"
+        exit 1
     fi
 }
 
@@ -218,6 +227,10 @@ setup_layers() {
     "$SCRIPTS"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
 }
 
+if [[ $remainder -gt 0 ]]; then
+    setup_remainder_inputs=one_remainder two_remainder
+fi
+
 # these need to be exported for the parallel command
 export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
 export TESTS SCRIPTS LOGS BUILD THIS_DIR
@@ -229,13 +242,10 @@ SEE $LOGS/layer_\$layer_setup.log
 ================
 "
 
-# TODO add remainder setups
 generate_merkle_tree &
-parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
 
 wait
-
-exit 0
 
 # ///////////////////////////////////////////////////////
 # Move zkeys to test dir.
@@ -253,8 +263,9 @@ move_zkey() {
 }
 
 export -f move_zkey generated_zkey_path
-# TODO remainders
-parallel move_zkey ::: one two three
+parallel move_zkey ::: one two three $setup_remainder_inputs
+
+exit 0
 
 # ///////////////////////////////////////////////////////
 # Layer 1 & 2 prove in parallel.
