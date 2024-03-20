@@ -42,29 +42,27 @@ Initiating test with the following parameters:
 
 IDENTIFIER="$num_sigs"_sigs_"$parallelism"_batches_"$merkle_tree_height"_height
 
-# TODO change names to contain path or dir
-BUILD="$THIS_DIR"/../build/tests/$IDENTIFIER
-MERKLE_PROOFS="$THIS_DIR"/merkle_proofs.json
-MERKLE_ROOT="$THIS_DIR"/merkle_root.json
-POA_INPUT="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
-SCRIPTS="$THIS_DIR"/../scripts
-TESTS="$THIS_DIR"/$IDENTIFIER
+BUILD_DIR="$THIS_DIR"/../build/tests/$IDENTIFIER
+CIRCUITS_DIR="$THIS_DIR"/../circuits
+LOGS_DIR="$TESTS_DIR"/logs
+MERKLE_PROOFS_PATH="$THIS_DIR"/merkle_proofs.json
+MERKLE_ROOT_PATH="$THIS_DIR"/merkle_root.json
+POA_INPUT_PATH="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
+SCRIPTS_DIR="$THIS_DIR"/../scripts
+TESTS_DIR="$THIS_DIR"/$IDENTIFIER
 ZKEY_DIR="$THIS_DIR"/../zkeys
-CIRCUITS="$THIS_DIR"/../circuits
-
-LOGS="$TESTS"/logs
 
 BLINDING_FACTOR="4869643893319708471955165214975585939793846505679808910535986866633137979160"
 
 # ///////////////////////////////////////////////////////
 # Create directories.
 
-if [[ ! -d "$TESTS" ]]; then
-    mkdir -p "$TESTS"
+if [[ ! -d "$TESTS_DIR" ]]; then
+    mkdir -p "$TESTS_DIR"
 fi
 
-if [[ ! -d "$LOGS" ]]; then
-    mkdir -p "$LOGS"
+if [[ ! -d "$LOGS_DIR" ]]; then
+    mkdir -p "$LOGS_DIR"
 fi
 
 if [[ ! -d "$ZKEY_DIR" ]]; then
@@ -93,14 +91,14 @@ build_dir() {
     declare -n ret=$2
     local name
     parse_layer_name $1 name
-    ret="$BUILD"/layer_"$name"
+    ret="$BUILD_DIR"/layer_"$name"
 }
 
 circuit_path() {
     declare -n ret=$2
     local name
     parse_layer_name $1 name
-    ret="$TESTS"/layer_"$name".circom
+    ret="$TESTS_DIR"/layer_"$name".circom
 }
 
 ptau_path() {
@@ -114,7 +112,7 @@ signals_path() {
     declare -n ret=$2
     local name
     parse_layer_name $1 name
-    ret="$TESTS"/layer_"$name"_input.json
+    ret="$TESTS_DIR"/layer_"$name"_input.json
 }
 
 exitsting_zkey_path() {
@@ -163,10 +161,10 @@ zkey_arg() {
 # ///////////////////////////////////////////////////////
 # Data generation
 
-circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
+circuits_relative_path=$(realpath --relative-to="$TESTS_DIR" "$CIRCUITS_DIR")
 
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS_DIR" --circuits-library-relative-path "$circuits_relative_path"
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
@@ -177,14 +175,14 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
-    printf "\n================ $MSG ================\nSEE $LOGS/merkle_tree.log\n"
+    printf "\n================ $MSG ================\nSEE $LOGS_DIR/merkle_tree.log\n"
 
-    execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
+    execute npx ts-node "$SCRIPTS_DIR"/merkle_tree.ts \
         --anonymity-set "$THIS_DIR"/anonymity_set.json \
-        --poa-input-data "$POA_INPUT" \
+        --poa-input-data "$POA_INPUT_PATH" \
         --output-dir "$THIS_DIR" \
         --height $merkle_tree_height \
-        >"$LOGS"/merkle_tree.log
+        >"$LOGS_DIR"/merkle_tree.log
 }
 
 # ///////////////////////////////////////////////////////
@@ -199,7 +197,7 @@ setup_layers() {
     zkey_arg $1 zkey
 
     # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
-    "$SCRIPTS"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
+    "$SCRIPTS_DIR"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
 }
 
 if [[ $remainder -gt 0 ]]; then
@@ -208,17 +206,17 @@ fi
 
 # these need to be exported for the parallel command
 export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
-export TESTS SCRIPTS LOGS BUILD THIS_DIR
+export TESTS_DIR SCRIPTS_DIR LOGS_DIR BUILD_DIR THIS_DIR
 export threshold parallelism num_sigs naming_map
 
 printf "
 ================ RUNNING G16 SETUP FOR ALL LAYERS ================
-SEE $LOGS/layer_\$layer_setup.log
+SEE $LOGS_DIR/layer_\$layer_setup.log
 ================
 "
 
 generate_merkle_tree &
-parallel --joblog "$LOGS/setup_layers.log" setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
+parallel --joblog "$LOGS_DIR/setup_layers.log" setup_layers {} '>' "$LOGS_DIR"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
 
 wait
 
@@ -278,10 +276,10 @@ prove_layers_one_two() {
     fi
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH $i"
-    execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
+    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT_PATH" --write-layer-one-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
 
-    "$SCRIPTS"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
-    "$SCRIPTS"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
 
     # Setup layer 2 path variables.
     build_dir 2 build
@@ -295,33 +293,33 @@ prove_layers_one_two() {
     fi
 
     MSG="CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS BATCH $i"
-    execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l1_proof_dir"
+    execute python "$SCRIPTS_DIR"/sanitize_groth16_proof.py "$l1_proof_dir"
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH $i"
-    execute npx ts-node "$SCRIPTS"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --merkle-proofs "$MERKLE_PROOFS" --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json --write-layer-two-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
+    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_two.ts --poa-input-data "$POA_INPUT_PATH" --merkle-root "$MERKLE_ROOT_PATH" --merkle-proofs "$MERKLE_PROOFS_PATH" --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json --write-layer-two-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
 
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
 
-    "$SCRIPTS"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" $zkey "$circuit" "$signals"
-    "$SCRIPTS"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" $zkey "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
 
     MSG="CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS"
-    execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l2_proof_dir"
+    execute python "$SCRIPTS_DIR"/sanitize_groth16_proof.py "$l2_proof_dir"
 }
 
 # these need to be exported for the parallel command
 export -f prove_layers_one_two
-export POA_INPUT MERKLE_ROOT MERKLE_PROOFS
+export POA_INPUT_PATH MERKLE_ROOT_PATH MERKLE_PROOFS_PATH
 
 printf "
 ================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================
-SEE $LOGS/layers_one_two_prove_batch_\$i.log
-OR $LOGS/layers_one_two_prove.log
+SEE $LOGS_DIR/layers_one_two_prove_batch_\$i.log
+OR $LOGS_DIR/layers_one_two_prove.log
 ================
 "
 
-seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS/layers_one_two_prove.log" prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_batch_{}.log '2>&1'
+seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS_DIR/layers_one_two_prove.log" prove_layers_one_two {} '>' "$LOGS_DIR"/layers_one_two_prove_batch_{}.log '2>&1'
 
 # ///////////////////////////////////////////////////////
 # Layer 3 prove.
@@ -333,14 +331,14 @@ circuit_path 3 circuit
 zkey_arg 3 zkey
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
-execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT" --merkle-root "$MERKLE_ROOT" --layer-two-sanitized-proof "$build" --multiple-proofs --write-layer-three-data-to "$signals" --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT_PATH" --merkle-root "$MERKLE_ROOT_PATH" --layer-two-sanitized-proof "$build" --multiple-proofs --write-layer-three-data-to "$signals" --blinding-factor $BLINDING_FACTOR
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
-"$SCRIPTS"/g16_prove.sh -b -B "$build" $zkey "$circuit" "$signals"
+"$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" $zkey "$circuit" "$signals"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
-execute npx ts-node "$SCRIPTS"/pedersen_commitment_checker.ts --layer-three-public-inputs "$build"/public.json --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts --layer-three-public-inputs "$build"/public.json --blinding-factor $BLINDING_FACTOR
 
 echo "SUCCESS"
