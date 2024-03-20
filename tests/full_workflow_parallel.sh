@@ -228,7 +228,7 @@ setup_layers() {
 }
 
 if [[ $remainder -gt 0 ]]; then
-    setup_remainder_inputs=one_remainder two_remainder
+    setup_remainder_inputs="one_remainder two_remainder"
 fi
 
 # these need to be exported for the parallel command
