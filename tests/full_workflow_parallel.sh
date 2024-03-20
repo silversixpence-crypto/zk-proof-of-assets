@@ -171,26 +171,26 @@ zkey_arg() {
 
 circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
 
-# MSG="GENERATING TEST CIRCUITS"
-# execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
+MSG="GENERATING TEST CIRCUITS"
+execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
 
-# MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
-# execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
+MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
+execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
 
-# MSG="GENERATING ANONYMITY SET"
-# execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
+MSG="GENERATING ANONYMITY SET"
+execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
 
-# # Run in parallel to the next commands, 'cause it takes long
-# (
-#     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
-#         printf "\n================ $MSG ================ \n" &&
-#         execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
-#             --anonymity-set "$THIS_DIR"/anonymity_set.json \
-#             --poa-input-data "$POA_INPUT" \
-#             --output-dir "$THIS_DIR" \
-#             --height $merkle_tree_height \
-#             >"$LOGS"/merkle_tree.log
-# ) #&
+# Run in parallel to the next commands, 'cause it takes long
+generate_merkle_tree() {
+    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
+        printf "\n================ $MSG ================ \n" &&
+        execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
+            --anonymity-set "$THIS_DIR"/anonymity_set.json \
+            --poa-input-data "$POA_INPUT" \
+            --output-dir "$THIS_DIR" \
+            --height $merkle_tree_height \
+            >"$LOGS"/merkle_tree.log
+}
 
 # ///////////////////////////////////////////////////////
 # G16 setup for all layers, in parallel.
@@ -199,9 +199,6 @@ setup_layers() {
     local name build circuit ptau zkey
 
     parse_layer_name $1 name
-
-    printf "\n================ RUNNING G16 SETUP FOR LAYER $name CIRCUIT ================\n"
-    printf "SEE $LOGS/layer_${name}_setup.log\n"
 
     build_dir $name build
     circuit_path $name circuit
@@ -217,12 +214,15 @@ export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_nam
 export TESTS SCRIPTS LOGS BUILD THIS_DIR
 export threshold parallelism num_sigs naming_map
 
-# TODO logs & echo
-parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
+printf "
+================ RUNNING G16 SETUP FOR ALL LAYERS ================
+SEE $LOGS/layer_\$layer_setup.log
+================
+"
+generate_merkle_tree & \
+parallel setup_layers {} '>' "$LOGS"/layer_${naming_map[{}]}_setup.log '2>&1' ::: 1 2 3
 
-echo "_name $_name"
-
-#wait
+wait
 
 exit 0
 
