@@ -27,7 +27,7 @@ SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
 SNARKJS_FILE=$(basename $SNARKJS_CLI)
 
 if [[ ! -f "$SNARKJS_CLI" ]]; then
-    echo "$ERR_PREFIX: snarkjs not present in node_modules. Maybe run 'pnpm i'?."
+    ERR_MSG="$ERR_PREFIX: snarkjs not present in node_modules. Maybe run 'pnpm i'?."
     exit 1
 fi
 
@@ -94,8 +94,7 @@ ARGS:
 }
 
 if [ "$#" -lt 2 ]; then
-    echo "$ERR_PREFIX: Not enough arguments"
-    print_usage
+    ERR_MSG="$ERR_PREFIX: Not enough arguments"
     exit 1
 fi
 
@@ -105,7 +104,7 @@ fi
 circuit_path="${@: -1}"
 
 if [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
     exit 1
 fi
 
@@ -114,7 +113,7 @@ circuit_file=$(basename $circuit_path)
 circuit_name="${circuit_file%.*}"
 
 if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
     exit 1
 fi
 
@@ -177,7 +176,7 @@ fi
 # Setup for big circuits.
 
 if $big_circuits; then
-    verify_patched_node_path $patched_node_path $ERR_PREFIX
+    verify_patched_node_path "$patched_node_path" "$ERR_PREFIX"
 fi
 
 ############################################
@@ -185,19 +184,17 @@ fi
 
 if $skip_zkey_gen; then
     if [[ -z "$zkey_path" ]]; then
-        echo "$ERR_PREFIX: Path to zkey not set, but -Z option was given."
-        print_usage
+        ERR_MSG="$ERR_PREFIX: Path to zkey not set, but -Z option was given."
         exit 1
     fi
 
     if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
-        echo "$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
+        ERR_MSG="$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         exit 1
     fi
 else
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
-        echo "$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
-        print_usage
+        ERR_MSG="$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
         exit 1
         # elif
         # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
@@ -260,7 +257,7 @@ if ! $skip_zkey_gen; then
         execute npx snarkjs zkey beacon "$build_dir"/"$circuit_name"_"$suffix".zkey "$build_dir"/"$circuit_name"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
     fi
 
-    zkey_path="$build_dir"/"$circuit_name"_final.zkey
+    set_default_zkey_path_final "$build_dir" "$circuit_name" zkey_path
 else
     printf "\n================ SKIPPING ZKEY GENERATION, USING EXISTING ZKEY $zkey_path ================"
 fi
