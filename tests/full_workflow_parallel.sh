@@ -9,7 +9,7 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=4
+num_sigs=3
 anon_set_size=1000
 merkle_tree_height=14
 ideal_num_sigs_per_batch=2
