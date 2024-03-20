@@ -15,8 +15,8 @@ merkle_tree_height=14
 ideal_num_sigs_per_batch=2
 
 output=$(python "$THIS_DIR"/../scripts/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
-num_sigs_per_batch=$(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
-remainder=$(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
+num_sigs_per_batch=2 # $(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
+remainder=1 # $(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
 
 parallelism=$((num_sigs / num_sigs_per_batch))
 if [[ $remainder -gt 0 ]]; then
