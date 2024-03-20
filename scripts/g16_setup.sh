@@ -13,8 +13,10 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 
 # Inspiration taken from
 # https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
+
 . "$G16_SETUP_DIRECTORY/lib/error_handling.sh"
 . "$G16_SETUP_DIRECTORY/lib/cmd_executor.sh"
+. "$G16_SETUP_DIRECTORY/lib/g16_utils.sh"
 
 ############################################
 # Constants.
@@ -175,17 +177,7 @@ fi
 # Setup for big circuits.
 
 if $big_circuits; then
-    if [[ -z "$patched_node_path" ]]; then
-        echo "$ERR_PREFIX: Path to patched node binary not set. This must be set if using '-b'."
-        print_usage
-        exit 1
-    fi
-
-    patched_node_file=$(basename $patched_node_path)
-    if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
-        echo "$ERR_PREFIX: $patched_node_path must point to a file with name 'node'"
-        exit 1
-    fi
+    verify_patched_node_path $patched_node_path $ERR_PREFIX
 fi
 
 ############################################
@@ -239,7 +231,7 @@ if $big_circuits; then
 fi
 
 if $quick; then
-    printf "\n================ DONE, SKIPPING ZKEY & VKEY GENERATION ================"
+    printf "\n================ SKIPPING ZKEY & VKEY GENERATION DUE TO SHORT-CIRCUIT FLAG -q ================"
     exit 0
 fi
 
@@ -269,6 +261,8 @@ if ! $skip_zkey_gen; then
     fi
 
     zkey_path="$build_dir"/"$circuit_name"_final.zkey
+else
+    printf "\n================ SKIPPING ZKEY GENERATION, USING EXISTING ZKEY $zkey_path ================"
 fi
 
 MSG="EXPORTING VKEY"
