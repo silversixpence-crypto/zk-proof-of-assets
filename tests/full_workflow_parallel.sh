@@ -160,8 +160,6 @@ execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --me
 MSG="GENERATING ANONYMITY SET"
 execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
 
-set -x
-
 # Run in parallel to the next commands, 'cause it takes long
 (
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
@@ -172,27 +170,29 @@ set -x
             --output-dir "$THIS_DIR" \
             --height $merkle_tree_height \
             >"$LOGS"/merkle_tree.log
-) &
+) #&
+
+set -x
 
 # ///////////////////////////////////////////////////////
 # G16 setup for all layers, in parallel.
 
 # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
 # TODO STENT this should all be done with parallel cmd
-(
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$(ptau_path 1)" $(zkey_arg 1) "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
-) &
+# (
+#     printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
+#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$(ptau_path 1)" $(zkey_arg 1) "$(circuit_path 1)" >"$LOGS"/layer_one_setup.log 2>&1
+# ) &
 
-(
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$(ptau_path 2)" $(zkey_arg 2) "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
-) &
+# (
+#     printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
+#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$(ptau_path 2)" $(zkey_arg 2) "$(circuit_path 2)" >"$LOGS"/layer_two_setup.log 2>&1
+# ) &
 
-(
-    printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
-)
+# (
+#     printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
+#         "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$(circuit_path 3)" >"$LOGS"/layer_three_setup.log 2>&1
+# )
 
 setup_layers() {
     i=$1
@@ -200,10 +200,17 @@ setup_layers() {
     printf "\n================ RUNNING G16 SETUP FOR LAYER $i CIRCUIT ================\n"
     printf "SEE $LOGS/layer_${naming_map[$i]}_setup.log\n"
 
-    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$(ptau_path 3)" $(zkey_arg 3) "$L3_CIRCUIT" >"$LOGS"/layer_"${naming_map[$i]}"_setup.log 2>&1
+    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir $i)" -t "$(ptau_path $i)" $(zkey_arg $i) "$(circuit_path $i)"
 }
 
-wait
+# these need to be exported for the parallel command
+export -f setup_layers build_dir ptau_path zkey_arg circuit_path
+export TESTS SCRIPTS LOGS naming_map
+export threshold parallelism num_sigs
+
+parallel setup_layers {} '>' "$LOGS"/layer_"${naming_map[{}]}"_setup.log 2>&1 '2>&1' ::: 1 2 3
+
+#wait
 
 exit 0
 
@@ -282,7 +289,13 @@ export -f prove_layers_one_two
 export TESTS L1_BUILD L1_CIRCUIT L1_ZKEY_ARG L2_BUILD L2_CIRCUIT L2_ZKEY_ARG POA_INPUT SCRIPTS MERKLE_ROOT MERKLE_PROOFS THIS_DIR
 export threshold parallelism num_sigs
 
-printf "\n================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================\nSEE $LOGS/layers_one_two_prove_batch_\$i.log\n"
+printf "
+================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================
+SEE $LOGS/layers_one_two_prove_batch_\$i.log
+OR $LOGS/layers_one_two_prove.log
+================ 
+"
+
 seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS/layers_one_two_prove.log" prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_batch_{}.log '2>&1'
 
 # ///////////////////////////////////////////////////////
