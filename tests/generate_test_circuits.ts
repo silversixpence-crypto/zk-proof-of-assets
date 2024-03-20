@@ -48,25 +48,11 @@ include "${circuitsLib}/layer_one.circom";
 component main = LayerOne(${numSigs});
 `,
 
-    one_remainder: `pragma circom 2.1.7;
-
-include "${circuitsLib}/layer_one.circom";
-
-component main = LayerOne(${numSigsRemainder});
-`,
-
     two: `pragma circom 2.1.7;
 
 include "${circuitsLib}/layer_two.circom";
 
 component main {public [merkle_root]} = LayerTwo(${numSigs}, ${merkleTreeHeight});
-`,
-
-    two_remainder: `pragma circom 2.1.7;
-
-include "${circuitsLib}/layer_two.circom";
-
-component main {public [merkle_root]} = LayerTwo(${numSigsRemainder}, ${merkleTreeHeight});
 `,
 
     three: `pragma circom 2.1.7;
@@ -75,6 +61,29 @@ include "${circuitsLib}/layer_three.circom";
 
 component main = LayerThree(${parallelism});
 `};
+
+if (numSigsRemainder > 0) {
+    let remainder_circuits = {
+        one_remainder: `pragma circom 2.1.7;
+
+include "${circuitsLib}/layer_one.circom";
+
+component main = LayerOne(${numSigsRemainder});
+`,
+
+        two_remainder: `pragma circom 2.1.7;
+
+include "${circuitsLib}/layer_two.circom";
+
+component main {public [merkle_root]} = LayerTwo(${numSigsRemainder}, ${merkleTreeHeight});
+`,
+    }
+
+    circuits = {
+        ...circuits,
+        ...remainder_circuits,
+    }
+}
 
 for (const [name, code] of Object.entries(circuits)) {
     let filepath = path.join(circuitsDir, "layer_" + name + ".circom");
