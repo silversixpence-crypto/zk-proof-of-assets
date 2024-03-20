@@ -96,10 +96,12 @@ fi
 naming_map=(zero one two three)
 
 parse_layer_name() {
+    declare -n RET_parse_layer_name=$2
+
     if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
-        echo ${naming_map[$1]}
+        RET_parse_layer_name=${naming_map[$1]}
     elif [[ $1 == one || $1 == two || $1 == three ]]; then
-        echo $1
+        RET_parse_layer_name=$1
     else
         ERR_MSG="[likely a bug] Invalid layer selection: $1"
         exit 1
@@ -107,39 +109,47 @@ parse_layer_name() {
 }
 
 build_dir() {
-    name=$(parse_layer_name $1)
-    echo "$BUILD"/layer_"$name"
+    declare -n RET_build_dir=$2
+    parse_layer_name $1 name
+    RET_build_dir="$BUILD"/layer_"$name"
 }
 
 circuit_path() {
-    name=$(parse_layer_name $1)
-    echo "$TESTS"/layer_"$name".circom
+    declare -n RET_circuit_path=$2
+    parse_layer_name $1 name
+    RET_circuit_path="$TESTS"/layer_"$name".circom
 }
 
 ptau_path() {
-    name=$(parse_layer_name $1)
-    echo "$THIS_DIR"/../powersOfTau28_hez_final.ptau
+    declare -n RET_ptau_path=$2
+    parse_layer_name $1 name
+    RET_ptau_path="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
 signals_path() {
-    name=$(parse_layer_name $1)
-    echo "$TESTS"/layer_"$name"_input.json
+    declare -n RET_signals_path=$2
+    parse_layer_name $1 name
+    RET_signals_path="$TESTS"/layer_"$name"_input.json
 }
 
 exitsting_zkey_path() {
-    name=$(parse_layer_name $1)
+    declare -n RET_exitsting_zkey_path=$2
+
+    parse_layer_name $1 name
 
     if [[ $1 == 1 ]]; then
-        echo "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+        RET_exitsting_zkey_path="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
     elif [[ $1 == 2 ]]; then
-        echo "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+        RET_exitsting_zkey_path="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
     else
-        echo "$TESTS"/layer_three_"$parallelism"_batches.zkey
+        RET_exitsting_zkey_path="$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
 }
 
 zkey_arg() {
-    zkey_path=$(exitsting_zkey_path $1)
+    declare -n RET_zkey_arg=$2
+
+    exitsting_zkey_path $1 zkey_path
 
     if [[ -f "$zkey_path" ]]; then
         zkey_arg="-Z $zkey_path"
@@ -147,7 +157,7 @@ zkey_arg() {
         zkey_arg=""
     fi
 
-    echo "$zkey_arg"
+    RET_zkey_arg="$zkey_arg"
 }
 
 # ///////////////////////////////////////////////////////
@@ -155,28 +165,26 @@ zkey_arg() {
 
 circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
 
-MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
+# MSG="GENERATING TEST CIRCUITS"
+# execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
 
-MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
-execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
+# MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
+# execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
 
-MSG="GENERATING ANONYMITY SET"
-execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
+# MSG="GENERATING ANONYMITY SET"
+# execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
 
-# Run in parallel to the next commands, 'cause it takes long
-(
-    MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
-        printf "\n================ $MSG ================ \n" &&
-        execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
-            --anonymity-set "$THIS_DIR"/anonymity_set.json \
-            --poa-input-data "$POA_INPUT" \
-            --output-dir "$THIS_DIR" \
-            --height $merkle_tree_height \
-            >"$LOGS"/merkle_tree.log
-) #&
-
-set -x
+# # Run in parallel to the next commands, 'cause it takes long
+# (
+#     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES (SEE $LOGS/merkle_tree.log)" &&
+#         printf "\n================ $MSG ================ \n" &&
+#         execute npx ts-node "$SCRIPTS"/merkle_tree.ts \
+#             --anonymity-set "$THIS_DIR"/anonymity_set.json \
+#             --poa-input-data "$POA_INPUT" \
+#             --output-dir "$THIS_DIR" \
+#             --height $merkle_tree_height \
+#             >"$LOGS"/merkle_tree.log
+# ) #&
 
 # ///////////////////////////////////////////////////////
 # G16 setup for all layers, in parallel.
@@ -199,20 +207,26 @@ set -x
 # )
 
 setup_layers() {
-    name=$(parse_layer_name $1)
+    parse_layer_name $1 name
 
     printf "\n================ RUNNING G16 SETUP FOR LAYER $name CIRCUIT ================\n"
     printf "SEE $LOGS/layer_${name}_setup.log\n"
 
-    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir $i)" -t "$(ptau_path $i)" $(zkey_arg $i) "$(circuit_path $i)"
+    build_dir $name _build
+    circuit_path $name _circuit
+    ptau_path $name _ptau
+    zkey_arg $name _zkey
+
+    "$SCRIPTS"/g16_setup.sh -b -B "$_build" -t "$_ptau" $_zkey "$_circuit"
 }
 
 # these need to be exported for the parallel command
 export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
-export TESTS SCRIPTS LOGS naming_map
-export threshold parallelism num_sigs
+export TESTS SCRIPTS LOGS BUILD THIS_DIR
+export threshold parallelism num_sigs naming_map
 
-parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
+parallel setup_layers {} ::: one two three
+         #'>' "$LOGS"/layer_{}_setup.log '2>&1' \
 
 #wait
 
