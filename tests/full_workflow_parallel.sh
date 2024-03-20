@@ -9,14 +9,14 @@ THIS_DIR="$(dirname "$THIS_FILE_PATH")"
 # ///////////////////////////////////////////////////////
 # Variables.
 
-num_sigs=5770
-anon_set_size=10000
-merkle_tree_height=25
+num_sigs=2
+anon_set_size=1000
+merkle_tree_height=14
 ideal_num_sigs_per_batch=263
 
 output=$(python "$THIS_DIR"/../scripts/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
 num_sigs_per_batch=$(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
-remainder=$(echo $output| grep -o -e "[0-9]*" | sed -n 2p)
+remainder=$(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
 
 parallelism=$((num_sigs / num_sigs_per_batch))
 if [[ $remainder -gt 0 ]]; then
@@ -32,7 +32,7 @@ Initiating test with the following parameters:
 - Merkle tree height:              $merkle_tree_height
 - Number of batches:               $parallelism
 - Batch size:                      $num_sigs_per_batch
-- Final batch size:                $remainder
+- Remainder batch size:            $remainder
 
 /////////////////////////////////////////////////////////
 "
@@ -93,6 +93,59 @@ if [[ -f "$L3_EXISTING_ZKEY" ]]; then
     L3_ZKEY_ARG="-Z $L3_EXISTING_ZKEY"
 fi
 
+naming_map=(zero one two three)
+
+check_valid_layer() {
+    if ! [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
+        ERR_MSG="[likely a bug] Invalid layer selection: $1"
+        exit 1
+    fi
+}
+
+build_dir() {
+    check_valid_layer $1
+    echo "$BUILD"/layer_"${naming_map[$1]}"
+}
+
+circuit_path() {
+    check_valid_layer $1
+    echo "$TESTS"/layer_"${naming_map[$1]}".circom
+}
+
+ptau_path() {
+    check_valid_layer $1
+    echo "$THIS_DIR"/../powersOfTau28_hez_final.ptau
+}
+
+signals_path() {
+    check_valid_layer $1
+    echo "$TESTS"/layer_"${naming_map[$1]}"_input.json
+}
+
+exitsting_zkey_path() {
+    check_valid_layer $1
+
+    if [[ $1 == 1 ]]; then
+        echo "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+    elif [[ $1 == 2 ]]; then
+        echo "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    else
+        echo "$TESTS"/layer_three_"$parallelism"_batches.zkey
+    fi
+}
+
+zkey_arg() {
+    zkey_path=$(exitsting_zkey_path $1)
+
+    if [[ -f "$zkey_path" ]]; then
+        zkey_arg="-Z $zkey_path"
+    else
+        zkey_arg=""
+    fi
+
+    echo "$zkey_arg"
+}
+
 # ///////////////////////////////////////////////////////
 # Data generation
 
@@ -100,8 +153,6 @@ circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
 
 MSG="GENERATING TEST CIRCUITS"
 execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS" --circuits-library-relative-path "$circuits_relative_path"
-
-exit 0
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
@@ -125,22 +176,34 @@ execute npx ts-node "$THIS_DIR"/generate_anon_set.ts --num-addresses $anon_set_s
 # G16 setup for all layers, in parallel.
 
 # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
+# TODO STENT this should all be done with parallel cmd
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 1 CIRCUIT ================\nSEE $LOGS/layer_one_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L1_BUILD" -t "$L1_PTAU" $L1_ZKEY_ARG "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 1)" -t "$L1_PTAU" $L1_ZKEY_ARG "$L1_CIRCUIT" >"$LOGS"/layer_one_setup.log 2>&1
 ) &
 
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 2 CIRCUIT ================\nSEE $LOGS/layer_two_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L2_BUILD" -t "$L2_PTAU" $L2_ZKEY_ARG "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 2)" -t "$L2_PTAU" $L2_ZKEY_ARG "$L2_CIRCUIT" >"$LOGS"/layer_two_setup.log 2>&1
 ) &
 
 (
     printf "\n================ RUNNING G16 SETUP FOR LAYER 3 CIRCUIT ================\nSEE $LOGS/layer_three_setup.log\n" &&
-        "$SCRIPTS"/g16_setup.sh -b -B "$L3_BUILD" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
+        "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_three_setup.log 2>&1
 )
 
+setup_layers() {
+    i=$1
+
+    printf "\n================ RUNNING G16 SETUP FOR LAYER $i CIRCUIT ================\n"
+    printf "SEE $LOGS/layer_${naming_map[$i]}_setup.log\n"
+
+    "$SCRIPTS"/g16_setup.sh -b -B "$(build_dir 3)" -t "$L3_PTAU" $L3_ZKEY_ARG "$L3_CIRCUIT" >"$LOGS"/layer_"${naming_map[$i]}"_setup.log 2>&1
+}
+
 wait
+
+exit 0
 
 # ///////////////////////////////////////////////////////
 # Move zkeys to test dir.
@@ -229,7 +292,7 @@ execute npx ts-node "$SCRIPTS"/input_prep_for_layer_three.ts --poa-input-data "$
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
-"$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" $L3_ZKEY_ARG  "$L3_CIRCUIT" "$L3_SIGNALS"
+"$SCRIPTS"/g16_prove.sh -b -B "$L3_BUILD" $L3_ZKEY_ARG "$L3_CIRCUIT" "$L3_SIGNALS"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS"/pedersen_commitment_checker.ts --layer-three-public-inputs "$L3_BUILD"/public.json --blinding-factor $BLINDING_FACTOR
