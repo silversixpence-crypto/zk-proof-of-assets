@@ -220,7 +220,7 @@ SEE $LOGS/layer_\$layer_setup.log
 ================
 "
 generate_merkle_tree & \
-parallel setup_layers {} '>' "$LOGS"/layer_${naming_map[{}]}_setup.log '2>&1' ::: 1 2 3
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three
 
 wait
 
