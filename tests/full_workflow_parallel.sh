@@ -208,7 +208,7 @@ export -f setup_layers build_dir ptau_path zkey_arg circuit_path
 export TESTS SCRIPTS LOGS naming_map
 export threshold parallelism num_sigs
 
-parallel setup_layers {} '>' "$LOGS"/layer_"${naming_map[{}]}"_setup.log 2>&1 '2>&1' ::: 1 2 3
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: 1 2 3
 
 #wait
 
@@ -293,7 +293,7 @@ printf "
 ================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================
 SEE $LOGS/layers_one_two_prove_batch_\$i.log
 OR $LOGS/layers_one_two_prove.log
-================ 
+================
 "
 
 seq 0 $((parallelism - 1)) | parallel --joblog "$LOGS/layers_one_two_prove.log" prove_layers_one_two {} '>' "$LOGS"/layers_one_two_prove_batch_{}.log '2>&1'
