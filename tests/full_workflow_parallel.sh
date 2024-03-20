@@ -281,6 +281,7 @@ prove_layers_one_two() {
     execute npx ts-node "$SCRIPTS"/input_prep_for_layer_one.ts --poa-input-data "$POA_INPUT" --write-layer-one-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
 
     "$SCRIPTS"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
+    "$SCRIPTS"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
 
     # Setup layer 2 path variables.
     build_dir 2 build
@@ -303,6 +304,7 @@ prove_layers_one_two() {
     printf "\n================ $MSG ================\n"
 
     "$SCRIPTS"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" $zkey "$circuit" "$signals"
+    "$SCRIPTS"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
 
     MSG="CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS"
     execute python "$SCRIPTS"/sanitize_groth16_proof.py "$l2_proof_dir"
