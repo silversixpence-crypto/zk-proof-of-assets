@@ -25,6 +25,10 @@ template LayerOne(num_sigs) {
     //////////////////////////////////////////////
     // Verify ECDSA signatures.
 
+    // Note that there is no need to verify the pubkey because in
+    // layer 2 it is converted to an Ethereum address, so if the
+    // pubkey is invalid then so is the address.
+
     assert(num_sigs > 0);
 
     if (num_sigs == 1) {
@@ -57,6 +61,4 @@ template LayerOne(num_sigs) {
     }
 
     signal output pubkey_x_coord_hash <== hasher.out;
-
-    // TODO need to verify the pubkeys are valid
 }
