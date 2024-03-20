@@ -96,12 +96,12 @@ fi
 naming_map=(zero one two three)
 
 parse_layer_name() {
-    declare -n RET_parse_layer_name=$2
+    declare -n parse_layer_name_RET=$2
 
     if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
-        RET_parse_layer_name=${naming_map[$1]}
+        parse_layer_name_RET=${naming_map[$1]}
     elif [[ $1 == one || $1 == two || $1 == three ]]; then
-        RET_parse_layer_name=$1
+        parse_layer_name_RET=$1
     else
         ERR_MSG="[likely a bug] Invalid layer selection: $1"
         exit 1
@@ -109,45 +109,45 @@ parse_layer_name() {
 }
 
 build_dir() {
-    declare -n RET_build_dir=$2
-    parse_layer_name $1 name
-    RET_build_dir="$BUILD"/layer_"$name"
+    declare -n build_dir_RET=$2
+    parse_layer_name $1 build_dir_NAME
+    build_dir_RET="$BUILD"/layer_"$build_dir_NAME"
 }
 
 circuit_path() {
-    declare -n RET_circuit_path=$2
-    parse_layer_name $1 name
-    RET_circuit_path="$TESTS"/layer_"$name".circom
+    declare -n circuit_path_RET=$2
+    parse_layer_name $1 circuit_path_NAME
+    circuit_path_RET="$TESTS"/layer_"$circuit_path_NAME".circom
 }
 
 ptau_path() {
-    declare -n RET_ptau_path=$2
-    parse_layer_name $1 name
-    RET_ptau_path="$THIS_DIR"/../powersOfTau28_hez_final.ptau
+    declare -n ptau_path_RET=$2
+    parse_layer_name $1 ptau_path_NAME
+    ptau_path_RET="$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
 signals_path() {
-    declare -n RET_signals_path=$2
-    parse_layer_name $1 name
-    RET_signals_path="$TESTS"/layer_"$name"_input.json
+    declare -n signals_path_RET=$2
+    parse_layer_name $1 signals_path_NAME
+    signals_path_RET="$TESTS"/layer_"$signals_path_NAME"_input.json
 }
 
 exitsting_zkey_path() {
-    declare -n RET_exitsting_zkey_path=$2
+    declare -n exitsting_zkey_path_RET=$2
 
-    parse_layer_name $1 name
+    parse_layer_name $1 exitsting_zkey_path_NAME
 
     if [[ $1 == 1 ]]; then
-        RET_exitsting_zkey_path="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+        exitsting_zkey_path_RET="$TESTS"/layer_one_"$num_sigs"_sigs.zkey
     elif [[ $1 == 2 ]]; then
-        RET_exitsting_zkey_path="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+        exitsting_zkey_path_RET="$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
     else
-        RET_exitsting_zkey_path="$TESTS"/layer_three_"$parallelism"_batches.zkey
+        exitsting_zkey_path_RET="$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
 }
 
 zkey_arg() {
-    declare -n RET_zkey_arg=$2
+    declare -n zkey_arg_RET=$2
 
     exitsting_zkey_path $1 zkey_path
 
@@ -157,7 +157,7 @@ zkey_arg() {
         zkey_arg=""
     fi
 
-    RET_zkey_arg="$zkey_arg"
+    zkey_arg_RET="$zkey_arg"
 }
 
 # ///////////////////////////////////////////////////////
@@ -207,15 +207,15 @@ circuits_relative_path=$(realpath --relative-to="$TESTS" "$CIRCUITS")
 # )
 
 setup_layers() {
-    parse_layer_name $1 name
+    parse_layer_name $1 setup_layers_NAME
 
-    printf "\n================ RUNNING G16 SETUP FOR LAYER $name CIRCUIT ================\n"
-    printf "SEE $LOGS/layer_${name}_setup.log\n"
+    printf "\n================ RUNNING G16 SETUP FOR LAYER $setup_layers_NAME CIRCUIT ================\n"
+    printf "SEE $LOGS/layer_${setup_layers_NAME}_setup.log\n"
 
-    build_dir $name _build
-    circuit_path $name _circuit
-    ptau_path $name _ptau
-    zkey_arg $name _zkey
+    build_dir $setup_layers_NAME _build
+    circuit_path $setup_layers_NAME _circuit
+    ptau_path $setup_layers_NAME _ptau
+    zkey_arg $setup_layers_NAME _zkey
 
     "$SCRIPTS"/g16_setup.sh -b -B "$_build" -t "$_ptau" $_zkey "$_circuit"
 }
@@ -225,8 +225,7 @@ export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_nam
 export TESTS SCRIPTS LOGS BUILD THIS_DIR
 export threshold parallelism num_sigs naming_map
 
-parallel setup_layers {} ::: one two three
-         #'>' "$LOGS"/layer_{}_setup.log '2>&1' \
+parallel setup_layers {} '>' "$LOGS"/layer_{}_setup.log '2>&1' ::: one two three 
 
 #wait
 
