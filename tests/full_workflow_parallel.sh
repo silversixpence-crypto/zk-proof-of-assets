@@ -97,44 +97,44 @@ naming_map=(zero one two three)
 
 parse_layer_name() {
     if [[ $1 == 1 || $1 == 2 || $1 == 3 ]]; then
-        return ${naming_map[$1]}
+        echo ${naming_map[$1]}
     elif [[ $1 == one || $1 == two || $1 == three ]]; then
-        return $1
+        echo $1
+    else
+        ERR_MSG="[likely a bug] Invalid layer selection: $1"
+        exit 1
     fi
-
-    ERR_MSG="[likely a bug] Invalid layer selection: $1"
-    exit 1
 }
 
 build_dir() {
     name=$(parse_layer_name $1)
-    return "$BUILD"/layer_"$name"
+    echo "$BUILD"/layer_"$name"
 }
 
 circuit_path() {
     name=$(parse_layer_name $1)
-    return "$TESTS"/layer_"$name".circom
+    echo "$TESTS"/layer_"$name".circom
 }
 
 ptau_path() {
     name=$(parse_layer_name $1)
-    return "$THIS_DIR"/../powersOfTau28_hez_final.ptau
+    echo "$THIS_DIR"/../powersOfTau28_hez_final.ptau
 }
 
 signals_path() {
     name=$(parse_layer_name $1)
-    return "$TESTS"/layer_"$name"_input.json
+    echo "$TESTS"/layer_"$name"_input.json
 }
 
 exitsting_zkey_path() {
     name=$(parse_layer_name $1)
 
     if [[ $1 == 1 ]]; then
-        return "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
+        echo "$TESTS"/layer_one_"$num_sigs"_sigs.zkey
     elif [[ $1 == 2 ]]; then
-        return "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+        echo "$TESTS"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
     else
-        return "$TESTS"/layer_three_"$parallelism"_batches.zkey
+        echo "$TESTS"/layer_three_"$parallelism"_batches.zkey
     fi
 }
 
