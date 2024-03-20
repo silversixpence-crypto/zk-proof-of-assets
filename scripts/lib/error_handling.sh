@@ -21,6 +21,10 @@ failure() {
     local msg=$6
     local lineno_fns=${1% 0}
 
+    if [[ $exitstatus == 0 ]]; then
+        exit 0
+    fi
+
     if [[ "$lineno_fns" != "0" ]] ; then
         lineno="${lineno} ${lineno_fns}"
     fi
@@ -34,5 +38,5 @@ failure() {
 
     exit 1
 }
-trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR
+trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR EXIT
 
