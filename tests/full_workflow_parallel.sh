@@ -41,6 +41,7 @@ Initiating test with the following parameters:
 # Constants.
 
 IDENTIFIER="$num_sigs"_sigs_"$parallelism"_batches_"$merkle_tree_height"_height
+TESTS_DIR="$THIS_DIR"/$IDENTIFIER
 
 BUILD_DIR="$THIS_DIR"/../build/tests/$IDENTIFIER
 CIRCUITS_DIR="$THIS_DIR"/../circuits
@@ -49,7 +50,6 @@ MERKLE_PROOFS_PATH="$THIS_DIR"/merkle_proofs.json
 MERKLE_ROOT_PATH="$THIS_DIR"/merkle_root.json
 POA_INPUT_PATH="$THIS_DIR"/input_data_for_"$num_sigs"_accounts.json
 SCRIPTS_DIR="$THIS_DIR"/../scripts
-TESTS_DIR="$THIS_DIR"/$IDENTIFIER
 ZKEY_DIR="$THIS_DIR"/../zkeys
 
 BLINDING_FACTOR="4869643893319708471955165214975585939793846505679808910535986866633137979160"
@@ -164,7 +164,7 @@ zkey_arg() {
 circuits_relative_path=$(realpath --relative-to="$TESTS_DIR" "$CIRCUITS_DIR")
 
 MSG="GENERATING TEST CIRCUITS"
-execute npx ts-node "$THIS_DIR"/generate_test_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS_DIR" --circuits-library-relative-path "$circuits_relative_path"
+execute npx ts-node "$SCRIPTS_DIR"/generate_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$TESTS_DIR" --circuits-library-relative-path "$circuits_relative_path"
 
 MSG="GENERATING TEST INPUT FOR PROOF OF ASSETS PROTOCOL"
 execute npx ts-node "$THIS_DIR"/generate_test_input.ts --num-sigs $num_sigs --message "message to sign"
@@ -331,7 +331,7 @@ circuit_path 3 circuit
 zkey_arg 3 zkey
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
-execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts --poa-input-data "$POA_INPUT_PATH" --merkle-root "$MERKLE_ROOT_PATH" --layer-two-sanitized-proof "$build" --multiple-proofs --write-layer-three-data-to "$signals" --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts --merkle-root "$MERKLE_ROOT_PATH" --layer-two-sanitized-proof "$build" --multiple-proofs --write-layer-three-data-to "$signals" --blinding-factor $BLINDING_FACTOR
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
