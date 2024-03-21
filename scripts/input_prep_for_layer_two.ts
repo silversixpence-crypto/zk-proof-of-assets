@@ -2,7 +2,7 @@ import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
 import { bigint_to_array, bigint_to_Uint8Array, Uint8Array_to_bigint } from "./lib/utils";
 import {
-    Signature,
+    EcdsaStarSignature,
     ProofOfAssetsInputFileShape,
     Groth16ProofAsInput,
     AccountAttestation,

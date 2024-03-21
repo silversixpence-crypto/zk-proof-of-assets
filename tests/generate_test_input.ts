@@ -11,61 +11,19 @@ import { sign, Point, CURVE } from '@noble/secp256k1';
 import { randomBytes } from '@noble/hashes/utils';
 import { Wallet } from "ethers";
 
-import { Signature, ProofOfAssetsInputFileShape, AccountData, AccountAttestation } from "../scripts/lib/interfaces";
+import { EcdsaStarSignature, ProofOfAssetsInputFileShape, AccountData, AccountAttestation } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array } from "../scripts/lib/utils";
 import { generate_pvt_pub_key_pairs, generate_deterministic_balance, KeyPair } from "./keys";
+import { mod, invert, construct_r_prime } from "../scripts/lib/ecdsa_star";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
 
-// Calculates a modulo b
-function mod(a: bigint, b: bigint = CURVE.P): bigint {
-    const result = a % b;
-    return result >= 0n ? result : b + result;
-}
-
-// Inverses number over modulo
-function invert(number: bigint, modulo: bigint = CURVE.P): bigint {
-    if (number === 0n || modulo <= 0n) {
-        throw new Error(`invert: expected positive integers, got n=${number} mod=${modulo}`);
-    }
-
-    // Eucledian GCD https://brilliant.org/wiki/extended-euclidean-algorithm/
-    let a = mod(number, modulo);
-    let b = modulo;
-    let x = 0n, y = 1n, u = 1n, v = 0n;
-
-    while (a !== 0n) {
-        const q = b / a;
-        const r = b % a;
-        const m = x - u * q;
-        const n = y - v * q;
-        b = a, a = r, x = u, y = v, u = m, v = n;
-    }
-    const gcd = b;
-    if (gcd !== 1n) throw new Error('invert: does not exist');
-
-    return mod(x, modulo);
-}
-
-// computing v = r_i' in R_i = (r_i, r_i')
-function construct_r_prime(r: bigint, s: bigint, pvtkey: bigint, msg_hash: Uint8Array): bigint {
-    const { n } = CURVE;
-
-    var msg_hash_bigint: bigint = Uint8Array_to_bigint(msg_hash);
-
-    var p_1 = Point.BASE.multiply(mod(msg_hash_bigint * invert(s, n), n));
-    var p_2 = Point.fromPrivateKey(pvtkey).multiply(mod(r * invert(s, n), n));
-    var p_res = p_1.add(p_2);
-
-    return p_res.y;
-}
-
 // Signature values are returned as bigints.
-async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<Signature> {
+async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<EcdsaStarSignature> {
     var pvtkey = key_pair.pvt;
     var pubkey = key_pair.pub;
 
@@ -76,9 +34,9 @@ async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<Signa
 
     var r: bigint = Uint8Array_to_bigint(sig.slice(0, 32));
     var s: bigint = Uint8Array_to_bigint(sig.slice(32, 64));
-    var r_prime: bigint = construct_r_prime(r, s, pvtkey, msg_hash);
+    var r_prime: bigint = construct_r_prime(r, s, pubkey, msg_hash);
 
-    return { r, s, r_prime, pubkey };
+    return { r, s, r_prime, pubkey, msghash };
 }
 
 // Constructs a json object with ECDSA* signatures, eth addresses, and balances
@@ -109,7 +67,6 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
 
     return {
         account_data,
-        msg_hash,
     };
 }
 

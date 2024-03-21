@@ -4,7 +4,7 @@
 import { Point, CURVE } from '@noble/secp256k1';
 
 import { jsonReviver } from "./lib/json_serde";
-import { Signature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
+import { EcdsaStarSignature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
 import { bigint_to_array, Uint8Array_to_bigint } from "./lib/utils";
 
 const fs = require('fs');
@@ -19,9 +19,7 @@ interface LayerOneInputFileShape {
     msghash: bigint[][],
 }
 
-function construct_input(sigs: Signature[], msg_hash: Uint8Array): LayerOneInputFileShape {
-    var msg_hash_bigint: bigint = Uint8Array_to_bigint(msg_hash);
-
+function construct_input(sigs: EcdsaStarSignature[]): LayerOneInputFileShape {
     var output: LayerOneInputFileShape = {
         r: [],
         s: [],
@@ -35,7 +33,7 @@ function construct_input(sigs: Signature[], msg_hash: Uint8Array): LayerOneInput
         output.s.push(bigint_to_array(64, 4, sig.s));
         output.rprime.push(bigint_to_array(64, 4, sig.r_prime));
         output.pubkey.push([bigint_to_array(64, 4, sig.pubkey.x), bigint_to_array(64, 4, sig.pubkey.y)]);
-        output.msghash.push(bigint_to_array(64, 4, msg_hash_bigint));
+        output.msghash.push(bigint_to_array(64, 4, Uint8Array_to_bigint(sig.msghash)));
     });
 
     return output;
@@ -77,8 +75,7 @@ fs.readFile(input_data_path, function read(err: any, json_in: any) {
     }
 
     var layer_one_input: LayerOneInputFileShape = construct_input(
-        input_data.account_data.map(w => w.signature).slice(start_index, end_index),
-        input_data.msg_hash,
+        input_data.account_data.map(w => w.signature).slice(start_index, end_index)
     );
 
     const json_out = JSON.stringify(
