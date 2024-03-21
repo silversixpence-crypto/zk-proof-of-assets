@@ -10,19 +10,19 @@ const assert = require('assert');
 
 interface SignatureData {
     address: string,
-    balance: bigint,
+    balance: string,
     signature: EcdsaSignature,
 }
 
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         signaturesPath: ['signatures', 's'],
-        outputDir: ['output-dir', 'o'],
+        outputPath: ['output-path', 'o'],
     },
 });
 
 let signaturesPath = argv.signaturesPath;
-let outputDir = argv.outputDir;
+let outputPath = argv.outputPath;
 
 fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
     if (err) {
@@ -55,7 +55,7 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
             signature: ecdsaStarSig,
             account_data: {
                 address: address_dec,
-                balance: sigInputData.balance,
+                balance: BigInt(sigInputData.balance),
             }
         };
     });
@@ -65,7 +65,5 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
     }
 
     const json = JSON.stringify(outputData, jsonReplacer, 2);
-    let filename = "input_data_for_" + num_sigs + "_accounts.json";
-    let outputPath = path.join(outputDir, filename);
     fs.writeFileSync(outputPath, json);
 });
