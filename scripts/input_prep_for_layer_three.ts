@@ -62,7 +62,6 @@ function constructInput(proofData: Groth16ProofAsInput[], balances: bigint[], me
 
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
-        poaInputDataPath: ['poa-input-data', 'i'],
         merkleRootPath: ['merkle-root', 't'],
         layerTwoSanitizedProofPath: ['layer-two-sanitized-proof', 's'],
         layerThreeInputPath: ['write-layer-three-data-to', 'o'],
@@ -70,7 +69,6 @@ var argv = require('minimist')(process.argv.slice(2), {
         blindingFactor: ['blinding-factor', 'b'],
     },
     default: {
-        poaInputDataPath: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
         merkleRootPath: path.join(__dirname, "../tests/merkle_root.json"),
         layerTwoSanitizedProofPath: path.join(__dirname, "../build/tests/layer_two/sanitized_proof.json"),
         layerThreeInputPath: path.join(__dirname, "../tests/layer_three/input.json"),
@@ -79,15 +77,11 @@ var argv = require('minimist')(process.argv.slice(2), {
     }
 });
 
-let inputDataPath = argv.poaInputDataPath;
 let merkleRootPath = argv.merkleRootPath;
 let layerTwoSanitizedProofPath = argv.layerTwoSanitizedProofPath;
 let layerThreeInputPath = argv.layerThreeInputPath;
 let multipleProofs = argv.multipleProofs;
 let blindingFactor: bigint = BigInt(argv.blindingFactor);
-
-let inputDataRaw = fs.readFileSync(inputDataPath);
-let inputData: ProofOfAssetsInputFileShape = JSON.parse(inputDataRaw, jsonReviver);
 
 let merkleRootRaw = fs.readFileSync(merkleRootPath);
 let merkleRoot: bigint = JSON.parse(merkleRootRaw, jsonReviver);
