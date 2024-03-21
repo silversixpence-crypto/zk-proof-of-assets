@@ -12,3 +12,4 @@ merkle_root.json
 anonymity_set.json
 pubkey_x_coords_hash.txt
 input_data_for_*
+signatures.json
