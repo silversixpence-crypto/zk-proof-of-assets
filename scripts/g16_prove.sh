@@ -98,24 +98,12 @@ fi
 circuit_path="${@:(-2):1}"
 signals_path="${@: -1}"
 
-if [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
-    exit 1
-fi
+check_file_exists_with_ext "$ERR_PREFIX" "circuit_path" "$circuit_path" "circom"
+check_file_exists_with_ext "$ERR_PREFIX" "signals_path" "$signals_path" "json"
 
 # https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
 circuit_file=$(basename $circuit_path)
 circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
-    exit 1
-fi
-
-if [[ "${signals_path##*.}" != "json" ]] || [[ ! -f "$signals_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <signals_path> '$signals_path' does not point to an existing json file."
-    exit 1
-fi
 
 ############################################
 # Parse flags & optional args.
