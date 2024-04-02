@@ -125,10 +125,17 @@ exitsting_zkey_path() {
 
     parse_layer_name $1 name
 
-    if [[ $name == one || $name == one_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_one_"$num_sigs"_sigs.zkey
-    elif [[ $name == two || $name == two_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    echo "exitsting_zkey_path name: $name"
+    echo "zkey dir $ZKEY_DIR"
+
+    if [[ $name == one ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$num_sigs_per_batch"_sigs.zkey
+    elif [[ $name == one_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$remainder"_sigs.zkey
+    elif [[ $name == two ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$num_sigs_per_batch"_sigs_"$merkle_tree_height"_height.zkey
+    elif [[ $name == two_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$remainder"_sigs_"$merkle_tree_height"_height.zkey
     elif [[ $name == three ]]; then
         ret="$ZKEY_DIR"/layer_three_"$parallelism"_batches.zkey
     else
@@ -218,8 +225,8 @@ fi
 
 # these need to be exported for the parallel command
 export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
-export TESTS SCRIPTS LOGS BUILD THIS_DIR
-export threshold parallelism num_sigs naming_map
+export TESTS SCRIPTS LOGS BUILD THIS_DIR ZKEY_DIR
+export threshold parallelism num_sigs naming_map num_sigs_per_batch remainder
 
 printf "
 ================ RUNNING G16 SETUP FOR ALL LAYERS ================
