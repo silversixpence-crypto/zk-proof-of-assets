@@ -51,11 +51,18 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
 
         let address_dec: bigint = BigInt(addressFromEcdsa);
 
+        let balance;
+        if (sigInputData.balance.slice(-1) == 'n') {
+            balance = BigInt(sigInputData.balance.substring(0, sigInputData.balance.length - 1));
+        } else {
+            balance = BigInt(sigInputData.balance);
+        }
+
         return {
             signature: ecdsaStarSig,
             account_data: {
                 address: address_dec,
-                balance: BigInt(sigInputData.balance),
+                balance,
             }
         };
     });
