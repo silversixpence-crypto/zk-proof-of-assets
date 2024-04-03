@@ -139,7 +139,7 @@ while getopts 'bB:hn:qr:t:vZ:' flag; do
     B) build_dir="${OPTARG}" ;;
     h)
         print_usage
-        exit 1
+        exit 0
         ;;
     n) patched_node_path="${OPTARG}" ;;
     q) quick=true ;;
@@ -152,7 +152,7 @@ while getopts 'bB:hn:qr:t:vZ:' flag; do
         ;;
     *)
         print_usage
-        exit 1
+        exit 0
         ;;
     esac
 done
