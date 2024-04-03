@@ -29,12 +29,15 @@ use serde::{Deserialize, Serialize};
 #[derive(Parser)]
 struct Cli {
     /// Path to the csv anonymity set file.
+    #[arg(short, long, value_name = "FILE_PATH")]
     anon_set: PathBuf,
 
     /// Path to the PoA input data file.
+    #[arg(short, long, value_name = "FILE_PATH")]
     poa_input_data: PathBuf,
 
     /// Directory where the proofs & root hash files will be written to.
+    #[arg(short, long, value_name = "DIR_PATH")]
     output_dir: PathBuf,
 }
 
@@ -296,6 +299,7 @@ fn generate_proofs(
     let poa_input_data: ProofOfAssetsInputFileShape =
         serde_json::from_reader(poa_input_reader).unwrap();
 
+    // Hash address & balance of owned addresses.
     let mut owned_leaves: Vec<OwnedLeaf> = poa_input_data
         .accountAttestations
         .into_iter()
@@ -325,9 +329,9 @@ fn generate_proofs(
     owned_leaves.sort_by(|a, b| a.hash.cmp(&b.hash));
 
     let mut owned_leaf_indices = Vec::<usize>::new();
-    let mut owned_i = 0;
     let mut anon_i = 0;
 
+    // Search anon set for owned addresses, panic if not found.
     for owned_i in 0..owned_leaves.len() {
         let target = owned_leaves.get(owned_i).unwrap().hash;
 
@@ -349,7 +353,7 @@ fn generate_proofs(
     let mut output_path_elements: Vec<Vec<BigIntJson>> = Vec::new();
     let mut output_path_indices: Vec<Vec<u8>> = Vec::new();
 
-    // let proofs: Vec<MerkleProof<MyPoseidon>> =
+    // Generate Merkle proofs & construct json output.
     for i in 0..owned_leaf_indices.len() {
         let anon_set_index = *owned_leaf_indices.get(i).unwrap();
 
