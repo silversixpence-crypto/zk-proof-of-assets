@@ -324,12 +324,27 @@ async function test() {
     }, {
         address: BigInt("0xe92d1a43df510f82c66382592a047d288f85226f"),
         balance: BigInt("450118327413183663278977"),
+    }, {
+        address: BigInt("0x243f3c960525b7953a20710a9245e4887433867b"),
+        balance: BigInt("1058748567537136135"),
     }];
 
     let leaves = await convert_to_leaves(poseidon, field, data);
     let tree = await build_tree(poseidon, field, leaves.map(l => l.hash), height);
     let root = tree[tree.length - 1][0];
     console.log("root", root);
+
+    let owned_leaves = await convert_to_leaves(poseidon, field, poa_input_data.account_data.map(a => a.account_data));
+    let json = JSON.stringify(root, jsonReplacer, 2);
+    fs.writeFileSync(merkle_root_path, json);
+
+    let proofs: Proofs = await generate_proofs(poseidon, field, tree, owned_leaves);
+    json = JSON.stringify(
+        proofs,
+        jsonReplacer,
+        2
+    );
+    fs.writeFileSync(merkle_proofs_path, json);
 }
 
 // test();
