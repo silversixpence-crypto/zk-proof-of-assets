@@ -10,7 +10,7 @@ const JSONStream = require("JSONStream");
 // Tree building.
 
 // NOTE: picked this as the null field element arbitrarily
-const NULL_NODE: bigint = 1n;
+const NULL_NODE: bigint = 0n;
 
 // Construct the Merkle tree and return all the data as a 2-dimensional array.
 // The first element of the array are the leaf nodes, and the last element of the array is the root node.
@@ -33,7 +33,11 @@ async function build_tree(poseidon: any, field: any, leaves: bigint[], height: n
 
     // It does not matter if the leaves are sorted or not, but this does offer some standardization,
     // and may make debugging easier.
-    leaves.sort();
+    leaves.sort((a, b) => (a < b) ? -1 : ((a > b) ? 1 : 0))
+
+    for (let i = 0; i < leaves.length; i++) {
+        console.log(leaves[i]);
+    }
 
     let tree = [leaves];
     let cur_level = 0;
@@ -216,7 +220,7 @@ var argv = require('minimist')(process.argv.slice(2), {
     },
     default: {
         anonymity_set: path.join(__dirname, "../tests/anonymity_set.json"),
-        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_32_accounts.json"),
+        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
         output_dir: path.join(__dirname, "../tests"),
         tree_height: 0, // automatically determine height based on number of leaves
     }
@@ -275,6 +279,59 @@ async function main() {
 }
 
 main();
+
+// ================================================================
+// Testing equality with Rust script.
+
+async function test() {
+    const poseidon = await circomlibjs.buildPoseidon();
+    const field = poseidon.F; // poseidon finite field
+
+    let address = BigInt("0x00000000219ab540356cbb839cbe05303d7705fa")
+    let balance = BigInt("40574880376960633295804796")
+
+    let poseidon_result = poseidon([address, balance]);
+    let hash = field.toObject(poseidon_result);
+    console.log("address", address);
+    console.log("balance", balance);
+    console.log("hash", hash);
+
+    let data: AccountData[] = [{
+        address: BigInt("0x00000000219ab540356cbb839cbe05303d7705fa"),
+        balance: BigInt("40574880376960633295804796"),
+    }, {
+        address: BigInt("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
+        balance: BigInt("3096634537312179226772493"),
+    }, {
+        address: BigInt("0xbe0eb53f46cd790cd13851d5eff43d12404d33e8"),
+        balance: BigInt("1996008385229756365635021"),
+    }, {
+        address: BigInt("0x8315177ab297ba92a06054ce80a67ed4dbd7ed3a"),
+        balance: BigInt("1571102089176861007916205"),
+    }, {
+        address: BigInt("0x40b38765696e3d5d8d9d834d8aad4bb6e418e489"),
+        balance: BigInt("1493000793977280497891552"),
+    }, {
+        address: BigInt("0xda9dfa130df4de4673b89022ee50ff26f6ea73cf"),
+        balance: BigInt("1398923564608087249317539"),
+    }, {
+        address: BigInt("0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503"),
+        balance: BigInt("584999039631441227364527"),
+    }, {
+        address: BigInt("0xf977814e90da44bfa03b6295a0616a897441acec"),
+        balance: BigInt("547700594833510126425623"),
+    }, {
+        address: BigInt("0xe92d1a43df510f82c66382592a047d288f85226f"),
+        balance: BigInt("450118327413183663278977"),
+    }];
+
+    let leaves = await convert_to_leaves(poseidon, field, data);
+    let tree = await build_tree(poseidon, field, leaves.map(l => l.hash), height);
+    let root = tree[tree.length - 1][0];
+    console.log("root", root);
+}
+
+// test();
 
 // ================================================================
 // Some test data for converting private keys to Ethereum addresses.
