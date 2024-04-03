@@ -3,8 +3,7 @@ import { interfaces } from 'mocha';
 
 // Main input for the system.
 export interface ProofOfAssetsInputFileShape {
-    // TODO change name here to attestation
-    account_data: AccountAttestation[],
+    accountAttestations: AccountAttestation[],
 }
 
 export interface EcdsaSignature {
@@ -24,7 +23,7 @@ export interface EcdsaStarSignature {
 
 export interface AccountAttestation {
     signature: EcdsaStarSignature,
-    account_data: AccountData,
+    accountData: AccountData,
 }
 
 export interface AccountData {

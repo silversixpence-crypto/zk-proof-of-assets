@@ -67,7 +67,7 @@ fs.readFile(input_data_path, function read(err: any, json_in: any) {
     var input_data: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
 
     if (end_index === -1) {
-        end_index = input_data.account_data.length;
+        end_index = input_data.accountAttestations.length;
     }
 
     if (start_index >= end_index) {
@@ -75,7 +75,7 @@ fs.readFile(input_data_path, function read(err: any, json_in: any) {
     }
 
     var layer_one_input: LayerOneInputFileShape = construct_input(
-        input_data.account_data.map(w => w.signature).slice(start_index, end_index)
+        input_data.accountAttestations.map(w => w.signature).slice(start_index, end_index)
     );
 
     const json_out = JSON.stringify(

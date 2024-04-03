@@ -29,8 +29,8 @@ let inputData: ProofOfAssetsInputFileShape = JSON.parse(inputDataRaw, jsonRevive
 let publicInputsRaw = fs.readFileSync(layerThreePublicInputsPath);
 let publicInputs: string[] = JSON.parse(publicInputsRaw, jsonReviver);
 
-let balanceSum = inputData.account_data.reduce(
-    (accumulator, currentValue) => currentValue.account_data.balance + accumulator,
+let balanceSum = inputData.accountAttestations.reduce(
+    (accumulator, currentValue) => currentValue.accountAttestations.balance + accumulator,
     0n
 );
 

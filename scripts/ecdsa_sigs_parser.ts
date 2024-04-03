@@ -32,7 +32,7 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
     let sigsInputData: SignatureData[] = JSON.parse(jsonIn);
     let num_sigs = sigsInputData.length;
 
-    let accountData: AccountAttestation[] = sigsInputData.map(sigInputData => {
+    let accountAttestations: AccountAttestation[] = sigsInputData.map(sigInputData => {
         let ethers_ecdsaSig = ethers.Signature.from(sigInputData.signature);
         let pubkey = ethers.SigningKey.recoverPublicKey(sigInputData.signature.msghash, ethers_ecdsaSig)
         let addressFromEcdsa = ethers.computeAddress(pubkey);
@@ -60,7 +60,7 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
 
         return {
             signature: ecdsaStarSig,
-            account_data: {
+            accountData: {
                 address: address_dec,
                 balance,
             }
@@ -68,7 +68,7 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
     });
 
     let outputData: ProofOfAssetsInputFileShape = {
-        account_data: accountData,
+        accountAttestations
     }
 
     const json = JSON.stringify(outputData, jsonReplacer, 2);

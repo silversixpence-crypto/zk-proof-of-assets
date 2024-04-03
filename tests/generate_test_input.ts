@@ -41,7 +41,7 @@ async function ecdsa_star(msghash: Uint8Array, key_pair: KeyPair): Promise<Ecdsa
 
 // Constructs a json object with ECDSA* signatures, eth addresses, and balances
 async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<ProofOfAssetsInputFileShape> {
-    let account_data: AccountAttestation[] = [];
+    let accountAttestations: AccountAttestation[] = [];
 
     for (var i = 0; i < key_pairs.length; i++) {
         let pvt_hex = key_pairs[i].pvt.toString(16);
@@ -49,9 +49,9 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
         let address_dec: bigint = BigInt(address_hex);
         let signature = await ecdsa_star(msg_hash, key_pairs[i]);
 
-        account_data.push({
+        accountAttestations.push({
             signature,
-            account_data: {
+            accountData: {
                 address: address_dec,
                 balance: generate_deterministic_balance(key_pairs[i]),
             }
@@ -59,14 +59,14 @@ async function generate_input_data(msghash: Uint8Array, key_pairs: KeyPair[]): P
     }
 
     // It's very important to sort by address, otherwise the layer 2 circuit will fail.
-    account_data.sort((a, b) => {
-        if (a.account_data.address < b.account_data.address) return -1;
-        else if (a.account_data.address > b.account_data.address) return 1;
+    accountAttestations.sort((a, b) => {
+        if (a.accountData.address < b.accountData.address) return -1;
+        else if (a.accountData.address > b.accountData.address) return 1;
         else return 0;
     });
 
     return {
-        account_data,
+        accountAttestations,
     };
 }
 

@@ -81,18 +81,18 @@ async function write_pubkey_x_coords_hash(pubkeys: Point[], output_path: String)
 // =========================================================
 // Input signal builder for the circuit.
 
-function construct_input(proof_data: Groth16ProofAsInput, x_coords_hash: string, account_data: AccountAttestation[], merkle_root: bigint, merkle_proofs: Proofs): LayerTwoInputFileShape {
+function construct_input(proof_data: Groth16ProofAsInput, x_coords_hash: string, accountAttestations: AccountAttestation[], merkle_root: bigint, merkle_proofs: Proofs): LayerTwoInputFileShape {
     var { pubInput, ...other_data } = proof_data;
 
     var layer_two_input: LayerTwoInputFileShape = {
         ...other_data,
         pubkey_x_coord_hash: x_coords_hash,
-        pubkey: account_data.map(a => [
+        pubkey: accountAttestations.map(a => [
             bigint_to_array(64, 4, a.signature.pubkey.x),
             bigint_to_array(64, 4, a.signature.pubkey.y)
         ]),
-        leaf_addresses: account_data.map(a => a.account_data.address),
-        leaf_balances: account_data.map(a => a.account_data.balance),
+        leaf_addresses: accountAttestations.map(a => a.accountData.address),
+        leaf_balances: accountAttestations.map(a => a.accountData.balance),
         merkle_root,
         path_elements: merkle_proofs.path_elements,
         path_indices: merkle_proofs.path_indices,
@@ -104,17 +104,17 @@ function construct_input(proof_data: Groth16ProofAsInput, x_coords_hash: string,
 // =========================================================
 // Checks.
 
-// account_data & merkle_leaves come from 2 different files so it's not guaranteed that
+// accountAttestations & merkle_leaves come from 2 different files so it's not guaranteed that
 // each element of the one corresponds to the other. This is checked here. We also check
 // that the addresses are in ascending order, which is required by the circuit so that
 // the prover cannot do a double-spend attack.
-function check_address_ordering(account_data: AccountAttestation[], merkle_leaves: Leaf[]) {
-    if (account_data.length != merkle_leaves.length) {
-        throw new Error(`Length of input data array ${account_data.length} should equal length of merkle proofs array ${merkle_leaves.length}`);
+function check_address_ordering(accountAttestations: AccountAttestation[], merkle_leaves: Leaf[]) {
+    if (accountAttestations.length != merkle_leaves.length) {
+        throw new Error(`Length of input data array ${accountAttestations.length} should equal length of merkle proofs array ${merkle_leaves.length}`);
     }
 
-    for (let i = 0; i < account_data.length; i++) {
-        let addr_input: bigint = account_data[i].account_data.address;
+    for (let i = 0; i < accountAttestations.length; i++) {
+        let addr_input: bigint = accountAttestations[i].accountData.address;
         let addr_merkle: bigint = merkle_leaves[i].address;
 
         if (addr_input != addr_merkle) {
@@ -173,16 +173,16 @@ let input_data_raw = fs.readFileSync(input_data_path);
 let input_data: ProofOfAssetsInputFileShape = JSON.parse(input_data_raw, jsonReviver);
 
 if (end_index === -1) {
-    end_index = input_data.account_data.length;
+    end_index = input_data.accountAttestations.length;
 }
 
 if (start_index >= end_index) {
     throw new Error(`start_index ${start_index} must be less than end_index ${end_index}`);
 }
 
-let account_data = input_data.account_data.slice(start_index, end_index);
+let accountAttestations = input_data.accountAttestations.slice(start_index, end_index);
 
-write_pubkey_x_coords_hash(account_data.map(w => w.signature.pubkey), x_coords_hash_path)
+write_pubkey_x_coords_hash(accountAttestations.map(w => w.signature.pubkey), x_coords_hash_path)
     .then(x_coords_hash => {
         let merkle_root_raw = fs.readFileSync(merkle_root_path);
         let merkle_root: bigint = JSON.parse(merkle_root_raw, jsonReviver);
@@ -199,9 +199,9 @@ write_pubkey_x_coords_hash(account_data.map(w => w.signature.pubkey), x_coords_h
         var proof_data_raw = fs.readFileSync(layer_one_sanitized_proof_path);
         var proof_data: Groth16ProofAsInput = JSON.parse(proof_data_raw, jsonReviver);
 
-        check_address_ordering(account_data, merkle_proofs_slice.leaves);
+        check_address_ordering(accountAttestations, merkle_proofs_slice.leaves);
 
-        var layer_two_input: LayerTwoInputFileShape = construct_input(proof_data, x_coords_hash, account_data, merkle_root, merkle_proofs_slice);
+        var layer_two_input: LayerTwoInputFileShape = construct_input(proof_data, x_coords_hash, accountAttestations, merkle_root, merkle_proofs_slice);
 
         const json_out = JSON.stringify(
             layer_two_input,
