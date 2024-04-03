@@ -78,31 +78,6 @@ ARGS:
 "
 }
 
-if [ "$#" -lt 1 ]; then
-    ERR_MSG="$ERR_PREFIX: Not enough arguments"
-    exit 1
-fi
-
-############################################
-# Required args.
-
-# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
-circuit_path="${@:(-2):1}"
-
-if [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
-    exit 1
-fi
-
-# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-circuit_file=$(basename $circuit_path)
-circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
-    exit 1
-fi
-
 ############################################
 # Parse flags & optional args.
 
@@ -142,6 +117,31 @@ while getopts 'bB:hn:p:t:vwzZ:' flag; do
         ;;
     esac
 done
+
+############################################
+# Required args.
+
+if [ "$#" -lt 1 ]; then
+    ERR_MSG="$ERR_PREFIX: Not enough arguments"
+    exit 1
+fi
+
+# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
+circuit_path="${@:(-2):1}"
+
+if [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
+    exit 1
+fi
+
+# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
+
+if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
+    exit 1
+fi
 
 ############################################
 

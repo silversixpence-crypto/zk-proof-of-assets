@@ -93,30 +93,6 @@ ARGS:
 "
 }
 
-if [ "$#" -lt 2 ]; then
-    ERR_MSG="$ERR_PREFIX: Not enough arguments"
-    exit 1
-fi
-
-############################################
-# Required args.
-
-circuit_path="${@: -1}"
-
-if [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
-    exit 1
-fi
-
-# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-circuit_file=$(basename $circuit_path)
-circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
-    exit 1
-fi
-
 ############################################
 # Parse flags & optional args.
 
@@ -156,6 +132,30 @@ while getopts 'bB:hn:qr:t:vZ:' flag; do
         ;;
     esac
 done
+
+############################################
+# Required args.
+
+if [ "$#" -lt 2 ]; then
+    ERR_MSG="$ERR_PREFIX: Not enough arguments"
+    exit 1
+fi
+
+circuit_path="${@: -1}"
+
+if [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
+    exit 1
+fi
+
+# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
+
+if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
+    exit 1
+fi
 
 ############################################
 
