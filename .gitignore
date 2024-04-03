@@ -6,6 +6,10 @@ __pycache__/
 *.log
 yarn.lock
 
+target/
+Cargo.lock
+**/*.rs.bk
+
 merkle_tree.json
 merkle_proofs.json
 merkle_root.json
