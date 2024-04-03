@@ -167,12 +167,12 @@ async function generate_proofs(poseidon: any, field: any, tree: bigint[][], owne
 // ================================================================
 
 // Convert account data into leaf nodes by hashing address and balance.
-async function convert_to_leaves(poseidon: any, field: any, accountData: AccountData[]): Promise<Leaf[]> {
+async function convert_to_leaves(poseidon: any, field: any, account_data: AccountData[]): Promise<Leaf[]> {
     let leaves: Leaf[] = [];
 
-    for (let i = 0; i < accountData.length; i++) {
-        let address = accountData[i].address;
-        let balance = accountData[i].balance;
+    for (let i = 0; i < account_data.length; i++) {
+        let address = account_data[i].address;
+        let balance = account_data[i].balance;
 
         let poseidon_result = poseidon([address, balance]);
         let hash = field.toObject(poseidon_result);
@@ -244,7 +244,7 @@ async function main() {
     const field = poseidon.F; // poseidon finite field
 
     let leaves = await convert_to_leaves(poseidon, field, anonymity_set);
-    let owned_leaves = await convert_to_leaves(poseidon, field, poa_input_data.accountAttestations.map(a => a.accountData));
+    let owned_leaves = await convert_to_leaves(poseidon, field, poa_input_data.account_data.map(a => a.account_data));
     let tree = await build_tree(poseidon, field, leaves.map(l => l.hash), height);
 
     // NOTE not working, so is commented out.
