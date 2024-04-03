@@ -10,16 +10,40 @@
 //!
 //! The hash function used for the Merlke Tree is Poseidon.
 
-use csv::ReaderBuilder;
-use rs_merkle::{Hasher, MerkleTree};
-
 use std::error::Error;
 use std::fs::File;
+use std::path::PathBuf;
 
 use ark_bn254::Fr;
+use csv::ReaderBuilder;
 use light_poseidon::{Poseidon, PoseidonBytesHasher};
-
 use num_bigint::BigUint;
+use rs_merkle::{Hasher, MerkleTree};
+
+use clap::Parser;
+
+use serde::Serialize;
+
+/// Search for a pattern in a file and display the lines that contain it.
+#[derive(Parser)]
+struct Cli {
+    /// The pattern to look for.
+    pattern: String,
+
+    /// Path to the csv anonymity set file.
+    anon_set: PathBuf,
+
+    /// Path to the PoA input data file.
+    poa_input_data: PathBuf,
+
+    /// Directory where the proofs & root hash files will be written to.
+    output_dir: PathBuf,
+}
+
+#[derive(Serialize)]
+struct RootHash {
+    __bigint__: String,
+}
 
 /// Copied from
 /// https://users.rust-lang.org/t/how-to-get-a-substring-of-a-string/1351/11
@@ -97,20 +121,51 @@ impl Hasher for MyPoseidon {
     }
 }
 
+fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
+    let mut p = p.into_os_string();
+    p.push(s);
+    p.into()
+}
+
+fn write_merkle_root(merkle_tree: &MerkleTree<MyPoseidon>, root_path: PathBuf) {
+    let root_bytes: [u8; 32] = merkle_tree.root().unwrap();
+    let root_bigint = BigUint::from_bytes_be(&root_bytes[..]);
+    let root_encoded: RootHash = RootHash {
+        __bigint__: root_bigint.to_string(),
+    };
+
+    let mut root_file = File::create(root_path.clone()).expect("Merkle root file creation failed");
+    let _ = serde_json::to_writer_pretty(root_file, &root_encoded);
+
+    println!(
+        "Root hash {:?} written to file {:?}",
+        root_bigint, root_path
+    );
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Initiating Merkle Tree build..");
 
-    let input_file_name = std::env::args().nth(1).expect("No csv file name given");
+    let args = Cli::parse();
+    let anon_set_file_path = args.anon_set; // std::env::args().nth(1).expect("No csv file name given");
+    let merkle_root_path = append_to_path(args.output_dir.clone(), "merkle_root.json");
+    let merkle_proofs_path = append_to_path(args.output_dir, "merkle_proofs.json");
 
-    let mut poseidon_hasher: Poseidon<Fr> = Poseidon::<Fr>::new_circom(2).unwrap();
+    let mut poseidon_hasher: Poseidon<Fr> = Poseidon::<Fr>::new_circom(2)?;
 
-    println!("Trying to read given file '{}'", input_file_name.clone());
-    let file = File::open(input_file_name.clone())?;
+    println!(
+        "Trying to read given file '{:?}'",
+        anon_set_file_path.clone()
+    );
+    let file = File::open(anon_set_file_path.clone())?;
     let mut rdr = ReaderBuilder::new().from_reader(file);
 
     let mut leaves: Vec<[u8; 32]> = Vec::new();
 
-    println!("Converting lines in '{}' into leaf nodes.. (leaf node = hash(address, balance))", input_file_name);
+    println!(
+        "Converting lines in '{:?}' into leaf nodes.. (leaf node = hash(address, balance))",
+        anon_set_file_path
+    );
 
     for result in rdr.records() {
         let record = result?;
@@ -143,7 +198,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         leaves.push([0u8; 32]);
     }
 
-    println!("Number of leaves (after adding padding nodes): {}", leaves.len());
+    println!(
+        "Number of leaves (after adding padding nodes): {}",
+        leaves.len()
+    );
 
     leaves.sort();
 
@@ -151,8 +209,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     let merkle_tree = MerkleTree::<MyPoseidon>::from_leaves(&leaves);
     println!("Done creating Merkle tree");
 
-    let root: [u8; 32] = merkle_tree.root().unwrap();
-    println!("Root hash: {:?}", BigUint::from_bytes_be(&root[..]));
+    write_merkle_root(&merkle_tree, merkle_root_path);
+
+    // TODO we need to
+    // a) ingest the poa input data file
+    // b) gen proofs and write these to the out dir
+
+    // merkle_tree.proof(leaf_indices)
 
     Ok(())
 }

@@ -261,6 +261,7 @@ async function main() {
     //     ).join(",") +
     //     "]";
 
+    // This tree can be large so it's best not to try write it to a file.
     // fs.writeFileSync(merkle_tree_path, json);
     // let tree_string = tree.map(level => level.map(node => node.toString()));
     // write_large_object(tree_string, merkle_tree_path);

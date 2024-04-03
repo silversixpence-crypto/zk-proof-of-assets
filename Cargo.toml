@@ -1,5 +1,5 @@
 [package]
-name = "merkle_tree_csv"
+name = "zk-proof-of-assets"
 version = "0.1.0"
 edition = "2018"
 
@@ -10,6 +10,11 @@ ark-bn254 = "0.4.0"
 light-poseidon = "0.2.0"
 num-bigint = "0.4.4"
 
+clap = { version = "4.0", features = ["derive"] }
+
+serde_json = "1.0.111"
+serde = { version = "1.0.188", features = ["derive"] }
+
 [[bin]]
-name = "cool-tool"
+name = "merkle-tree"
 path = "scripts/merkle_tree.rs"
