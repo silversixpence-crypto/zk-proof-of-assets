@@ -72,7 +72,7 @@ ARGS:
 ############################################
 # Parse flags & optional args.
 
-build_dir="$PROJECT_ROOT_DIR"/build/
+build_dir="$PROJECT_ROOT_DIR"/build
 verbose=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
@@ -273,22 +273,19 @@ circuits_relative_path=$(realpath --relative-to="$build_dir" "$CIRCUITS_DIR")
 MSG="GENERATING CIRCUITS"
 execute npx ts-node "$SCRIPTS_DIR"/generate_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$build_dir" --circuits-library-relative-path "$circuits_relative_path"
 
-# TODO we need a script that takes the raw anon set data and outputs the corrects json format
-MSG="GENERATING ANONYMITY SET"
-execute npx ts-node "$FULL_WORKFLOW_DIR"/generate_anon_set.ts --num-addresses $anon_set_size
-
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
     printf "\n================ $MSG ================\nSEE $logs_dir/merkle_tree.log\n"
 
-    execute npx ts-node "$SCRIPTS_DIR"/merkle_tree.ts \
-        --anonymity-set "$FULL_WORKFLOW_DIR"/anonymity_set.json \
+    RUSTFLAGS=-Awarnings execute cargo run --bin merkle-tree -- \
+        --anon-set "$anon_set_path" \
         --poa-input-data "$parsed_sigs_path" \
-        --output-dir "$FULL_WORKFLOW_DIR" \
-        --height $merkle_tree_height \
-        >"$logs_dir"/merkle_tree.log
+        --output-dir "$build_dir" \
+    &>"$logs_dir"/merkle_tree.log
 }
+
+generate_merkle_tree
 
 exit 0
 

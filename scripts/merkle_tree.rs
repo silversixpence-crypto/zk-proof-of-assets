@@ -180,6 +180,7 @@ impl Hasher for MyPoseidon {
 
 fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
     let mut p = p.into_os_string();
+    p.push("/");
     p.push(s);
     p.into()
 }
@@ -248,7 +249,7 @@ fn build_leaves(anon_set_file_path: PathBuf) -> Vec<[u8; 32]> {
         leaves.push(hash);
     }
 
-    println!("Done creating leaves");
+    println!("Done creating {} leaves", leaves.len());
 
     // Add 0-valued nodes to make the tree full
     let size = leaves.len() as f64;
