@@ -66,6 +66,10 @@ Setup various software required to used the zk-proof-of-asset repo.
 USAGE:
     ./machine_initialization.sh [FLAGS] [OPTIONS]
 
+DESCRIPTION:
+    This script does the following:
+    1. TODO
+
 FLAGS:
 
      -c            AWS CloudWatch memory metrics

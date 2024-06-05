@@ -1,3 +1,14 @@
+/*
+Verify that the Pedersen commitment calculated from the secret values
+matches the one that was outputted by the layer 3 circuit.
+
+```bash
+npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --layer-three-public-inputs <json_with_public_inputs_for_layer_3_circuit> \
+              --blinding-factor <blinding_factor>
+```
+*/
+
 import { generator_g_formatted, generator_h_formatted, format_scalar_power, pedersen_commitment, dechunk_to_point, point_equal } from "./lib/pedersen_commitment";
 import { jsonReviver } from "./lib/json_serde";
 import { ProofOfAssetsInputFileShape } from "./lib/interfaces";
@@ -18,6 +29,8 @@ var argv = require('minimist')(process.argv.slice(2), {
         blindingFactor: "4869643893319708471955165214975585939793846505679808910535986866633137979160",
     }
 });
+
+// TODO say something about the hard-coded blinding factor above, or just remove it
 
 let inputDataPath = argv.poaInputDataPath;
 let layerThreePublicInputsPath = argv.layerThreePublicInputsPath;

@@ -1,3 +1,20 @@
+/**
+   Generates Circom code for the 3 layers, using CLI input value.
+
+   It basically configures the input params for the 3 circuit layers.
+
+   Use CLI like this:
+   ```bash
+   npx ts-node ./scripts/generate_circuits.ts \
+                 --num-sigs <num_sigs_per_batch> \
+                 --num-sigs-remainder <num_sigs_in_remainder_batch> \
+                 --tree-height <merkle_tree_height> \
+                 --parallelism <num_batches> \
+                 --write-circuits-to <generated_circuits_dir> \
+                 --circuits-library-relative-path <path_to_circuits_dir_from_generated_circuits_dir>
+   ```
+**/
+
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
