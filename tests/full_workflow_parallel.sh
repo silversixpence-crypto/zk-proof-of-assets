@@ -14,7 +14,7 @@ anon_set_size=1000
 merkle_tree_height=14
 ideal_num_sigs_per_batch=2
 
-output=$(python "$THIS_DIR"/../scripts/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
+output=$(python "$THIS_DIR"/../scripts/batch_size_optimizooor.py $num_sigs $ideal_num_sigs_per_batch)
 num_sigs_per_batch=2 # $(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
 remainder=1 # $(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
 

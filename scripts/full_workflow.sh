@@ -138,7 +138,7 @@ fi
 ######### PARALLELISM PARAMETERS ###########
 ############################################
 
-output=$(python "$SCRIPTS_DIR"/batch_size_calculator.py $num_sigs $ideal_num_sigs_per_batch)
+output=$(python "$SCRIPTS_DIR"/batch_size_optimizooor.py $num_sigs $ideal_num_sigs_per_batch)
 num_sigs_per_batch=$(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
 remainder=$(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
 
