@@ -1,4 +1,21 @@
-// https://docs.ethers.org/v6/api/crypto/#SigningKey_recoverPublicKey
+/**
+Ethereum ECDSA to ECDSA* coverter.
+
+This script takes a list of type `SignatureData` and converts it to a list of type
+`AccountAttestation`. A check is done to make sure the pubkey recovered from the
+signature matches the provided Ethereum address.
+
+Using this to recover the pubkey from the sig:
+https://docs.ethers.org/v6/api/crypto/#SigningKey_recoverPublicKey
+
+===================
+Usage
+
+There is a basic CLI that can be invoked like so:
+```bash
+npx ts-node ./scripts/ecdsa_sigs_parser.ts --signatures <path_to_input_ecdsa_sigs_json> --output-path <path_for_output_ecdsa_star_sigs_json>
+```
+**/
 
 import * as ethers from "ethers";
 import { AccountAttestation, EcdsaSignature, EcdsaStarSignature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
@@ -46,6 +63,8 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
         let ecdsaStarSig = ecdsa_star_from_ecdsa(ecdsaSig);
         let addressFromEcdsaStar = ethers.computeAddress("0x" + ecdsaStarSig.pubkey.toHex());
 
+        // Extra check to make sure the address of both sigs matches the input address.
+        // If this is not done the circuit will detect it.
         assert(addressFromEcdsa == sigInputData.address);
         assert(addressFromEcdsaStar == sigInputData.address);
 
