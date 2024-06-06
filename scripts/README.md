@@ -1,6 +1,51 @@
 # Summary of scripts in this directory
 
-Note that the only one needed to 
+Note that the only one that needs to be used is [full_workflow.sh](./full_workflow.sh), the rest are all used by this main script and so do not need to be invoked directly.
+
+
+## [Full workflow](./full_workflow.sh)
+
+```bash
+Proof of Assets ZK proof workflow.
+
+USAGE:
+    ./full_workflow.sh [FLAGS] [OPTIONS] <signatures_path> <anonymity_set_path> <blinding_factor>
+
+DESCRIPTION:
+    Note that only the Ethereum blockchain is currently supported.
+
+    This script does the following:
+    1. Converts the given ECDSA signatures to ECDSA* signatures, which are required for the circuits
+    2. Generates the final Circom circuits based on the pre-written templates & the provided inputs
+    3. Generate a Merkle Tree for the anonymity set
+    4. Invoke g16_setup.sh for the 3 layers to generate the proving keys (zkeys) (done in parallel by default)
+    5. Save the zkeys in the zkey directory, for reuse in future runs
+    6. Invoke g16_prove.sh for all batches of layers 1 & 2, in parallel
+    7. Invoke g16_prove.sh for final layer 3 circuit
+
+FLAGS:
+
+OPTIONS:
+
+    -b <NUM>         Ideal batch size (this may not be the resulting batch size)
+                     Default is `ceil(num_sigs / 5)`
+
+    -B <PATH>        Build directory, where all the build artifacts are placed
+                     Default is '<repo_root_dir>/build'
+
+ARGS:
+
+    <signatures_path>       Path to the file containing the signatures of the owned accounts
+
+    <anonymity_set_path>    Path to the anonymity set of addresses
+                            Headings should be \"address,eth_balance\"
+
+    <blinding_factor>       Blinding factor for the Pedersen commitment
+```
+
+---
+
+The helper scripts..
 
 ## [Batch size optimizer](./batch_size_optimizooor.py)
 
@@ -25,6 +70,19 @@ python ./scripts/batch_size_optimizooor.py <num_sigs> <ideal_num_sigs_per_batch>
 ```
 
 ## [ECDSA signature parser](./ecdsa_signature_parser.ts)
+
+Ethereum ECDSA to ECDSA* coverter.
+
+This script takes a list of type `SignatureData` and converts it to a list of type
+`AccountAttestation`. A check is done to make sure the pubkey recovered from the
+signature matches the provided Ethereum address.
+
+Using this to recover the pubkey from the sig:
+https://docs.ethers.org/v6/api/crypto/#SigningKey_recoverPublicKey
+
+<details>
+
+<summary>Input & output json shapes of the script</summary>
 
 ecdsa_sigs_parser.ts converts multiple ecdsa signatures of the form
 ```json
@@ -78,6 +136,8 @@ and turns it into an ecdsa* signature (extra `r_prime` term) in a format that th
       }
     }
 ```
+</details>
+
 A check is done to make sure the pubkey recovered from the
 signature matches the provided Ethereum address.
 
@@ -89,10 +149,6 @@ npx ts-node ./scripts/ecdsa_sigs_parser.ts \
               --signatures <path_to_input_ecdsa_sigs_json> \
               --output-path <path_for_output_ecdsa_star_sigs_json>
 ```
-
-## [Full workflow](./full_workflow.sh)
-
-TODO
 
 ## [G16 Prove](./g16_prove.sh)
 
@@ -271,15 +327,383 @@ npx ts-node ./scripts/generate_circuits.ts --num-sigs <num_sigs_per_batch> \
 
 ## [Input prep - layer 1](./input_prep_for_layer_one.ts)
 
-TODO 
+*Some of this code was taken from the [batch-ecdsa library](https://github.com/puma314/batch-ecdsa/blob/b512c651f497985a74858154e4a69bcdaf02443e/test/utils.ts)*
+
+Format data for use in layer 1 circuit.
+
+This script takes the output of ecdsa_sigs_parser.ts and converts it to the format required by the layer 1 circuit.
+
+Note that the output of ecdsa_sigs_parser.ts contains all the signatures, but
+we only want to take a portion of them for each batch. We can choose which
+portion via the index options in the CLI.
+
+<details>
+
+<summary>The output file has the following shape</summary>
+
+```javascript
+{
+  "r": [
+    [
+      "8283825256485755217",
+      // ...
+    ],
+    // ...
+  ],
+  "s": [
+    [
+      "7057909857611246358",
+      // ...
+    ],
+    // ...
+  ],
+  "rprime": [
+    [
+      "17472741145835596079",
+      // ...
+    ],
+    // ...
+  ],
+  "pubkey": [
+    [
+      [
+        "17105043016749647727",
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "msghash": [
+    [
+      "4259029091327649082",
+      // ...
+    ],
+    // ...
+  ]
+}
+```
+</details>
+
+Script can be invoked like so:
+
+```bash
+npx ts-node ./scripts/input_prep_for_layer_one.ts \
+            --poa-input-data <path_to_output_of_ecdsa_sigs_parser_script> \
+            --write-layer-one-data-to <dir> \
+            --account-start-index <index> \
+            --account-end-index <index>
+```
 
 ## [Input prep - layer 2](./input_prep_for_layer_two.ts)
 
-TODO
+Format data for use in layer 2 circuit.
+
+This script takes
+1. the output of ecdsa_sigs_parser.ts: `ProofOfAssetsInputFileShape`
+2. merkle root (`bigint`) & proofs (`Proofs`) from merkle_tree.rs
+3. layer 1 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
+and converts it to the format required by the layer 2 circuit: `LayerTwoInputFileShape`
+
+Note that the output of ecdsa_sigs_parser.ts contains all the signatures, but
+we only want to take a portion of them for each batch. We can choose which
+portion via the index options in the CLI.
+
+<details>
+
+<summary>The output file has the following shape</summary>
+
+```javascript
+{
+  "gamma2": [
+    [
+      [
+        5896345417453,
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "delta2": [
+    [
+      [
+        3655126963217,
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "negalfa1xbeta2": [
+    [
+      [
+        4063420080633,
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "IC": [
+    [
+      [
+        3438634672293,
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "negpa": [
+    [
+      6443468478906,
+      // ...
+    ],
+    // ...
+  ],
+  "pb": [
+    [
+      [
+        565327091242,
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "pc": [
+    [
+      1100766861909,
+      // ...
+    ],
+    // ...
+  ],
+  "pubkey_x_coord_hash": "9000...",
+  "pubkey": [
+    [
+      [
+        "17105043016749647727",
+        // ...
+      ],
+      // ...
+    ],
+    // ...
+  ],
+  "leaf_addresses": [
+    "58549...",
+    // ...
+  ],
+  "leaf_balances": [
+    "354",
+    // ...
+  ],
+  "merkle_root": "2138971...",
+  "path_elements": [
+    [
+      "11684240...",
+      // ...
+    ],
+    // ...
+  ],
+  "path_indices": [
+    [
+      0,
+      // ...
+    ],
+    // ...
+  ]
+}
+```
+</details>
+
+<details>
+
+<summary>Merkle proofs & root files are created by merkle_tree.rs</summary>
+
+Merkle root file looks like this:
+```json
+{
+  "__bigint__": "15472712420445845353699436315172899903146950857649372579231961778780845454369"
+}
+```
+
+Merkle proofs file looks like this:
+```javascript
+{
+  "leaves": [
+    {
+      "address": {
+        "__bigint__": "206933892483518574352511647678199729493848065659"
+      },
+      "balance": {
+        "__bigint__": "1058748567537136135"
+      },
+      "hash": {
+        "__bigint__": "7851871883103058869308994773056478210002897307428913610928488050559773655664"
+      }
+    },
+    // ...
+  ],
+  "path_elements": [
+    [
+      {
+        "__bigint__": "7904234440378902442369762803695352688549121058277502644031777861983205439866"
+      },
+      // ...
+    ],
+    // ...
+  ],
+  "path_indices": [
+    [
+      0,
+      // ...
+    ],
+    // ...
+  ]
+}
+```
+</details>
+
+```bash
+npx ts-node ./scripts/input_prep_for_layer_two.ts \
+            --poa-input-data <path_to_output_of_ecdsa_sigs_parser_script> \
+            --merkle-root <path_to_merkle_root_json> \
+            --merkle-proofs <path_to_merkle_proofs_json> \
+            --layer-one-sanitized-proof <output_of_sanitize_groth16_proof_script> \
+            --write-layer-two-data-to <path_to_output_json> \
+            --account-start-index <index> \
+            --account-end-index <index>
+```
 
 ## [Input prep - layer 3](./input_prep_for_layer_three.ts)
 
-TODO
+Format data for use in layer 3 circuit.
+
+This script takes
+1. merkle root: `bigint`
+2. layer 2 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
+3. blinding factor for the final Pedersen commitment of asset balance sum
+and converts it to the format required by the layer 3 circuit: `LayerThreeInputFileShape`
+<details>
+
+<summary>The output file has the following shape</summary>
+
+```javascript
+{
+  "gamma2": [
+    [
+      [
+        [
+          5896345417453,
+          // ...
+        ],
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "delta2": [
+    [
+      [
+        [
+          2433806394190,
+          // ...
+        ],
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "negalfa1xbeta2": [
+    [
+      [
+        [
+          4063420080633,
+          // ...
+        ],
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "IC": [
+    [
+      [
+        [
+          6650711866057,
+          // ...
+        ],
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "negpa": [
+    [
+      [
+        5123590522751,
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "pb": [
+    [
+      [
+        [
+          5750824120771,
+          // ...
+        ],
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "pc": [
+    [
+      [
+        2843075561801,
+        // ...
+      ],
+      // ...
+    ]
+  ],
+  "balances": [
+    632
+  ],
+  "merkle_root": "2138971...",
+  "ped_com_generator_g": [
+    [
+      "6836562328990639286768922",
+      // ...
+    ],
+    // ...
+  ],
+  "ped_com_generator_h": [
+    [
+      "25216993871230434893611732",
+      // ...
+    ],
+    // ...
+  ],
+  "ped_com_blinding_factor": [
+    "0",
+    // ...
+  ]
+}
+```
+
+</details>
+
+```bash
+npx ts-node ./scripts/input_prep_for_layer_three.ts \
+        --merkle-root <path_to_merkle_root_json> \
+        --layer-two-sanitized-proof <output_of_sanitize_groth16_proof_script> \
+        --write-layer-three-data-to <path_to_output_json> \
+        --blinding-factor <num> \
+        --multiple-proofs # need to set this if there is >1 batch
+```
 
 ## [Machine initialization](./machine_initialization.sh)
 
@@ -378,3 +802,8 @@ npx ts-node ./scripts/pedersen_commitment_checker.ts \
 ## [Sanitize G16 proof](./sanitize_groth16_proof.py)
 
 This script takes the proof files generated by Rapidsnark/Snarkjs, and converts them to input files for another circuit. The code was copied from [the circom-pairing library](https://github.com/yi-sun/circom-pairing/blob/107c316223a08ac577522c54edd81f0fc4c03130/python/bn254.ipynb)
+
+Invoke like this:
+```bash
+python ./scripts/sanitize_groth16_proof.py <proof_dir>
+```
