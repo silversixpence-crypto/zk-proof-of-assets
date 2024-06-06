@@ -30,7 +30,7 @@ fi
 BLINDING_FACTOR="4869643893319708471955165214975585939793846505679808910535986866633137979160"
 
 ############################################
-################### CLI ####################
+################## CLI #####################
 ############################################
 
 ERR_MSG="Most likely a bug in the shell script"
@@ -44,7 +44,13 @@ USAGE:
 
 DESCRIPTION:
     This script does the following:
-    1. TODO
+    1. Converts the given ECDSA signatures to ECDSA* signatures, which are required for the circuits
+    2. Generates the final Circom circuits based on the pre-written templates & the provided inputs
+    3. Generate a Merkle Tree for the anonymity set
+    4. Invoke g16_setup.sh for the 3 layers to generate the proving keys (zkeys) (done in parallel by default)
+    5. Save the zkeys in the zkey directory, for reuse in future runs
+    6. Invoke g16_prove.sh for all batches of layers 1 & 2, in parallel
+    7. Invoke g16_prove.sh for final layer 3 circuit
 
 FLAGS:
 
@@ -175,7 +181,12 @@ if [[ ! -d "$logs_dir" ]]; then
     mkdir -p "$logs_dir"
 fi
 
+# Accepts different forms of names for layers 1, 2, 3,
+# and returns a stardardized form.
 parse_layer_name() {
+    # This line allows the function to return a value to the variable provided
+    # by the caller. So you call it like this:
+    # parse_layer_name $input_variable_name output_variable_name
     declare -n ret=$2
 
     naming_map=(zero one two three)
@@ -266,12 +277,20 @@ set_zkey_arg() {
 ############################################
 
 MSG="PARSING SIGNATURES"
-execute npx ts-node "$SCRIPTS_DIR"/ecdsa_sigs_parser.ts -s "$sigs_path" --output-path "$parsed_sigs_path"
+execute npx ts-node "$SCRIPTS_DIR"/ecdsa_sigs_parser.ts \
+        --signatures "$sigs_path" \
+        --output-path "$parsed_sigs_path"
 
 circuits_relative_path=$(realpath --relative-to="$build_dir" "$CIRCUITS_DIR")
 
 MSG="GENERATING CIRCUITS"
-execute npx ts-node "$SCRIPTS_DIR"/generate_circuits.ts --num-sigs $num_sigs_per_batch --num-sigs-remainder $remainder --tree-height $merkle_tree_height --parallelism $parallelism --write-circuits-to "$build_dir" --circuits-library-relative-path "$circuits_relative_path"
+execute npx ts-node "$SCRIPTS_DIR"/generate_circuits.ts \
+        --num-sigs $num_sigs_per_batch \
+        --num-sigs-remainder $remainder \
+        --tree-height $merkle_tree_height \
+        --parallelism $parallelism \
+        --write-circuits-to "$build_dir" \
+        --circuits-library-relative-path "$circuits_relative_path"
 
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
@@ -286,8 +305,6 @@ generate_merkle_tree() {
 }
 
 generate_merkle_tree
-
-exit 0
 
 ############################################
 ### G16 SETUP FOR ALL LAYERS, IN PARALLEL ##
@@ -305,6 +322,7 @@ setup_layers() {
     "$SCRIPTS_DIR"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
 }
 
+# If there are some remainder sigs then we need to run layer 1 & 2 an extra time.
 if [[ $remainder -gt 0 ]]; then
     setup_remainder_inputs="one_remainder two_remainder"
 fi
@@ -320,6 +338,13 @@ SEE $logs_dir/layer_\$layer_setup.log
 ================
 "
 
+# This section (and others) use GNU's parallel.
+# https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
+# https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
+
+# TODO we should have the option to run this sequentially,
+# in case the host machine does not have enough compute/memory to
+# run all the things in parallel
 generate_merkle_tree &
 parallel --joblog "$logs_dir/setup_layers.log" setup_layers {} '>' "$logs_dir"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
 
@@ -344,15 +369,15 @@ move_zkey() {
 # these need to be exported for the parallel command
 export -f move_zkey generated_zkey_path
 
+printf "
+================ MOVING GENERATED ZKEYS TO "$ZKEY_DIR"================
+"
+
 parallel move_zkey ::: one two three $setup_remainder_inputs
 
 ############################################
 ####### LAYER 1 & 2 PROVE IN PARALLEL ######
 ############################################
-
-# Use GNU's parallel.
-# https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
-# https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
 
 prove_layers_one_two() {
     i=$1 # batch number
@@ -383,7 +408,11 @@ prove_layers_one_two() {
     fi
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH $i"
-    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_one.ts --poa-input-data "$parsed_sigs_path" --write-layer-one-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
+    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_one.ts \
+            --poa-input-data "$parsed_sigs_path" \
+            --write-layer-one-data-to "$signals" \
+            --account-start-index $start_index \
+            --account-end-index $end_index
 
     "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
     "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
@@ -403,7 +432,14 @@ prove_layers_one_two() {
     execute python "$SCRIPTS_DIR"/sanitize_groth16_proof.py "$l1_proof_dir"
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH $i"
-    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_two.ts --poa-input-data "$parsed_sigs_path" --merkle-root "$merkle_root_path" --merkle-proofs "$merkle_proofs_path" --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json --write-layer-two-data-to "$signals" --account-start-index $start_index --account-end-index $end_index
+    execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_two.ts \
+            --poa-input-data "$parsed_sigs_path" \
+            --merkle-root "$merkle_root_path" \
+            --merkle-proofs "$merkle_proofs_path" \
+            --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json \
+            --write-layer-two-data-to "$signals" \
+            --account-start-index $start_index \
+            --account-end-index $end_index
 
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
@@ -439,7 +475,12 @@ set_circuit_path 3 circuit
 set_zkey_arg 3 zkey
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
-execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts --merkle-root "$merkle_root_path" --layer-two-sanitized-proof "$build" --multiple-proofs --write-layer-three-data-to "$signals" --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
+        --merkle-root "$merkle_root_path" \
+        --layer-two-sanitized-proof "$build" \
+        --multiple-proofs \
+        --write-layer-three-data-to "$signals" \
+        --blinding-factor $BLINDING_FACTOR
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
@@ -447,6 +488,8 @@ printf "\n================ $MSG ================\n"
 "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" $zkey "$circuit" "$signals"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
-execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts --layer-three-public-inputs "$build"/public.json --blinding-factor $BLINDING_FACTOR
+execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
+        --layer-three-public-inputs "$build"/public.json \
+        --blinding-factor $BLINDING_FACTOR
 
 echo "SUCCESS"

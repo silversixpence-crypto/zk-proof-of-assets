@@ -13,7 +13,9 @@ Usage
 
 There is a basic CLI that can be invoked like so:
 ```bash
-npx ts-node ./scripts/ecdsa_sigs_parser.ts --signatures <path_to_input_ecdsa_sigs_json> --output-path <path_for_output_ecdsa_star_sigs_json>
+npx ts-node ./scripts/ecdsa_sigs_parser.ts \
+            --signatures <path_to_input_ecdsa_sigs_json> \
+            --output-path <path_for_output_ecdsa_star_sigs_json>
 ```
 **/
 
