@@ -229,16 +229,20 @@ set_signals_path() {
     ret="$build_dir"/layer_"$name"_input.json
 }
 
-set_exitsting_zkey_path() {
+set_existing_zkey_path() {
     declare -n ret=$2
     local name
 
     parse_layer_name $1 name
 
-    if [[ $name == one || $name == one_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_one_"$num_sigs"_sigs.zkey
-    elif [[ $name == two || $name == two_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    if [[ $name == one ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$num_sigs_per_batch"_sigs.zkey
+    elif [[ $name == one_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$remainder"_sigs.zkey
+    elif [[ $name == two ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$num_sigs_per_batch"_sigs_"$merkle_tree_height"_height.zkey
+    elif [[ $name == two_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$remainder"_sigs_"$merkle_tree_height"_height.zkey
     elif [[ $name == three ]]; then
         ret="$ZKEY_DIR"/layer_three_"$parallelism"_batches.zkey
     else
@@ -261,7 +265,7 @@ set_zkey_arg() {
     declare -n ret=$2
     local zkey_path
 
-    set_exitsting_zkey_path $1 zkey_path
+    set_existing_zkey_path $1 zkey_path
 
     if [[ -f "$zkey_path" ]]; then
         zkey_arg="-Z $zkey_path"
@@ -328,9 +332,9 @@ if [[ $remainder -gt 0 ]]; then
 fi
 
 # these need to be exported for the parallel command
-export -f setup_layers set_layer_build_dir set_ptau_path set_zkey_arg set_sigs_path parse_layer_name set_exitsting_zkey_path
-export SCRIPTS_DIR FULL_WORKFLOW_DIR
-export threshold parallelism num_sigs build_dir logs_dir
+export -f setup_layers set_layer_build_dir set_ptau_path set_zkey_arg set_sigs_path parse_layer_name set_existing_zkey_path
+export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
+export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder
 
 printf "
 ================ RUNNING G16 SETUP FOR ALL LAYERS ================
@@ -359,7 +363,7 @@ move_zkey() {
 
     parse_layer_name $1 _name
     set_generated_zkey_path $1 zkey_path
-    set_exitsting_zkey_path $1 zkey_path_save
+    set_existing_zkey_path $1 zkey_path_save
 
     if [[ -f "$zkey_path" ]]; then
         mv "$zkey_path" "$zkey_path_save"
