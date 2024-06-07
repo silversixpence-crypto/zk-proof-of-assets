@@ -35,8 +35,7 @@ There are conflicts with function names between ed25519-circom and other depende
 Here are some useful commands for running the whole proving system in a Docker container.
 
 ```bash
-# 'privileged' is needed to change vm.max_map_count (see machine_initialization.sh script)
-id=$(docker run --privileged -d -ti --rm ubuntu /bin/bash)
+id=$(docker run --privileged -d -ti -m 100G --memory-swap -1 --name poa_100g --rm ubuntu /bin/bash)
 
 docker cp ./scripts/machine_initialization.sh $id:/home
 docker cp ./powersOfTau28_hez_final_XX.ptau $id:/root
@@ -46,5 +45,8 @@ docker attach $id
 apt update -y && apt upgrade -y && apt install -y sudo vim
 cd /home && ./machine_initialization.sh -h
 ```
+- `-m` : set max memory (-1 for unlimited), which can be useful if you want to use the machine for other tasks, and you know the zk workflow will take up all the memory
+- `--memory-swap` : max swap (-1 for unlimited)
+- `--privileged` : is needed to change vm.max_map_count (see machine_initialization.sh script)
 
 
