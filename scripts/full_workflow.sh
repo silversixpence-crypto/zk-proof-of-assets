@@ -43,6 +43,8 @@ USAGE:
     ./full_workflow.sh [FLAGS] [OPTIONS] <signatures_path> <anonymity_set_path> <blinding_factor>
 
 DESCRIPTION:
+    Note that only the Ethereum blockchain is currently supported.
+
     This script does the following:
     1. Converts the given ECDSA signatures to ECDSA* signatures, which are required for the circuits
     2. Generates the final Circom circuits based on the pre-written templates & the provided inputs
@@ -57,19 +59,17 @@ FLAGS:
 OPTIONS:
 
     -b <NUM>         Ideal batch size (this may not be the resulting batch size)
-                     Default is TODO
+                     Default is `ceil(num_sigs / 5)`
 
     -B <PATH>        Build directory, where all the build artifacts are placed
                      Default is '<repo_root_dir>/build'
-
-    -h <NUM>         Merkle tree height
-                     Default is TODO
 
 ARGS:
 
     <signatures_path>       Path to the file containing the signatures of the owned accounts
 
     <anonymity_set_path>    Path to the anonymity set of addresses
+                            Headings should be \"address,eth_balance\"
 
     <blinding_factor>       Blinding factor for the Pedersen commitment
 "
@@ -126,7 +126,7 @@ merkle_tree_height=$(echo "1 + l($anon_set_size)/l(2)" | bc -l | sed "s/\.[0-9]*
 # if the batch size is not set by the user then set it automatically
 if [ -z "$ideal_num_sigs_per_batch" ]; then
     if [[ $num_sigs > 5 ]]; then
-        # 5 is a fairly arbitrary choice
+        # TODO 5 is a fairly arbitrary choice, maybe find a better one?
         ideal_num_sigs_per_batch=$((num_sigs / 5))
     else
         ideal_num_sigs_per_batch=$num_sigs

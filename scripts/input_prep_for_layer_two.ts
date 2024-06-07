@@ -1,3 +1,17 @@
+/**
+Format data for use in layer 2 circuit.
+
+This script takes
+1. the output of ecdsa_sigs_parser.ts: `ProofOfAssetsInputFileShape`
+2. merkle root (`bigint`) & proofs (`Proofs`) from merkle_tree.rs
+3. layer 1 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
+and converts it to the format required by the layer 2 circuit: `LayerTwoInputFileShape`
+
+Note that the output of ecdsa_sigs_parser.ts contains all the signatures, but
+we only want to take a portion of them for each batch. We can choose which
+portion via the index options in the CLI.
+**/
+
 import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
 import { bigint_to_array, bigint_to_Uint8Array, Uint8Array_to_bigint } from "./lib/utils";

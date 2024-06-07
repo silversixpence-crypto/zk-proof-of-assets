@@ -48,6 +48,7 @@ export interface Leaf {
     hash: bigint,
 }
 
+// TODO change the name here to MerkleProofs
 export interface Proofs {
     leaves: Leaf[],
     path_elements: bigint[][],

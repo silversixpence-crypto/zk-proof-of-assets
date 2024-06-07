@@ -68,7 +68,32 @@ USAGE:
 
 DESCRIPTION:
     This script does the following:
-    1. TODO
+    1. Installs a bunch of software using the APT package manager
+    2. Installs Rust via their install script
+    3. Clones the Circom repo, and builds from source
+    4. Clones the pyenv repo, and installs Python 3.10 & 3.6
+    5. Clones the node repo, selects a particular commit, and builds from source
+    6. Installs nvm via their install script, and installs latest npm
+    7. Clones rapidsnark repo, and builds from source
+    8. Installs pnpm via their install script
+    9. Print out the `export` command that needs to be run manually
+
+TROUBLESHOOTING:
+
+    If the npm install fails with this error:
+      > Installing latest LTS version.
+      > Downloading and installing node v20.11.0...
+      > Binary download failed, trying source.
+    Then run this command manually:
+      `export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts`.
+
+    If the pnpm install fails with this error:
+      > ==> Downloading pnpm binaries 8.15.1
+      > WARN using --force I sure hope you know what you are doing
+      > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
+      > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
+    Then run this command manually (with different tmp file):
+      `SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
 
 FLAGS:
 
@@ -91,6 +116,7 @@ OPTIONS:
                    See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
 
      -r <DIR>      Clone zk-proof-of-assets repo into <DIR>
+                   Also install dependencies and apply patches to dependencies
 
      -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
 "

@@ -1,3 +1,13 @@
+/**
+Format data for use in layer 3 circuit.
+
+This script takes
+1. merkle root: `bigint`
+2. layer 2 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
+3. blinding factor for the final Pedersen commitment of asset balance sum
+and converts it to the format required by the layer 3 circuit: `LayerThreeInputFileShape`
+**/
+
 import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
 import { ProofOfAssetsInputFileShape, Groth16ProofAsInput } from "./lib/interfaces";

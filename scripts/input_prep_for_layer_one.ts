@@ -1,5 +1,17 @@
-// Some of this code was taken from
-// https://github.com/puma314/batch-ecdsa/blob/b512c651f497985a74858154e4a69bcdaf02443e/test/utils.ts
+/**
+Format data for use in layer 1 circuit.
+
+This script takes the output of ecdsa_sigs_parser.ts `ProofOfAssetsInputFileShape`
+and converts it to the format required by the layer 1 circuit:
+`LayerOneInputFileShape`.
+
+Note that the output of ecdsa_sigs_parser.ts contains all the signatures, but
+we only want to take a portion of them for each batch. We can choose which
+portion via the index options in the CLI.
+
+Some of this code was taken from
+https://github.com/puma314/batch-ecdsa/blob/b512c651f497985a74858154e4a69bcdaf02443e/test/utils.ts
+**/
 
 import { Point, CURVE } from '@noble/secp256k1';
 
