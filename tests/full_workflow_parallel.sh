@@ -16,7 +16,9 @@ ideal_num_sigs_per_batch=2
 
 output=$(python "$THIS_DIR"/../scripts/batch_size_optimizooor.py $num_sigs $ideal_num_sigs_per_batch)
 num_sigs_per_batch=2 # $(echo $output | grep -o -e "[0-9]*" | sed -n 1p)
-remainder=1 # $(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
+remainder=1          # $(echo $output | grep -o -e "[0-9]*" | sed -n 2p)
+
+echo "num_sigs_per_batch $num_sigs_per_batch"
 
 parallelism=$((num_sigs / num_sigs_per_batch))
 if [[ $remainder -gt 0 ]]; then
@@ -121,10 +123,17 @@ exitsting_zkey_path() {
 
     parse_layer_name $1 name
 
-    if [[ $name == one || $name == one_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_one_"$num_sigs"_sigs.zkey
-    elif [[ $name == two || $name == two_remainder ]]; then
-        ret="$ZKEY_DIR"/layer_two_"$num_sigs"_sigs_"$merkle_tree_height"_height.zkey
+    echo "exitsting_zkey_path name: $name"
+    echo "zkey dir $ZKEY_DIR"
+
+    if [[ $name == one ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$num_sigs_per_batch"_sigs.zkey
+    elif [[ $name == one_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_one_"$remainder"_sigs.zkey
+    elif [[ $name == two ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$num_sigs_per_batch"_sigs_"$merkle_tree_height"_height.zkey
+    elif [[ $name == two_remainder ]]; then
+        ret="$ZKEY_DIR"/layer_two_"$remainder"_sigs_"$merkle_tree_height"_height.zkey
     elif [[ $name == three ]]; then
         ret="$ZKEY_DIR"/layer_three_"$parallelism"_batches.zkey
     else
@@ -148,6 +157,7 @@ zkey_arg() {
     local zkey_path
 
     exitsting_zkey_path $1 zkey_path
+    echo "zkey path $zkey_path"
 
     if [[ -f "$zkey_path" ]]; then
         zkey_arg="-Z $zkey_path"
@@ -191,10 +201,17 @@ generate_merkle_tree() {
 setup_layers() {
     local build circuit ptau zkey
 
+    echo "setup layers $1"
+
     build_dir $1 build
     circuit_path $1 circuit
     ptau_path $1 ptau
     zkey_arg $1 zkey
+
+    echo "build dir $build"
+    echo "circuit path $circuit"
+    echo "ptau path $ptau"
+    echo "zkey arg $zkey"
 
     # TODO check number of sigs and only do the -b flag if there are more than 10M constraints
     "$SCRIPTS_DIR"/g16_setup.sh -b -B "$build" -t "$ptau" $zkey "$circuit"
@@ -206,8 +223,8 @@ fi
 
 # these need to be exported for the parallel command
 export -f setup_layers build_dir ptau_path zkey_arg circuit_path parse_layer_name exitsting_zkey_path
-export TESTS_DIR SCRIPTS_DIR LOGS_DIR BUILD_DIR THIS_DIR
-export threshold parallelism num_sigs naming_map
+export TESTS_DIR SCRIPTS_DIR LOGS_DIR BUILD_DIR THIS_DIR ZKEY_DIR
+export threshold parallelism num_sigs naming_map num_sigs_per_batch remainder
 
 printf "
 ================ RUNNING G16 SETUP FOR ALL LAYERS ================
@@ -218,7 +235,13 @@ SEE $LOGS_DIR/layer_\$layer_setup.log
 generate_merkle_tree &
 parallel --joblog "$LOGS_DIR/setup_layers.log" setup_layers {} '>' "$LOGS_DIR"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
 
-wait
+generate_merkle_tree
+
+for layer in one two three $setup_remainder_inputs; do
+    setup_layers $layer > "$LOGS"/layer_"$layer"_setup.log 2>&1
+done
+
+# wait
 
 # ///////////////////////////////////////////////////////
 # Move zkeys to test dir.
