@@ -26,9 +26,6 @@ if [[ ! -d "$ZKEY_DIR" ]]; then
     mkdir -p "$ZKEY_DIR"
 fi
 
-# TODO remove
-BLINDING_FACTOR="4869643893319708471955165214975585939793846505679808910535986866633137979160"
-
 ############################################
 ################## CLI #####################
 ############################################
@@ -94,7 +91,7 @@ ARGS:
 
     <blinding_factor>       Blinding factor for the Pedersen commitment
                             The Pedersen commitments are done on the 25519 elliptic curve group
-                            Must be a decimal value less than `2^255 - 19`
+                            Must be a decimal value less than '2^255 - 19'
 "
 }
 
@@ -519,7 +516,7 @@ execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
         --layer-two-sanitized-proof "$build" \
         --multiple-proofs \
         --write-layer-three-data-to "$signals" \
-        --blinding-factor $BLINDING_FACTOR
+        --blinding-factor $blinding_factor
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
@@ -529,6 +526,6 @@ printf "\n================ $MSG ================\n"
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
         --layer-three-public-inputs "$build"/public.json \
-        --blinding-factor $BLINDING_FACTOR
+        --blinding-factor $blinding_factor
 
 echo "SUCCESS"
