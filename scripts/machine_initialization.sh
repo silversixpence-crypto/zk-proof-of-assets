@@ -78,6 +78,9 @@ DESCRIPTION:
     8. Installs pnpm via their install script
     9. Print out the `export` command that needs to be run manually
 
+    The script can be run multiple times without repeating work e.g. if a command
+    fails then you can run the script again and it will pick up where it left off.
+
 TROUBLESHOOTING:
 
     If the npm install fails with this error:
@@ -86,6 +89,7 @@ TROUBLESHOOTING:
       > Binary download failed, trying source.
     Then run this command manually:
       `export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts`.
+    And restart the process.
 
     If the pnpm install fails with this error:
       > ==> Downloading pnpm binaries 8.15.1
@@ -94,6 +98,7 @@ TROUBLESHOOTING:
       > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
     Then run this command manually (with different tmp file):
       `SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    And restart the process.
 
 FLAGS:
 

@@ -54,8 +54,6 @@ DESCRIPTION:
     6. Invoke g16_prove.sh for all batches of layers 1 & 2, in parallel
     7. Invoke g16_prove.sh for final layer 3 circuit
 
-FLAGS:
-
 OPTIONS:
 
     -b <NUM>         Ideal batch size (this may not be the resulting batch size)
@@ -68,10 +66,12 @@ ARGS:
 
     <signatures_path>       Path to the file containing the signatures of the owned accounts
 
-    <anonymity_set_path>    Path to the anonymity set of addresses
+    <anonymity_set_path>    Path to the CSV file containing the anonymity set of addresses & balances
                             Headings should be \"address,eth_balance\"
 
     <blinding_factor>       Blinding factor for the Pedersen commitment
+                            The Pedersen commitments are done on the 25519 elliptic curve group
+                            Must be a decimal value less than `2^255 - 19`
 "
 }
 
