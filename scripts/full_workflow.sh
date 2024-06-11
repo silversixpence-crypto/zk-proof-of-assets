@@ -304,19 +304,19 @@ set_zkey_arg() {
 
 MSG="PARSING SIGNATURES"
 execute npx ts-node "$SCRIPTS_DIR"/ecdsa_sigs_parser.ts \
-        --signatures "$sigs_path" \
-        --output-path "$parsed_sigs_path"
+    --signatures "$sigs_path" \
+    --output-path "$parsed_sigs_path"
 
 circuits_relative_path=$(realpath --relative-to="$build_dir" "$CIRCUITS_DIR")
 
 MSG="GENERATING CIRCUITS"
 execute npx ts-node "$SCRIPTS_DIR"/generate_circuits.ts \
-        --num-sigs $num_sigs_per_batch \
-        --num-sigs-remainder $remainder \
-        --tree-height $merkle_tree_height \
-        --parallelism $parallelism \
-        --write-circuits-to "$build_dir" \
-        --circuits-library-relative-path "$circuits_relative_path"
+    --num-sigs $num_sigs_per_batch \
+    --num-sigs-remainder $remainder \
+    --tree-height $merkle_tree_height \
+    --parallelism $parallelism \
+    --write-circuits-to "$build_dir" \
+    --circuits-library-relative-path "$circuits_relative_path"
 
 # Run in parallel to the next commands, 'cause it takes long
 generate_merkle_tree() {
@@ -327,10 +327,8 @@ generate_merkle_tree() {
         --anon-set "$anon_set_path" \
         --poa-input-data "$parsed_sigs_path" \
         --output-dir "$build_dir" \
-    &>"$logs_dir"/merkle_tree.log
+        &>"$logs_dir"/merkle_tree.log
 }
-
-generate_merkle_tree
 
 ############################################
 ### G16 SETUP FOR ALL LAYERS, IN PARALLEL ##
@@ -358,19 +356,15 @@ export -f setup_layer set_layer_build_dir set_ptau_path set_zkey_arg parse_layer
 export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
 export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder
 
-printf "
-================ RUNNING G16 SETUP FOR ALL LAYERS ================
-SEE $logs_dir/layer_\$layer_setup.log
-================
-"
-
 layers="one two three $setup_remainder_inputs"
 
 # the caller may want to run the setups sequentially, because they can be quite
 # compute/memory hungry, and if the machine does not have the resources then
 # running them in parallel will actually be slower than running sequentially
-if sequential_setup; then
+if $sequential_setup; then
     generate_merkle_tree
+
+    printf "\n================ RUNNING G16 SETUP FOR ALL LAYERS (SEQUENTIALLY) ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
 
     for layer in $layers; do
         setup_layer $layer
@@ -379,6 +373,8 @@ else
     # This section (and others) use GNU's parallel.
     # https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
     # https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
+
+    printf "\n================ RUNNING G16 SETUP FOR ALL LAYERS (IN PARALLEL, ALSO PARALLEL TO MERKLE TREE BUILD) ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
 
     generate_merkle_tree &
     parallel --joblog "$logs_dir/setup_layer.log" setup_layer {} '>' "$logs_dir"/layer_{}_setup.log '2>&1' ::: $layers
@@ -445,10 +441,10 @@ prove_layers_one_two() {
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH $i"
     execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_one.ts \
-            --poa-input-data "$parsed_sigs_path" \
-            --write-layer-one-data-to "$signals" \
-            --account-start-index $start_index \
-            --account-end-index $end_index
+        --poa-input-data "$parsed_sigs_path" \
+        --write-layer-one-data-to "$signals" \
+        --account-start-index $start_index \
+        --account-end-index $end_index
 
     "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
     "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
@@ -469,13 +465,13 @@ prove_layers_one_two() {
 
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH $i"
     execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_two.ts \
-            --poa-input-data "$parsed_sigs_path" \
-            --merkle-root "$merkle_root_path" \
-            --merkle-proofs "$merkle_proofs_path" \
-            --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json \
-            --write-layer-two-data-to "$signals" \
-            --account-start-index $start_index \
-            --account-end-index $end_index
+        --poa-input-data "$parsed_sigs_path" \
+        --merkle-root "$merkle_root_path" \
+        --merkle-proofs "$merkle_proofs_path" \
+        --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json \
+        --write-layer-two-data-to "$signals" \
+        --account-start-index $start_index \
+        --account-end-index $end_index
 
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
@@ -512,11 +508,11 @@ set_zkey_arg 3 zkey
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
 execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
-        --merkle-root "$merkle_root_path" \
-        --layer-two-sanitized-proof "$build" \
-        --multiple-proofs \
-        --write-layer-three-data-to "$signals" \
-        --blinding-factor $blinding_factor
+    --merkle-root "$merkle_root_path" \
+    --layer-two-sanitized-proof "$build" \
+    --multiple-proofs \
+    --write-layer-three-data-to "$signals" \
+    --blinding-factor $blinding_factor
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
@@ -525,7 +521,7 @@ printf "\n================ $MSG ================\n"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
-        --layer-three-public-inputs "$build"/public.json \
-        --blinding-factor $blinding_factor
+    --layer-three-public-inputs "$build"/public.json \
+    --blinding-factor $blinding_factor
 
 echo "SUCCESS"
