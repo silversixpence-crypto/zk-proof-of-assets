@@ -62,6 +62,10 @@ FLAGS:
                               and if the machine does not have the resources then running
                               in parallel will be slower than running sequentially.
 
+    -v                      Print commands that are run (set -x)
+
+    -h                      Help (print this text)
+
 OPTIONS:
 
     -b <NUM>                Ideal batch size (this may not be the resulting batch size)
@@ -72,7 +76,18 @@ OPTIONS:
 
 ARGS:
 
-    <signatures_path>       Path to the file containing the signatures of the owned accounts
+    <signatures_path>       Path to the json file containing the ECDSA signatures of the owned accounts
+                            The json file should be a list of entries of the form:
+                            {
+                              "address": "0x72d0de0955fdba5f62af04b6d1029e4a5fdba5f6",
+                              "balance": "5940527217576722726n",
+                              "signature": {
+                                "v": 28,
+                                "r": "0x4b192b5b734f7793e28313a9f269f1f3ad1e0587a395640f8f994abdb5d750a2",
+                                "s": "0xdba067cd36db3a3603649fdbb397d466021e6ef0307a41478b9aaeb47d0df6a5",
+                                "msghash": "0x5f8465236e0a23dff20d042e450704e452513ec41047dd0749777b1ff0717acc"
+                              }
+                            }
 
     <anonymity_set_path>    Path to the CSV file containing the anonymity set of addresses & balances
                             Headings should be \"address,eth_balance\"
