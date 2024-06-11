@@ -241,6 +241,7 @@ set_ptau_path() {
     declare -n ret=$2
     local _name
     parse_layer_name $1 _name
+    # TODO this should be optionally set in cli, best would be to have the smallest ptau file determined by circuit size
     ret="$FULL_WORKFLOW_DIR"/../powersOfTau28_hez_final.ptau
 }
 
