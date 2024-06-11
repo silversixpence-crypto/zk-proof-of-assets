@@ -66,7 +66,7 @@ FLAGS:
 OPTIONS:
 
     -b <NUM>                Ideal batch size (this may not be the resulting batch size)
-                            Default is `ceil(num_sigs / 5)`
+                            Default is 'ceil(num_sigs / 5)'
 
     -B <PATH>               Build directory, where all the build artifacts are placed
                             Default is '<repo_root_dir>/build'
