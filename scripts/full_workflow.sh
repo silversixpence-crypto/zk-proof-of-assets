@@ -175,6 +175,29 @@ if [[ $remainder -gt 0 ]]; then
     parallelism=$((parallelism + 1))
 fi
 
+if [[ -z $num_sigs ||
+    -z $anon_set_size ||
+    -z $merkle_tree_height ||
+    -z $parallelism ||
+    -z $num_sigs_per_batch ||
+    -z $remainder ]] \
+    ; then
+
+    printf "
+ERROR
+At least one of the following parameters is was unable to be set:
+    num_sigs: '$num_sigs'
+    anon_set_size: '$anon_set_size'
+    merkle_tree_height: '$merkle_tree_height'
+    parallelism: '$parallelism'
+    num_sigs_per_batch: '$num_sigs_per_batch'
+    remainder: '$remainder'
+"
+
+    ERR_MSG="Parameter not set"
+    exit 1
+fi
+
 printf "
 /////////////////////////////////////////////////////////
 Initiating proving system with the following parameters:
