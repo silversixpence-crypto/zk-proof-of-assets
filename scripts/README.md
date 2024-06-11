@@ -1,11 +1,11 @@
 # Summary of scripts in this directory
 
-Note that the only one that needs to be used is [full_workflow.sh](./full_workflow.sh), the rest are all used by this main script and so do not need to be invoked directly.
-
+Note that the only script in this directory that needs to be used by the prover/custodian is [full_workflow.sh](./full_workflow.sh), the rest of the scripts are all used by this main workflow and so do not need to be invoked directly. But descriptions of them are given below, anyway.
 
 ## [Full workflow](./full_workflow.sh)
 
 ```bash
+"
 Proof of Assets ZK proof workflow.
 
 USAGE:
@@ -25,27 +25,52 @@ DESCRIPTION:
 
 FLAGS:
 
+    -s                      Run the circuit setup script (g16_setup.sh) sequentially for all layers
+                            The default is to run the setup for each layer in parallel,
+                              but it can be very resource-hungry (depending on number of signatures)
+                              and if the machine does not have the resources then running
+                              in parallel will be slower than running sequentially.
+
+    -v                      Print commands that are run (set -x)
+
+    -h                      Help (print this text)
+
 OPTIONS:
 
-    -b <NUM>         Ideal batch size (this may not be the resulting batch size)
-                     Default is `ceil(num_sigs / 5)`
+    -b <NUM>                Ideal batch size (this may not be the resulting batch size)
+                            Default is `ceil(num_sigs / 5)`
 
-    -B <PATH>        Build directory, where all the build artifacts are placed
-                     Default is '<repo_root_dir>/build'
+    -B <PATH>               Build directory, where all the build artifacts are placed
+                            Default is '<repo_root_dir>/build'
 
 ARGS:
 
-    <signatures_path>       Path to the file containing the signatures of the owned accounts
+    <signatures_path>       Path to the json file containing the ECDSA signatures of the owned accounts
+                            The json file should be a list of entries of the form:
+                            {
+                              "address": "0x72d0de0955fdba5f62af04b6d1029e4a5fdba5f6",
+                              "balance": "5940527217576722726n",
+                              "signature": {
+                                "v": 28,
+                                "r": "0x4b192b5b734f7793e28313a9f269f1f3ad1e0587a395640f8f994abdb5d750a2",
+                                "s": "0xdba067cd36db3a3603649fdbb397d466021e6ef0307a41478b9aaeb47d0df6a5",
+                                "msghash": "0x5f8465236e0a23dff20d042e450704e452513ec41047dd0749777b1ff0717acc"
+                              }
+                            }
 
-    <anonymity_set_path>    Path to the anonymity set of addresses
+
+    <anonymity_set_path>    Path to the CSV file containing the anonymity set of addresses & balances
                             Headings should be \"address,eth_balance\"
 
     <blinding_factor>       Blinding factor for the Pedersen commitment
+                            The Pedersen commitments are done on the 25519 elliptic curve group
+                            Must be a decimal value less than `2^255 - 19`
+"
 ```
 
 ---
 
-The helper scripts..
+*The helper scripts..*
 
 ## [Batch size optimizer](./batch_size_optimizooor.py)
 
@@ -84,7 +109,7 @@ https://docs.ethers.org/v6/api/crypto/#SigningKey_recoverPublicKey
 
 <summary>Input & output json shapes of the script</summary>
 
-ecdsa_sigs_parser.ts converts multiple ecdsa signatures of the form
+ecdsa_sigs_parser.ts converts multiple ecdsa signatures of the form:
 ```json
 {
   "address": "0x3e....",
@@ -97,7 +122,7 @@ ecdsa_sigs_parser.ts converts multiple ecdsa signatures of the form
   }
 }
 ```
-and turns it into an ecdsa* signature (extra `r_prime` term) in a format that the circuits can ingest:
+and turns it into an ecdsa* signature (extra `r_prime` term) of the form:
 ```javascript
 {
       "signature": {
@@ -155,6 +180,7 @@ npx ts-node ./scripts/ecdsa_sigs_parser.ts \
 Groth16 proof generation for circom circuits.
 
 ```bash
+"
 USAGE:
     ./g16_prove.sh [FLAGS] [OPTIONS] <circuit_path> <signals_path>
 
@@ -206,6 +232,7 @@ ARGS:
     <circuit_path>   Path to a the circom circuit to generate a witness for
 
     <signals_path>   Path to the json file containing the input signals for the circuit
+"
 ```
 
 ## [G16 Setup](./g16_setup.sh)
@@ -213,6 +240,7 @@ ARGS:
 Groth16 setup for circom circuits.
 
 ```bash
+"
 USAGE:
     ./g16_setup.sh [FLAGS] [OPTIONS] <circuit_path>
 
@@ -259,6 +287,7 @@ OPTIONS:
 ARGS:
 
     <circuit_path>   Path to a the circom circuit to be compiled & have key generation done for
+"
 ```
 
 ## [G16 Verify](./g16_verify.sh)
@@ -266,6 +295,7 @@ ARGS:
 Groth16 proof verification for circom circuits.
 
 ```bash
+"
 USAGE:
     ./g16_verify.sh [FLAGS] [OPTIONS] <circuit_path>
 
@@ -309,6 +339,7 @@ OPTIONS:
 ARGS:
 
     <circuit_path>   Path to a the circom circuit to generate a witness for
+"
 ```
 
 ## [Generate circuits](./generate_circuits.ts)
@@ -708,6 +739,7 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
 ## [Machine initialization](./machine_initialization.sh)
 
 ```bash
+"
 Setup various software required to used the zk-proof-of-asset repo.
 
 USAGE:
@@ -724,6 +756,9 @@ DESCRIPTION:
     7. Clones rapidsnark repo, and builds from source
     8. Installs pnpm via their install script
     9. Print out the `export` command that needs to be run manually
+
+    The script can be run multiple times without repeating work e.g. if a command
+    fails then you can run the script again and it will pick up where it left off.
 
 TROUBLESHOOTING:
 
@@ -766,6 +801,7 @@ OPTIONS:
                    Also install dependencies and apply patches to dependencies
 
      -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
+"
 ```
 
 ## Merkle tree generator ([Rust](./merkle_tree.rs) & [TypeScript](./merkle_tree.ts) versions)
@@ -787,6 +823,54 @@ This is the output of the `-h` option for CLI of the Rust version. The Rust one 
 Ideally we need the Merkle Tree build to be
 parallelized because the Rust script takes 2.5 hrs to generate a tree for
 a set of size 10M. The hash function used for the Merlke Tree is Poseidon.
+
+<details>
+
+<summary>Merkle proofs & root files that are created</summary>
+
+Merkle root file looks like this:
+```json
+{
+  "__bigint__": "15472712420445845353699436315172899903146950857649372579231961778780845454369"
+}
+```
+
+Merkle proofs file looks like this:
+```javascript
+{
+  "leaves": [
+    {
+      "address": {
+        "__bigint__": "206933892483518574352511647678199729493848065659"
+      },
+      "balance": {
+        "__bigint__": "1058748567537136135"
+      },
+      "hash": {
+        "__bigint__": "7851871883103058869308994773056478210002897307428913610928488050559773655664"
+      }
+    },
+    // ...
+  ],
+  "path_elements": [
+    [
+      {
+        "__bigint__": "7904234440378902442369762803695352688549121058277502644031777861983205439866"
+      },
+      // ...
+    ],
+    // ...
+  ],
+  "path_indices": [
+    [
+      0,
+      // ...
+    ],
+    // ...
+  ]
+}
+```
+</details>
 
 ## [Pedersen commitment checker](./pedersen_commitment_checker.ts)
 
