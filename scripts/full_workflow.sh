@@ -54,13 +54,21 @@ DESCRIPTION:
     6. Invoke g16_prove.sh for all batches of layers 1 & 2, in parallel
     7. Invoke g16_prove.sh for final layer 3 circuit
 
+FLAGS:
+
+    -s                      Run the circuit setup script (g16_setup.sh) sequentially for all layers
+                            The default is to run the setup for each layer in parallel,
+                              but it can be very resource-hungry (depending on number of signatures)
+                              and if the machine does not have the resources then running
+                              in parallel will be slower than running sequentially.
+
 OPTIONS:
 
-    -b <NUM>         Ideal batch size (this may not be the resulting batch size)
-                     Default is `ceil(num_sigs / 5)`
+    -b <NUM>                Ideal batch size (this may not be the resulting batch size)
+                            Default is `ceil(num_sigs / 5)`
 
-    -B <PATH>        Build directory, where all the build artifacts are placed
-                     Default is '<repo_root_dir>/build'
+    -B <PATH>               Build directory, where all the build artifacts are placed
+                            Default is '<repo_root_dir>/build'
 
 ARGS:
 
@@ -80,12 +88,14 @@ ARGS:
 
 build_dir="$PROJECT_ROOT_DIR"/build
 verbose=false
+sequential_setup=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'b:B:hv' flag; do
+while getopts 'b:B:shv' flag; do
     case "${flag}" in
     b) ideal_num_sigs_per_batch="${OPTARG}" ;;
     B) build_dir="${OPTARG}" ;;
+    s) sequential_setup=true ;;
     h)
         print_usage
         exit 0
@@ -314,7 +324,7 @@ generate_merkle_tree
 ### G16 SETUP FOR ALL LAYERS, IN PARALLEL ##
 ############################################
 
-setup_layers() {
+setup_layer() {
     local build circuit ptau zkey
 
     set_layer_build_dir $1 build
@@ -332,7 +342,7 @@ if [[ $remainder -gt 0 ]]; then
 fi
 
 # these need to be exported for the parallel command
-export -f setup_layers set_layer_build_dir set_ptau_path set_zkey_arg set_sigs_path parse_layer_name set_existing_zkey_path
+export -f setup_layer set_layer_build_dir set_ptau_path set_zkey_arg set_sigs_path parse_layer_name set_existing_zkey_path
 export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
 export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder
 
@@ -342,17 +352,27 @@ SEE $logs_dir/layer_\$layer_setup.log
 ================
 "
 
-# This section (and others) use GNU's parallel.
-# https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
-# https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
+layers="one two three $setup_remainder_inputs"
 
-# TODO we should have the option to run this sequentially,
-# in case the host machine does not have enough compute/memory to
-# run all the things in parallel
-generate_merkle_tree &
-parallel --joblog "$logs_dir/setup_layers.log" setup_layers {} '>' "$logs_dir"/layer_{}_setup.log '2>&1' ::: one two three $setup_remainder_inputs
+# the caller may want to run the setups sequentially, because they can be quite
+# compute/memory hungry, and if the machine does not have the resources then
+# running them in parallel will actually be slower than running sequentially
+if sequential_setup; then
+    generate_merkle_tree
 
-wait
+    for layer in $layers; do
+        setup_layer $layer
+    done
+else
+    # This section (and others) use GNU's parallel.
+    # https://www.baeldung.com/linux/bash-for-loop-parallel#4-gnu-parallel-vs-xargs-for-distributing-commands-to-remote-servers
+    # https://www.gnu.org/software/parallel/parallel_examples.html#example-rewriting-a-for-loop-and-a-while-read-loop
+
+    generate_merkle_tree &
+    parallel --joblog "$logs_dir/setup_layer.log" setup_layer {} '>' "$logs_dir"/layer_{}_setup.log '2>&1' ::: $layers
+
+    wait
+fi
 
 ############################################
 ######### MOVE ZKEYS TO ZKEY DIR ###########
