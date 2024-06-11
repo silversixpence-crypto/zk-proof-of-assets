@@ -62,7 +62,6 @@ async function generate_signature_data(msghash: Uint8Array, key_pairs: KeyPair[]
         let a_address_dec: bigint = BigInt(a.address);
         let b_address_dec: bigint = BigInt(b.address);
         if (a_address_dec < b_address_dec) return -1;
-        else if (a_address_dec > b_address_dec) return -1;
         else if (a_address_dec > b_address_dec) return 1;
         else return 0;
     });
