@@ -20,18 +20,12 @@ npx ts-node ./scripts/ecdsa_sigs_parser.ts \
 **/
 
 import * as ethers from "ethers";
-import { AccountAttestation, EcdsaSignature, EcdsaStarSignature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
+import { AccountAttestation, EcdsaSignature, EcdsaStarSignature, ProofOfAssetsInputFileShape, SignatureData } from "./lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { ecdsa_star_from_ecdsa } from "./lib/ecdsa_star";
 
 const fs = require('fs');
 const assert = require('assert');
-
-interface SignatureData {
-    address: string,
-    balance: string,
-    signature: EcdsaSignature,
-}
 
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {

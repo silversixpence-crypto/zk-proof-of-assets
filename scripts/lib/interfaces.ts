@@ -1,6 +1,13 @@
 import { Point } from '@noble/secp256k1';
 import { interfaces } from 'mocha';
 
+// Input given by the prover.
+export interface SignatureData {
+    address: string,
+    balance: string,
+    signature: EcdsaSignature,
+}
+
 // Main input for the system.
 export interface ProofOfAssetsInputFileShape {
     accountAttestations: AccountAttestation[],
