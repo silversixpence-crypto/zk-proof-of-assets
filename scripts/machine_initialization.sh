@@ -209,8 +209,9 @@ ERR_MSG="System config setup failed"
 # https://stackoverflow.com/questions/23537560/docker-build-read-only-file-system
 # 6553000 is enough for at least 256 signatures in layer 1 circuit
 sudo sysctl -w vm.max_map_count=6553000
-# TODO do not add this if it has already been added
-sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
+if ! grep "vm.max_map_count=6553000" /etc/sysctl.conf; then
+    sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
+fi
 
 if $SWAP; then
     # Increase swap memory, and persist after reboot

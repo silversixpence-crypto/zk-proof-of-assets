@@ -25,12 +25,9 @@ var argv = require('minimist')(process.argv.slice(2), {
         blindingFactor: ['blinding-factor', 'b'],
     },
     default: {
-        poaInputDataPath: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
-        blindingFactor: "4869643893319708471955165214975585939793846505679808910535986866633137979160",
+        poaInputDataPath: path.join(__dirname, "../tests/input_data_for_2_accounts.json")
     }
 });
-
-// TODO say something about the hard-coded blinding factor above, or just remove it
 
 let inputDataPath = argv.poaInputDataPath;
 let layerThreePublicInputsPath = argv.layerThreePublicInputsPath;
