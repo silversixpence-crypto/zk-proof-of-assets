@@ -30,7 +30,10 @@ fi
 ################## CLI #####################
 ############################################
 
-ERR_MSG="Most likely a bug in the shell script"
+ERR_MSG="$ERR_PREFIX: Most likely a bug in the shell script"
+
+build_dir="$PROJECT_ROOT_DIR"/build
+ptau_path="$FULL_WORKFLOW_DIR"/../powersOfTau28_hez_final.ptau
 
 print_usage() {
     printf "
@@ -69,7 +72,10 @@ OPTIONS:
                             Default is 'ceil(num_sigs / 5)'
 
     -B <PATH>               Build directory, where all the build artifacts are placed
-                            Default is '<repo_root_dir>/build'
+                            Default is $build_dir
+
+    -p <PATH>               Ptau file to be used for generating groth16 proofs
+                            Default is $ptau_path
 
 ARGS:
 
@@ -98,15 +104,15 @@ ARGS:
 ############################################
 # Parse flags & optional args.
 
-build_dir="$PROJECT_ROOT_DIR"/build
 verbose=false
 sequential_setup=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'b:B:shv' flag; do
+while getopts 'b:B:p:shv' flag; do
     case "${flag}" in
     b) ideal_num_sigs_per_batch="${OPTARG}" ;;
     B) build_dir="${OPTARG}" ;;
+    p) ptau_path="${OPTARG}" ;;
     s) sequential_setup=true ;;
     h)
         print_usage
@@ -156,6 +162,11 @@ if [ -z "$ideal_num_sigs_per_batch" ]; then
 fi
 
 ############################################
+# Check ptau.
+
+check_file_exists_with_ext "$ERR_PREFIX" "ptau_path" "$ptau_path" "ptau"
+
+############################################
 
 if $verbose; then
     # print commands before executing
@@ -184,7 +195,7 @@ if [[ -z $num_sigs ||
     ; then
 
     printf "
-ERROR
+$ERR_PREFIX
 At least one of the following parameters is was unable to be set:
     num_sigs: '$num_sigs'
     anon_set_size: '$anon_set_size'
@@ -194,7 +205,7 @@ At least one of the following parameters is was unable to be set:
     remainder: '$remainder'
 "
 
-    ERR_MSG="Parameter not set"
+    ERR_MSG="$ERR_PREFIX: Parameter not set (see above)"
     exit 1
 fi
 
@@ -241,7 +252,7 @@ parse_layer_name() {
     elif [[ $1 == one || $1 == two || $1 == three || $1 == one_remainder || $1 == two_remainder ]]; then
         ret=$1
     else
-        ERR_MSG="[likely a bug] Invalid layer selection: $1"
+        ERR_MSG="$ERR_PREFIX: [likely a bug] Invalid layer selection: $1"
         exit 1
     fi
 }
@@ -264,8 +275,7 @@ set_ptau_path() {
     declare -n ret=$2
     local _name
     parse_layer_name $1 _name
-    # TODO this should be optionally set in cli, best would be to have the smallest ptau file determined by circuit size
-    ret="$FULL_WORKFLOW_DIR"/../powersOfTau28_hez_final.ptau
+    ret="ptau_path"
 }
 
 set_signals_path() {
@@ -292,7 +302,7 @@ set_existing_zkey_path() {
     elif [[ $name == three ]]; then
         ret="$ZKEY_DIR"/layer_three_"$parallelism"_batches.zkey
     else
-        ERR_MSG="[likely a bug] Invalid layer selection for existing zkey path: $name"
+        ERR_MSG="$ERR_PREFIX: [likely a bug] Invalid layer selection for existing zkey path: $name"
         exit 1
     fi
 }
