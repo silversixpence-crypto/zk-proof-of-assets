@@ -1,12 +1,14 @@
 /**
-This script is used for creating ECDSA signatures & Ethereum addresses for testing.
+   This script is used for creating ECDSA signatures & Ethereum addresses for testing.
 
-Use like this: `npx ts-node ./tests/generate_ecdsa_signatures.ts -n 5 -m "message to sign" -p`
--n : number of signatures to generate (max 128)
--m : message to sign
--p : print signatures
+   Use like this: `npx ts-node ./tests/generate_ecdsa_signatures.ts -n 5 -m "message to sign" -p`
+   -n : number of signatures to generate (max 128)
+   -m : message to sign
+   -p : print signatures
 
-A json file will be written that has the shape `SignatureData[]`.
+   The keys for the signatures are deterministically taken from keys.ts
+
+   A json file will be written that has the shape `SignatureData[]`.
 **/
 
 import { sign, Point, CURVE } from '@noble/secp256k1';
@@ -89,4 +91,3 @@ generate_signature_data(msg_hash, pairs).then(data => {
     const json = JSON.stringify(data);
     fs.writeFileSync(path.join(__dirname, filename), json);
 });
-

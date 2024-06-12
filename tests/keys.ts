@@ -1,3 +1,9 @@
+/**
+   List of private keys for testing.
+
+   The private keys are all private keys for secp256k1.
+**/
+
 import { Point } from '@noble/secp256k1';
 
 export interface KeyPair {

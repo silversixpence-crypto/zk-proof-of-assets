@@ -1,12 +1,22 @@
 /**
-Generate the anonymity set.
+Generate an anonymity set for testing.
 
-Can give the anonymity set size via '-n' cli option.
+Example CLI usage:
+```bash
+npx ts-node ./tests/generate_anon_set.ts --num-addresses 1000
+```
 
-First the addresses from keys.ts are used, then the addresses from random_ethereum_addresses.json
-The max supported anon set size is the sum of addresses in these 2 files.
+The addresses & balances are deterministically chosen. Addresses are first taken
+from keys.ts, then, if more addresses are needed, random_ethereum_addresses.json
+is used. The max supported anonymity set size is the sum of addresses in these
+2 files:
+- 600 for keys.ts
+- 10k for random_ethereum_addresses.json
 
-Output is anonymity_set.csv with headings 'address,eth_balance'
+Note that generate_test_input.ts takes keys from keys.ts, so we have to populate
+the anonymity set with all of these keys if we want the protocol to work.
+
+Output file is anonymity_set.csv with headings 'address,eth_balance'
 **/
 
 import { Wallet } from "ethers";
@@ -48,6 +58,9 @@ if (num_addresses > total_address_count) {
 let accounts: AccountData[] = [];
 let i = 0;
 
+// =============================================================================
+// Add addresses from keys.ts
+
 while (i < known_key_pairs.length && i < num_addresses) {
     let pvt_hex = known_key_pairs[i].pvt.toString(16);
     let address_hex = new Wallet(pvt_hex).address;
@@ -61,6 +74,9 @@ while (i < known_key_pairs.length && i < num_addresses) {
     i++;
 }
 
+// =============================================================================
+// Add addresses from random_ethereum_addresses.json
+
 if (num_addresses > i) {
     num_addresses = num_addresses - i;
     for (let j = 0; j < num_addresses; j++) {
@@ -70,13 +86,18 @@ if (num_addresses > i) {
     }
 }
 
+// =============================================================================
 // It's not necessary to have the addresses sorted at this stage, but it makes things
 // easier to reason about when debugging.
+
 accounts.sort((a, b) => {
     if (a.address < b.address) return -1;
     else if (a.address > b.address) return 1;
     else return 0;
 });
+
+// =============================================================================
+// Write to csv.
 
 const writableStream = fs.createWriteStream(path.join(__dirname, "anonymity_set.csv"));
 const columns = ["address", "eth_balance"];
