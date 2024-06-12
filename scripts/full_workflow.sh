@@ -401,6 +401,8 @@ if $sequential_setup; then
     printf "\n================ RUNNING G16 SETUP FOR ALL LAYERS (SEQUENTIALLY) ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
 
     for layer in $layers; do
+        printf "\n================ RUNNING G16 SETUP FOR LAYER $layer ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
+
         setup_layer $layer > "$logs_dir"/layer_"$layer"_setup.log
     done
 else
@@ -433,7 +435,7 @@ move_zkey() {
 }
 
 # these need to be exported for the parallel command
-export -f move_zkey generated_zkey_path
+export -f move_zkey set_generated_zkey_path
 
 printf "
 ================ MOVING GENERATED ZKEYS TO "$ZKEY_DIR"================
