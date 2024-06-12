@@ -15,7 +15,7 @@ G16_VERIFY_DIRECTORY="$(dirname "$G16_VERIFY_PATH")"
 # https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
 . "$G16_VERIFY_DIRECTORY/lib/error_handling.sh"
 . "$G16_VERIFY_DIRECTORY/lib/cmd_executor.sh"
-. "$G16_SETUP_DIRECTORY/lib/g16_utils.sh"
+. "$G16_VERIFY_DIRECTORY/lib/g16_utils.sh"
 
 ############################################
 # Constants.
