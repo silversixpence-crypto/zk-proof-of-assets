@@ -1,15 +1,19 @@
-// Generate the anonymity set.
-//
-// Can give the anonymity set size via '-n' cli option.
-//
-// First the addresses from keys.ts are used, then the addresses from random_ethereum_addresses.json
-// The max supported anon set size is the sum of addresses in these 2 files.
+/**
+Generate the anonymity set.
+
+Can give the anonymity set size via '-n' cli option.
+
+First the addresses from keys.ts are used, then the addresses from random_ethereum_addresses.json
+The max supported anon set size is the sum of addresses in these 2 files.
+
+Output is anonymity_set.csv with headings 'address,eth_balance'
+**/
 
 import { Wallet } from "ethers";
 import { randomBytes } from '@noble/hashes/utils';
 
 import { generate_pvt_pub_key_pairs, KeyPair, generate_deterministic_balance } from "./keys";
-import { Uint8Array_to_bigint } from "../scripts/lib/utils";
+import { bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { AccountData } from "../scripts/lib/interfaces";
 import { interfaces } from "mocha";
@@ -17,6 +21,7 @@ import { interfaces } from "mocha";
 const parseArgs = require('minimist');
 const fs = require('fs');
 const path = require('path');
+const { stringify } = require('csv-stringify');
 
 interface AccountDataRaw {
     address: string,
@@ -40,7 +45,7 @@ if (num_addresses > total_address_count) {
     throw new Error(`Cannot generate anonymity set size greater than ${total_address_count}. Size requested was ${num_addresses}`);
 }
 
-let addresses: AccountData[] = [];
+let accounts: AccountData[] = [];
 let i = 0;
 
 while (i < known_key_pairs.length && i < num_addresses) {
@@ -48,7 +53,7 @@ while (i < known_key_pairs.length && i < num_addresses) {
     let address_hex = new Wallet(pvt_hex).address;
     let address_dec: bigint = BigInt(address_hex);
 
-    addresses.push({
+    accounts.push({
         address: address_dec,
         balance: generate_deterministic_balance(known_key_pairs[i]),
     });
@@ -61,14 +66,27 @@ if (num_addresses > i) {
     for (let j = 0; j < num_addresses; j++) {
         let address: bigint = BigInt(random_address_set[j].address);
         let balance: bigint = BigInt(random_address_set[j].balance);
-        addresses.push({ address, balance });
+        accounts.push({ address, balance });
     }
 }
 
 // It's not necessary to have the addresses sorted at this stage, but it makes things
 // easier to reason about when debugging.
-addresses.sort();
+accounts.sort((a, b) => {
+    if (a.address < b.address) return -1;
+    else if (a.address > b.address) return 1;
+    else return 0;
+});
 
-const json = JSON.stringify(addresses, jsonReplacer, 2);
-fs.writeFileSync(path.join(__dirname, "anonymity_set.json"), json);
+const writableStream = fs.createWriteStream(path.join(__dirname, "anonymity_set.csv"));
+const columns = ["address", "eth_balance"];
+const stringifier = stringify({ header: true, columns });
+
+accounts.forEach(account => {
+    let address_hex = "0x" + bytesToHex(bigint_to_Uint8Array(account.address));
+    stringifier.write([address_hex, account.balance.toString()])
+}
+);
+
+stringifier.pipe(writableStream);
 
