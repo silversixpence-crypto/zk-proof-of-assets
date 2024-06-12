@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
+const assert = require('assert');
 
 var argv = parseArgs(process.argv.slice(2), {
     alias: {
@@ -44,14 +45,19 @@ var argv = parseArgs(process.argv.slice(2), {
     }
 });
 
-let numSigs = argv.numSigs;
-let numSigsRemainder = argv.numSigsRemainder;
-let merkleTreeHeight = argv.merkleTreeHeight;
+let numSigs: number = argv.numSigs;
+let numSigsRemainder: number = argv.numSigsRemainder;
+let merkleTreeHeight: number = argv.merkleTreeHeight;
 let parallelism: number = argv.layerParallelism;
-let circuitsDir = argv.circuitsDir;
-let circuitsLib = argv.circuitsLib;
+let circuitsDir: string = argv.circuitsDir;
+let circuitsLib: string = argv.circuitsLib;
 
-// TODO ensure all the above values are the expected type
+assert.ok(typeof numSigs === 'number');
+assert.ok(typeof numSigsRemainder === 'number');
+assert.ok(typeof merkleTreeHeight === 'number');
+assert.ok(typeof parallelism === 'number');
+assert.ok(typeof circuitsDir === 'string');
+assert.ok(typeof circuitsLib === 'string');
 
 if (!fs.existsSync(circuitsDir)) {
     fs.mkdirSync(circuitsDir);
