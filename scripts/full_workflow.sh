@@ -520,7 +520,7 @@ prove_layers_one_two() {
 }
 
 # these need to be exported for the parallel command
-export -f prove_layers_one_two set_signals_path
+export -f prove_layers_one_two set_signals_path set_circuit_path
 export parsed_sigs_path merkle_root_path merkle_proofs_path
 
 printf "
