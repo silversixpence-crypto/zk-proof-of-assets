@@ -401,9 +401,9 @@ if $sequential_setup; then
     printf "\n================ RUNNING G16 SETUP FOR ALL LAYERS (SEQUENTIALLY) ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
 
     for layer in $layers; do
-        printf "\n================ RUNNING G16 SETUP FOR LAYER $layer ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
+        printf "\n================ RUNNING G16 SETUP FOR LAYER $layer ================\nSEE $logs_dir/layer_$layer""_setup.log\n================\n"
 
-        setup_layer $layer > "$logs_dir"/layer_"$layer"_setup.log
+        setup_layer $layer &>"$logs_dir"/layer_"$layer"_setup.log
     done
 else
     # This section (and others) use GNU's parallel.
