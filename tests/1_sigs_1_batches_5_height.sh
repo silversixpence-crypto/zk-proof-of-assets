@@ -10,10 +10,14 @@ ANON_SET_SIZE=10
 NUM_SIGS=1
 BLINDING_FACTOR=2
 
-SCRIPTS_DIR="$TEST_DIR/../scripts"
+SCRIPTS_DIR="$TEST_DIR"/../scripts
 BUILD_DIR="$TEST_DIR"/1_sigs_1_batches_5_height
 
 ############################################
+
+if [[ ! -d "$BUILD_DIR" ]]; then
+    mkdir -p "$BUILD_DIR"
+fi
 
 npx ts-node "$TEST_DIR"/generate_anon_set.ts --num-addresses $ANON_SET_SIZE
 npx ts-node "$TEST_DIR"/generate_ecdsa_signatures.ts --num-sigs $NUM_SIGS -m "message to sign"
