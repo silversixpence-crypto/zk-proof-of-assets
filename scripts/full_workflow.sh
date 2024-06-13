@@ -149,7 +149,7 @@ parsed_sigs_path="$(dirname "$sigs_path")"/input_data_for_"$num_sigs"_accounts.j
 
 check_file_exists_with_ext "$ERR_PREFIX" "anon_set_path" "$anon_set_path" "csv"
 anon_set_size=$(cat $anon_set_path | tail -n+2 | wc -l)
-merkle_tree_height=$(echo "1 + l($anon_set_size)/l(2)" | bc -l | sed "s/\.[0-9]*//")
+merkle_tree_height=$(echo "2 + l($anon_set_size)/l(2)" | bc -l | sed "s/\.[0-9]*//")
 
 # if the batch size is not set by the user then set it automatically
 if [ -z "$ideal_num_sigs_per_batch" ]; then
