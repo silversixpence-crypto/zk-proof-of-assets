@@ -82,7 +82,7 @@ var msg_hash: Uint8Array = sha256(msg);
 var pairs = generate_pvt_pub_key_pairs(argv.n);
 
 generate_signature_data(msg_hash, pairs).then(data => {
-    var filename = "input_data_for_" + num_sigs + "_accounts.json";
+    var filename = "signatures_" + num_sigs + ".json";
 
     if (argv.p === true) {
         console.log("Writing the following data to", filename, data);

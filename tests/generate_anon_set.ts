@@ -99,7 +99,8 @@ accounts.sort((a, b) => {
 // =============================================================================
 // Write to csv.
 
-const writableStream = fs.createWriteStream(path.join(__dirname, "anonymity_set.csv"));
+const filename = "anonymity_set_" + num_addresses + ".csv";
+const writableStream = fs.createWriteStream(path.join(__dirname, filename));
 const columns = ["address", "eth_balance"];
 const stringifier = stringify({ header: true, columns });
 
