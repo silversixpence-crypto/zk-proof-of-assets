@@ -275,7 +275,7 @@ set_ptau_path() {
     declare -n ret=$2
     local _name
     parse_layer_name $1 _name
-    ret="ptau_path"
+    ret="$ptau_path"
 }
 
 set_signals_path() {

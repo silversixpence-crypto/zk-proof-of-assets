@@ -11,6 +11,7 @@ NUM_SIGS=1
 BLINDING_FACTOR=2
 
 SCRIPTS_DIR="$TEST_DIR"/../scripts
+SOURCE_DIR="$TEST_DIR"/..
 BUILD_DIR="$TEST_DIR"/1_sigs_1_batches_5_height
 
 ############################################
@@ -30,7 +31,7 @@ mv "$TEST_DIR"/$anon_set "$BUILD_DIR"
 
 "$SCRIPTS_DIR"/full_workflow.sh \
               -s \
-              -p powersOfTau28_hez_final_26.ptau \
+              -p "$SOURCE_DIR"/powersOfTau28_hez_final_26.ptau \
               "$BUILD_DIR"/$signatures \
               "$BUILD_DIR"/$anon_set \
               $BLINDING_FACTOR
