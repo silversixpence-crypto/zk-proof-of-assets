@@ -413,7 +413,10 @@ else
     printf "\n================ RUNNING G16 SETUP FOR ALL LAYERS (IN PARALLEL, ALSO PARALLEL TO MERKLE TREE BUILD) ================\nSEE $logs_dir/layer_\$layer_setup.log\n================\n"
 
     generate_merkle_tree &
-    parallel --joblog "$logs_dir/setup_layer.log" setup_layer {} '>' "$logs_dir"/layer_{}_setup.log '2>&1' ::: $layers
+    parallel --joblog "$logs_dir/setup_layer.log" \
+             setup_layer {} \
+             '>' "$logs_dir"/layer_{}_setup.log '2>&1' \
+             ::: $layers
 
     wait
 fi
@@ -482,8 +485,8 @@ prove_layers_one_two() {
         --account-start-index $start_index \
         --account-end-index $end_index
 
-    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
-    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" "$zkey" "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" "$circuit"
 
     # Setup layer 2 path variables.
     set_layer_build_dir 2 build
@@ -512,8 +515,8 @@ prove_layers_one_two() {
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
 
-    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" $zkey "$circuit" "$signals"
-    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" "$zkey" "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l2_proof_dir" "$circuit"
 
     MSG="CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS"
     execute python "$SCRIPTS_DIR"/sanitize_groth16_proof.py "$l2_proof_dir"
@@ -521,7 +524,7 @@ prove_layers_one_two() {
 
 # these need to be exported for the parallel command
 export -f prove_layers_one_two set_signals_path set_circuit_path
-export parsed_sigs_path merkle_root_path merkle_proofs_path
+export parsed_sigs_path merkle_root_path merkle_proofs_path merkle_tree_height
 
 printf "
 ================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================
