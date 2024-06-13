@@ -126,22 +126,12 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
-circuit_path="${@:(-2):1}"
-
-if [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
-    exit 1
-fi
+circuit_path="${@: -1}"
+check_file_exists_with_ext "$ERR_PREFIX" "circuit_path" "$circuit_path" "circom"
 
 # https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
 circuit_file=$(basename $circuit_path)
 circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    ERR_MSG="$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
-    exit 1
-fi
 
 ############################################
 
@@ -159,7 +149,7 @@ if [[ -z "$proof_dir" ]]; then
 fi
 
 if [[ ! -d "$proof_dir" ]]; then
-    ERR_MSG="Proof directory does not exist $proof_dir"
+    ERR_MSG="$ERR_PREFIX: Proof directory does not exist $proof_dir"
     exit 1
 fi
 
