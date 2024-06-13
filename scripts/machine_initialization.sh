@@ -281,13 +281,15 @@ if ! which npm; then
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-    # NOTE This sometimes fails with:
-    # > Installing latest LTS version.
-    # > Downloading and installing node v20.11.0...
-    # > Binary download failed, trying source.
-    #
-    # In this case run this command manually:
-    # `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts`.
+    printf"
+    NOTE This sometimes fails with:
+    > Installing latest LTS version.
+    > Downloading and installing node v20.11.0...
+    > Binary download failed, trying source.
+
+    In this case run this command manually:
+    `export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts`.
+    "
     nvm install --lts
 fi
 
@@ -310,13 +312,16 @@ export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 ERR_MSG="PNPM setup failed"
 cd "$HOME"
 if [[ ! -f "$HOME/.local/share/pnpm/pnpm" ]]; then
-    # NOTE This sometimes fails with:
-    # > ==> Downloading pnpm binaries 8.15.1
-    # > WARN using --force I sure hope you know what you are doing
-    # > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
-    # > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
-    # In this case just run this manually (with different tmp file):
-    # `SHELL="$SHELL"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    printf"
+    NOTE This sometimes fails with:
+    > ==> Downloading pnpm binaries 8.15.1
+    > WARN using --force I sure hope you know what you are doing
+    > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
+    > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
+
+    In this case just run this manually (with different tmp file):
+    `SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    "
     curl -fsSL https://get.pnpm.io/install.sh | sh -
 fi
 export PNPM_HOME="$HOME/.local/share/pnpm"
