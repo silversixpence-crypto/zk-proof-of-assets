@@ -88,7 +88,7 @@ TROUBLESHOOTING:
       > Downloading and installing node v20.11.0...
       > Binary download failed, trying source.
     Then run this command manually:
-      `export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts`.
+      export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts.
     And restart the process.
 
     If the pnpm install fails with this error:
@@ -97,7 +97,7 @@ TROUBLESHOOTING:
       > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
       > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
     Then run this command manually (with different tmp file):
-      `SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+      SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force
     And restart the process.
 
 FLAGS:
@@ -288,7 +288,7 @@ if ! which npm; then
     > Binary download failed, trying source.
 
     In this case run this command manually:
-    `export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts`.
+    export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts.
     "
     nvm install --lts
 fi
@@ -320,7 +320,7 @@ if [[ ! -f "$HOME/.local/share/pnpm/pnpm" ]]; then
     > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
 
     In this case just run this manually (with different tmp file):
-    `SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force
     "
     curl -fsSL https://get.pnpm.io/install.sh | sh -
 fi
