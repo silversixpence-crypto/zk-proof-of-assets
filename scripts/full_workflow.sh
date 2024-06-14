@@ -388,7 +388,7 @@ fi
 # these need to be exported for the parallel command
 export -f setup_layer set_layer_build_dir set_ptau_path set_zkey_arg parse_layer_name set_existing_zkey_path
 export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
-export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder
+export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder merkle_tree_height
 
 layers="one two three $setup_remainder_inputs"
 
@@ -524,7 +524,7 @@ prove_layers_one_two() {
 
 # these need to be exported for the parallel command
 export -f prove_layers_one_two set_signals_path set_circuit_path
-export parsed_sigs_path merkle_root_path merkle_proofs_path merkle_tree_height
+export parsed_sigs_path merkle_root_path merkle_proofs_path
 
 printf "
 ================ PROVING ALL BATCHES OF LAYERS 1 & 2 IN PARALLEL ================
