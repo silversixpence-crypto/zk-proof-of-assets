@@ -16,6 +16,14 @@ See [the high priority task list](https://github.com/silversixpence-crypto/zk-pr
 
 The code is at it's first stage: Groth16 & Circom libraries. Second stage involves using different proving systems & libraries for ECDSA verification to gain [hopefully] ~1000x in performance.
 
+## Design
+
+TODO diagram of recursive snark design
+
+TODO explain inputs & outputs of the system
+
+TODO explain what to do with the pedersen commitment
+
 ## Usage
 
 The code has only been tested on a Linux machine (Debian).
@@ -61,10 +69,6 @@ TODO talk about how to get the anon set
 
 TODO talk about ptau files and link 
 
-## Design
-
-TODO diagram
-
 ## Patches
 
 The [init script](./scripts/machine_initialization.sh) applies a few patches to the submodules.
@@ -76,6 +80,12 @@ Workaround for a problem in the circom compiler: https://github.com/iden3/circom
 ### ed25519-circom patch
 
 There are conflicts with function names between ed25519-circom and other dependencies, so the patch renames the functions.
+
+## Performance
+
+TODO explain that zkey gen takes the longest
+
+TODO create graphs for timing data, say which machine you ran stuff on
 
 ## Testing
 
