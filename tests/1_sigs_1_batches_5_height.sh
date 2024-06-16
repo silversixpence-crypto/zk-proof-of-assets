@@ -32,6 +32,7 @@ mv "$TEST_DIR"/$anon_set "$BUILD_DIR"
 "$SCRIPTS_DIR"/full_workflow.sh \
               -s \
               -p "$SOURCE_DIR"/powersOfTau28_hez_final_26.ptau \
+              -B "$BUILD_DIR" \
               "$BUILD_DIR"/$signatures \
               "$BUILD_DIR"/$anon_set \
               $BLINDING_FACTOR
