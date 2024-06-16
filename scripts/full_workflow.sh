@@ -414,9 +414,9 @@ else
 
     generate_merkle_tree &
     parallel --joblog "$logs_dir/setup_layer.log" \
-             setup_layer {} \
-             '>' "$logs_dir"/layer_{}_setup.log '2>&1' \
-             ::: $layers
+        setup_layer {} \
+        '>' "$logs_dir"/layer_{}_setup.log '2>&1' \
+        ::: $layers
 
     wait
 fi
@@ -545,11 +545,18 @@ set_signals_path 3 signals
 set_circuit_path 3 circuit
 set_zkey_arg 3 zkey
 
+# Find all the paths to the layer two sanitized proofs
+# and join them into a list separated by a comma.
+layer_two_proofs=$(
+    find $(pwd -P) -type f -iname "*sanitized_proof.json" |
+        grep layer_two |
+        paste -sd "," -
+)
+
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
 execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
-    --merkle-root "$merkle_root_path" \
-    --layer-two-sanitized-proof "$build" \
-    --multiple-proofs \
+    --merkle-root-path "$merkle_root_path" \
+    --layer-two-sanitized-proof-paths "$layer_two_proofs" \
     --write-layer-three-data-to "$signals" \
     --blinding-factor $blinding_factor
 
