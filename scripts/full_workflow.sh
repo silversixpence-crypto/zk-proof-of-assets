@@ -485,7 +485,7 @@ prove_layers_one_two() {
         --account-start-index $start_index \
         --account-end-index $end_index
 
-    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" "$zkey" "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l1_proof_dir" $zkey "$circuit" "$signals"
     "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l1_proof_dir" "$circuit"
 
     # Setup layer 2 path variables.
@@ -515,7 +515,7 @@ prove_layers_one_two() {
     MSG="RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH $i"
     printf "\n================ $MSG ================\n"
 
-    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" "$zkey" "$circuit" "$signals"
+    "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" -p "$l2_proof_dir" $zkey "$circuit" "$signals"
     "$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" -p "$l2_proof_dir" "$circuit"
 
     MSG="CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS"
