@@ -11,13 +11,11 @@
    A json file will be written that has the shape `SignatureData[]`.
 **/
 
-import { sign, Point, CURVE } from '@noble/secp256k1';
-import { randomBytes } from '@noble/hashes/utils';
+import { sign } from '@noble/secp256k1';
 import { Wallet } from "ethers";
 
 import { EcdsaSignature, SignatureData, } from "../scripts/lib/interfaces";
-import { jsonReplacer } from "../scripts/lib/json_serde";
-import { Uint8Array_to_bigint, bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
+import { bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
 import { generatePvtPubKeyPairs, generateDeterministicBalance, KeyPair } from "./keys";
 
 const { sha256 } = require('@noble/hashes/sha256');
@@ -27,17 +25,17 @@ const parseArgs = require('minimist');
 
 async function ecdsaSign(msghash: Uint8Array, keyPair: KeyPair): Promise<EcdsaSignature> {
     var pvtkey = keyPair.pvt;
-    var pubkey = keyPair.pub;
 
-    var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(pvtkey), {
+    var [sig, recoveryBit]: [Uint8Array, number] = await sign(msghash, bigint_to_Uint8Array(pvtkey), {
         canonical: true,
         der: false,
+        recovered: true,
     });
 
     return {
         r: '0x' + bytesToHex(sig.slice(0, 32)),
         s: '0x' + bytesToHex(sig.slice(32, 64)),
-        v: 28,
+        v: recoveryBit === 0 ? 27 : 28,
         msghash: '0x' + bytesToHex(msghash)
     };
 }
@@ -49,7 +47,6 @@ async function generateSignatureData(msghash: Uint8Array, keyPairs: KeyPair[]): 
     for (var i = 0; i < keyPairs.length; i++) {
         let pvtHex = keyPairs[i].pvt.toString(16);
         let addressHex: string = new Wallet(pvtHex).address;
-        let addressDec: bigint = BigInt(addressHex);
         let signature = await ecdsaSign(msghash, keyPairs[i]);
 
         signatureData.push({

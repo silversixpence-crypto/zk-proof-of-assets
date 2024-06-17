@@ -28,15 +28,11 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
 ```
 **/
 
-import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
-import { ProofOfAssetsInputFileShape, Groth16ProofAsInput } from "./lib/interfaces";
-import { bigint_to_array, bigint_to_Uint8Array } from "./lib/utils";
+import { Groth16ProofAsInput } from "./lib/interfaces";
 import { generator_g_formatted, generator_h_formatted, formatScalarPower } from "./lib/pedersen_commitment";
 
 const fs = require('fs');
-const circomlibjs = require("circomlibjs");
-const path = require('path');
 
 interface LayerThreeInputFileShape {
     // We need the groth16 proof data for all the layer 2 circuits.
@@ -102,7 +98,6 @@ var argv = require('minimist')(process.argv.slice(2), {
 let merkleRootPath = argv.merkleRootPath;
 let layerTwoSanitizedProofPaths = argv.layerTwoSanitizedProofPaths;
 let layerThreeInputPath = argv.layerThreeInputPath;
-let multipleProofs = argv.multipleProofs;
 let blindingFactor: bigint = BigInt(argv.blindingFactor);
 
 let merkleRootRaw = fs.readFileSync(merkleRootPath);
@@ -132,7 +127,7 @@ let layerThreeInput: LayerThreeInputFileShape = constructInput(proofDataArray, b
 
 const jsonOut = JSON.stringify(
     layerThreeInput,
-    (key, value) => typeof value === "bigint" ? value.toString() : value,
+    (_, value) => typeof value === "bigint" ? value.toString() : value,
     2
 );
 

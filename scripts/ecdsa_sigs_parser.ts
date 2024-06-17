@@ -20,7 +20,7 @@ npx ts-node ./scripts/ecdsa_sigs_parser.ts \
 **/
 
 import * as ethers from "ethers";
-import { AccountAttestation, EcdsaSignature, EcdsaStarSignature, ProofOfAssetsInputFileShape, SignatureData } from "./lib/interfaces";
+import { AccountAttestation, EcdsaSignature, ProofOfAssetsInputFileShape, SignatureData } from "./lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { ecdsaStarFromEcdsa } from "./lib/ecdsa_star";
 
@@ -43,7 +43,6 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
     }
 
     let sigsInputData: SignatureData[] = JSON.parse(jsonIn);
-    let num_sigs = sigsInputData.length;
 
     let accountAttestations: AccountAttestation[] = sigsInputData.map(sigInputData => {
         let ethers_ecdsaSig = ethers.Signature.from(sigInputData.signature);
@@ -60,9 +59,9 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
         let addressFromEcdsaStar = ethers.computeAddress("0x" + ecdsaStarSig.pubkey.toHex());
 
         // Extra check to make sure the address of both sigs matches the input address.
-        // If this is not done the circuit will detect it.
-        assert(addressFromEcdsa == sigInputData.address);
-        assert(addressFromEcdsaStar == sigInputData.address);
+        // If this is not done here then the circuit will detect it.
+        assert.equal(sigInputData.address, addressFromEcdsa);
+        assert.equal(sigInputData.address, addressFromEcdsaStar);
 
         let address_dec: bigint = BigInt(addressFromEcdsa);
 
