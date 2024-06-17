@@ -18,11 +18,17 @@ The code is at it's first stage: Groth16 & Circom libraries. Second stage involv
 
 ## Design
 
-TODO diagram of recursive snark design
-
 TODO explain inputs & outputs of the system
 
 TODO explain what to do with the pedersen commitment
+
+<details>
+
+<summary>Diagram showing recursive snark design for ECDSA signatures</summary>
+
+![Flow diagram](./images/poa_snark_recursive_design.png)
+
+</details>
 
 ## Usage
 
