@@ -112,7 +112,7 @@ let proofDataArray: Groth16ProofAsInput[] = [];
 let balances: bigint[] = [];
 
 
-for (const layerTwoProofPath of Array(layerTwoSanitizedProofPaths)) {
+for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     if (!fs.lstatSync(layerTwoProofPath).isFile()) {
         throw new Error(`Expected ${layerTwoProofPath} to be a path to a file`);
     }
