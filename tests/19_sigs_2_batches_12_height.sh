@@ -6,16 +6,18 @@
 TEST_FILE_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 TEST_DIR="$(dirname "$TEST_FILE_PATH")"
 
-ANON_SET_SIZE=2000
 NUM_SIGS=19
 BATCH_SIZE=2
+ANON_SET_SIZE=2000
+
+height=$(echo "2 + l($ANON_SET_SIZE)/l(2)" | bc -l | sed "s/\.[0-9]*//")
 
 # (2^155 - 19) - 1
 BLINDING_FACTOR=57896044618658097711785492504343953926634992332820282019728792003956564819948
 
 SCRIPTS_DIR="$TEST_DIR"/../scripts
 SOURCE_DIR="$TEST_DIR"/..
-BUILD_DIR="$TEST_DIR"/3_sigs_2_batches_12_height
+BUILD_DIR="$TEST_DIR"/"$NUM_SIGS"_sigs_"$BATCH_SIZE"_batches_"$height"_height
 
 ############################################
 
