@@ -7,7 +7,7 @@ TEST_FILE_PATH="$(realpath "${BASH_SOURCE[-1]}")"
 TEST_DIR="$(dirname "$TEST_FILE_PATH")"
 
 ANON_SET_SIZE=2000
-NUM_SIGS=3
+NUM_SIGS=19
 BATCH_SIZE=2
 
 # (2^155 - 19) - 1
@@ -15,7 +15,7 @@ BLINDING_FACTOR=5789604461865809771178549250434395392663499233282028201972879200
 
 SCRIPTS_DIR="$TEST_DIR"/../scripts
 SOURCE_DIR="$TEST_DIR"/..
-BUILD_DIR="$TEST_DIR"/3_sigs_2_batches_11_height
+BUILD_DIR="$TEST_DIR"/3_sigs_2_batches_12_height
 
 ############################################
 
