@@ -99,7 +99,8 @@ accounts.sort((a, b) => {
 // Write to csv.
 
 const filename = "anonymity_set_" + numAddresses + ".csv";
-const writableStream = fs.createWriteStream(path.join(__dirname, filename));
+const filePath = path.join(__dirname, filename);
+const writableStream = fs.createWriteStream(filePath);
 const columns = ["address", "eth_balance"];
 const stringifier = stringify({ header: true, columns });
 
@@ -110,4 +111,6 @@ accounts.forEach(account => {
 );
 
 stringifier.pipe(writableStream);
+
+console.log(`Test anonymity set of size ${numAddresses} has been generated and written to ${filePath}`);
 

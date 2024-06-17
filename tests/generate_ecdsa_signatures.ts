@@ -81,13 +81,16 @@ var msg = argv.msg;
 var msgHash: Uint8Array = sha256(msg);
 var pairs = generatePvtPubKeyPairs(argv.n);
 
-generateSignatureData(msgHash, pairs).then(data => {
-    var filename = "signatures_" + numSigs + ".json";
+var filename = "signatures_" + numSigs + ".json";
+var filePath = path.join(__dirname, filename);
 
+generateSignatureData(msgHash, pairs).then(data => {
     if (argv.p === true) {
         console.log("Writing the following data to", filename, data);
     }
 
     const json = JSON.stringify(data);
-    fs.writeFileSync(path.join(__dirname, filename), json);
+    fs.writeFileSync(filePath, json);
 });
+
+console.log(`Test signature set of size ${numSigs} has been generated and written to ${filePath}`);
