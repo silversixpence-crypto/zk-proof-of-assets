@@ -32,6 +32,8 @@ TODO explain what to do with the pedersen commitment
 
 ## Usage
 
+### Prover
+
 The code has only been tested on a Linux machine (Debian).
 
 First, you'll need to install some software. There is a script that does all of this for you: [machine_initialization.sh](./scripts/machine_initialization.sh). **The script only works on a Debian machine.** It does some invasive changes to the machine (like changing `vm.max_map_count` in `sysctl`) so it is recommended to run it on a server and not your personal machine; running it in a Docker container is also an option. You can find out more about what this script does [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
@@ -69,11 +71,11 @@ cd /root/zk-proof-of-assets
     $blinding_factor
 ```
 
-### Powers of Tau
+#### Powers of Tau
 
 The ptau files can be manually downloaded from the [snarkjs GH](https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2), but are also automatically downloaded by the machine_initialization script. These files are used as a 'safe' source of randomness for the proving key generation phase (read more [here](https://github.com/weijiekoh/perpetualpowersoftau)).
 
-### Anonymity set
+#### Anonymity set
 
 The anonymity set must be created by the prover, and then made public. One way to create this set is to take the top N accounts of a blockchain (ranked by holdings of the digital asset).
 
@@ -84,6 +86,10 @@ The anonymity set must be created by the prover, and then made public. One way t
 SELECT * FROM `bigquery-public-data.crypto_ethereum.balances` ORDER BY eth_balance DESC LIMIT 10000000
 ```
 3. 10M winds up being ~600MB, which you can add to your Drive (without paid API access) and then download.
+
+### Verifier
+
+TODO
 
 ## Patches
 
