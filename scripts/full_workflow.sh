@@ -505,6 +505,7 @@ prove_layers_one_two() {
     MSG="PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH $i"
     execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_two.ts \
         --poa-input-data "$parsed_sigs_path" \
+        --write-x-coords-hash-to "$build_dir/pubkey_x_coords_hash.txt" \
         --merkle-root "$merkle_root_path" \
         --merkle-proofs "$merkle_proofs_path" \
         --layer-one-sanitized-proof "$l1_proof_dir"/sanitized_proof.json \

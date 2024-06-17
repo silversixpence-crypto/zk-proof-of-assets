@@ -78,14 +78,14 @@ async function poseidonSponge(inputs: bigint[]): Promise<bigint> {
     return await field.toObject(hashOut[1]);
 }
 
-async function hash_x_coords(xCoords: bigint[]): Promise<string> {
+async function hashXCoords(xCoords: bigint[]): Promise<string> {
     let hash: bigint = await poseidonSponge(xCoords);
     return hash.toString();
 }
 
-async function write_pubkey_x_coords_hash(pubkeys: Point[], outputPath: String): Promise<string> {
+async function writePubkeyXCoordsHash(pubkeys: Point[], outputPath: String): Promise<string> {
     let xCoords = pubkeys.map(pubkey => bigint_to_array(64, 4, pubkey.x)).flat();
-    let hash = await hash_x_coords(xCoords);
+    let hash = await hashXCoords(xCoords);
 
     fs.writeFileSync(outputPath, hash);
 
@@ -95,7 +95,7 @@ async function write_pubkey_x_coords_hash(pubkeys: Point[], outputPath: String):
 // =========================================================
 // Input signal builder for the circuit.
 
-function construct_input(proofData: Groth16ProofAsInput, xCoordsHash: string, accountAttestations: AccountAttestation[], merkleRoot: bigint, merkleProofs: Proofs): LayerTwoInputFileShape {
+function constructInput(proofData: Groth16ProofAsInput, xCoordsHash: string, accountAttestations: AccountAttestation[], merkleRoot: bigint, merkleProofs: Proofs): LayerTwoInputFileShape {
     var { pubInput, ...otherData } = proofData;
 
     var layerTwoInput: LayerTwoInputFileShape = {
@@ -122,7 +122,7 @@ function construct_input(proofData: Groth16ProofAsInput, xCoordsHash: string, ac
 // each element of the one corresponds to the other. This is checked here. We also check
 // that the addresses are in ascending order, which is required by the circuit so that
 // the prover cannot do a double-spend attack.
-function check_address_ordering(accountAttestations: AccountAttestation[], merkleLeaves: Leaf[]) {
+function checkAddressOrdering(accountAttestations: AccountAttestation[], merkleLeaves: Leaf[]) {
     if (accountAttestations.length != merkleLeaves.length) {
         throw new Error(`Length of input data array ${accountAttestations.length} should equal length of merkle proofs array ${merkleLeaves.length}`);
     }
@@ -196,7 +196,7 @@ if (startIndex >= endIndex) {
 
 let accountAttestations = inputData.accountAttestations.slice(startIndex, endIndex);
 
-write_pubkey_x_coords_hash(accountAttestations.map(w => w.signature.pubkey), xCoordsHashPath)
+writePubkeyXCoordsHash(accountAttestations.map(w => w.signature.pubkey), xCoordsHashPath)
     .then(xCoordsHash => {
         let merkleRootRaw = fs.readFileSync(merkleRootPath);
         let merkleRoot: bigint = JSON.parse(merkleRootRaw, jsonReviver);
@@ -213,9 +213,9 @@ write_pubkey_x_coords_hash(accountAttestations.map(w => w.signature.pubkey), xCo
         var proofDataRaw = fs.readFileSync(layerOneSanitizedProofPath);
         var proofData: Groth16ProofAsInput = JSON.parse(proofDataRaw, jsonReviver);
 
-        check_address_ordering(accountAttestations, merkleProofsSlice.leaves);
+        checkAddressOrdering(accountAttestations, merkleProofsSlice.leaves);
 
-        var layerTwoInput: LayerTwoInputFileShape = construct_input(proofData, xCoordsHash, accountAttestations, merkleRoot, merkleProofsSlice);
+        var layerTwoInput: LayerTwoInputFileShape = constructInput(proofData, xCoordsHash, accountAttestations, merkleRoot, merkleProofsSlice);
 
         const jsonOut = JSON.stringify(
             layerTwoInput,
