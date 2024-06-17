@@ -26,8 +26,6 @@ fi
 
 BUILD_DIR="$TEST_DIR"/"$NUM_SIGS"_sigs_"$parallelism"_batches_"$height"_height
 
-exit 0
-
 ############################################
 
 if [[ ! -d "$BUILD_DIR" ]]; then
