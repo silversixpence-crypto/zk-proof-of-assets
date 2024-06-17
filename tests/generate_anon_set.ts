@@ -78,8 +78,7 @@ while (i < knownKeyPairs.length && i < numAddresses) {
 // Add addresses from random_ethereum_addresses.json
 
 if (numAddresses > i) {
-    numAddresses = numAddresses - i;
-    for (let j = 0; j < numAddresses; j++) {
+    for (let j = 0; j < numAddresses - i; j++) {
         let address: bigint = BigInt(randomAddressSet[j].address);
         let balance: bigint = BigInt(randomAddressSet[j].balance);
         accounts.push({ address, balance });
