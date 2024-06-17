@@ -1,0 +1,52 @@
+
+================ PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH 0 ================
+Mon Jun 17 10:13:06 BST 2024
+STATS: time ([H:]M:S) 0:00.84 ; mem 0Kb ; cpu 194%
+
+================ GENERATING WITNESS USING C++ CODE ================
+Mon Jun 17 10:13:07 BST 2024
+STATS: time ([H:]M:S) 0:16.74 ; mem 0Kb ; cpu 99%
+
+================ GENERATING PROOF USING RAPIDSNARK ================
+Mon Jun 17 10:13:24 BST 2024
+STATS: time ([H:]M:S) 0:02.83 ; mem 0Kb ; cpu 2120%
+
+================ DONE G16 PROVE ================
+
+================ VERIFYING PROOF ================
+Mon Jun 17 10:13:27 BST 2024
+[32;22m[INFO]  [39;1msnarkJS[0m: OK!
+STATS: time ([H:]M:S) 0:00.29 ; mem 0Kb ; cpu 344%
+
+================ DONE G16 VERIFY ================
+
+================ CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS BATCH 0 ================
+Mon Jun 17 10:13:27 BST 2024
+STATS: time ([H:]M:S) 0:03.20 ; mem 0Kb ; cpu 100%
+
+================ PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH 0 ================
+Mon Jun 17 10:13:30 BST 2024
+STATS: time ([H:]M:S) 0:00.95 ; mem 0Kb ; cpu 202%
+
+================ RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH 0 ================
+
+================ GENERATING WITNESS USING C++ CODE ================
+Mon Jun 17 10:13:31 BST 2024
+STATS: time ([H:]M:S) 0:53.84 ; mem 0Kb ; cpu 99%
+
+================ GENERATING PROOF USING RAPIDSNARK ================
+Mon Jun 17 10:14:25 BST 2024
+STATS: time ([H:]M:S) 0:26.85 ; mem 0Kb ; cpu 2014%
+
+================ DONE G16 PROVE ================
+
+================ VERIFYING PROOF ================
+Mon Jun 17 10:14:52 BST 2024
+[32;22m[INFO]  [39;1msnarkJS[0m: OK!
+STATS: time ([H:]M:S) 0:00.31 ; mem 0Kb ; cpu 321%
+
+================ DONE G16 VERIFY ================
+
+================ CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS ================
+Mon Jun 17 10:14:52 BST 2024
+STATS: time ([H:]M:S) 0:02.99 ; mem 0Kb ; cpu 100%

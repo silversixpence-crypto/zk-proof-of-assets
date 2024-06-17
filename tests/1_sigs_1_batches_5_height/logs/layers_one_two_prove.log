@@ -1,0 +1,2 @@
+Seq	Host	Starttime	JobRuntime	Send	Receive	Exitval	Signal	Command
+1	:	1718615586.704	   108.930	0	0	0	0	prove_layers_one_two 0 > /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/logs/layers_one_two_prove_batch_0.log 2>&1
