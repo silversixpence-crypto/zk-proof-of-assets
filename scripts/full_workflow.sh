@@ -547,11 +547,13 @@ set_zkey_arg 3 zkey
 
 # Find all the paths to the layer two sanitized proofs
 # and join them into a list separated by a comma.
+cd "$build_dir"
 layer_two_proofs=$(
     find $(pwd -P) -type f -iname "*sanitized_proof.json" |
         grep layer_two |
         paste -sd "," -
 )
+cd -
 
 MSG="PREPARING INPUT SIGNALS FILE FOR LAYER THREE CIRCUIT"
 execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
