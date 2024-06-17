@@ -9,7 +9,7 @@ npx ts-node ./scripts/pedersen_commitment_checker.ts \
 ```
 */
 
-import { generator_g_formatted, generator_h_formatted, format_scalar_power, pedersen_commitment, dechunk_to_point, point_equal } from "./lib/pedersen_commitment";
+import { generator_g_formatted, generator_h_formatted, formatScalarPower, pedersenCommitment, dechunkToPoint, pointEqual } from "./lib/pedersen_commitment";
 import { jsonReviver } from "./lib/json_serde";
 import { ProofOfAssetsInputFileShape } from "./lib/interfaces";
 const assert = require('assert');
@@ -40,13 +40,13 @@ let publicInputsRaw = fs.readFileSync(layerThreePublicInputsPath);
 let publicInputs: string[] = JSON.parse(publicInputsRaw, jsonReviver);
 
 let balanceSum = inputData.accountAttestations.reduce(
-    (accumulator, currentValue) => currentValue.accountAttestations.balance + accumulator,
+    (accumulator, currentValue) => currentValue.accountData.balance + accumulator,
     0n
 );
 
-let com_calc = pedersen_commitment(balanceSum, blindingFactor);
-let com_circuit = dechunk_to_point(publicInputs.map(i => BigInt(i)));
+let comCalc = pedersenCommitment(balanceSum, blindingFactor);
+let comCircuit = dechunkToPoint(publicInputs.map(i => BigInt(i)));
 
 assert.ok(
-    point_equal(com_calc, com_circuit),
+    pointEqual(comCalc, comCircuit),
 );

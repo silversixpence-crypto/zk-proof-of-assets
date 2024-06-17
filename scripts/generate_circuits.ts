@@ -86,7 +86,7 @@ component main = LayerThree(${parallelism});
 `};
 
 if (numSigsRemainder > 0) {
-    let remainder_circuits = {
+    let remainderCircuits = {
         one_remainder: `pragma circom 2.1.7;
 
 include "${circuitsLib}/layer_one.circom";
@@ -104,7 +104,7 @@ component main {public [merkle_root]} = LayerTwo(${numSigsRemainder}, ${merkleTr
 
     circuits = {
         ...circuits,
-        ...remainder_circuits,
+        ...remainderCircuits,
     }
 }
 

@@ -18,16 +18,16 @@ import { Wallet } from "ethers";
 import { EcdsaSignature, SignatureData, } from "../scripts/lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { Uint8Array_to_bigint, bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
-import { generate_pvt_pub_key_pairs, generate_deterministic_balance, KeyPair } from "./keys";
+import { generatePvtPubKeyPairs, generateDeterministicBalance, KeyPair } from "./keys";
 
 const { sha256 } = require('@noble/hashes/sha256');
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
 
-async function ecdsa_sign(msghash: Uint8Array, key_pair: KeyPair): Promise<EcdsaSignature> {
-    var pvtkey = key_pair.pvt;
-    var pubkey = key_pair.pub;
+async function ecdsaSign(msghash: Uint8Array, keyPair: KeyPair): Promise<EcdsaSignature> {
+    var pvtkey = keyPair.pvt;
+    var pubkey = keyPair.pub;
 
     var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(pvtkey), {
         canonical: true,
@@ -43,46 +43,46 @@ async function ecdsa_sign(msghash: Uint8Array, key_pair: KeyPair): Promise<Ecdsa
 }
 
 // Constructs a json object with ECDSA signatures, eth addresses, and balances
-async function generate_signature_data(msghash: Uint8Array, key_pairs: KeyPair[]): Promise<SignatureData[]> {
-    let signature_data: SignatureData[] = [];
+async function generateSignatureData(msghash: Uint8Array, keyPairs: KeyPair[]): Promise<SignatureData[]> {
+    let signatureData: SignatureData[] = [];
 
-    for (var i = 0; i < key_pairs.length; i++) {
-        let pvt_hex = key_pairs[i].pvt.toString(16);
-        let address_hex: string = new Wallet(pvt_hex).address;
-        let address_dec: bigint = BigInt(address_hex);
-        let signature = await ecdsa_sign(msghash, key_pairs[i]);
+    for (var i = 0; i < keyPairs.length; i++) {
+        let pvtHex = keyPairs[i].pvt.toString(16);
+        let addressHex: string = new Wallet(pvtHex).address;
+        let addressDec: bigint = BigInt(addressHex);
+        let signature = await ecdsaSign(msghash, keyPairs[i]);
 
-        signature_data.push({
+        signatureData.push({
             signature,
-            address: address_hex,
-            balance: generate_deterministic_balance(key_pairs[i]).toString() + "n",
+            address: addressHex,
+            balance: generateDeterministicBalance(keyPairs[i]).toString() + "n",
         });
     }
 
     // It's very important to sort by address, otherwise the layer 2 circuit will fail.
-    signature_data.sort((a, b) => {
-        let a_address_dec: bigint = BigInt(a.address);
-        let b_address_dec: bigint = BigInt(b.address);
-        if (a_address_dec < b_address_dec) return -1;
-        else if (a_address_dec > b_address_dec) return 1;
+    signatureData.sort((a, b) => {
+        let a_addressDec: bigint = BigInt(a.address);
+        let b_addressDec: bigint = BigInt(b.address);
+        if (a_addressDec < b_addressDec) return -1;
+        else if (a_addressDec > b_addressDec) return 1;
         else return 0;
     });
 
-    return signature_data;
+    return signatureData;
 }
 
 var argv = parseArgs(process.argv.slice(2), {
-    alias: { num_sigs: ['num-sigs', 'n'], msg: ['message', 'm'], print_data: ['print', 'p'] },
-    default: { num_sigs: 2, msg: "my message to sign", print_data: false }
+    alias: { numSigs: ['num-sigs', 'n'], msg: ['message', 'm'], printData: ['print', 'p'] },
+    default: { numSigs: 2, msg: "my message to sign", printData: false }
 });
-var num_sigs = argv.num_sigs;
+var numSigs = argv.numSigs;
 var msg = argv.msg;
 
-var msg_hash: Uint8Array = sha256(msg);
-var pairs = generate_pvt_pub_key_pairs(argv.n);
+var msgHash: Uint8Array = sha256(msg);
+var pairs = generatePvtPubKeyPairs(argv.n);
 
-generate_signature_data(msg_hash, pairs).then(data => {
-    var filename = "signatures_" + num_sigs + ".json";
+generateSignatureData(msgHash, pairs).then(data => {
+    var filename = "signatures_" + numSigs + ".json";
 
     if (argv.p === true) {
         console.log("Writing the following data to", filename, data);

@@ -31,7 +31,7 @@ interface LayerOneInputFileShape {
     msghash: bigint[][],
 }
 
-function construct_input(sigs: EcdsaStarSignature[]): LayerOneInputFileShape {
+function constructInput(sigs: EcdsaStarSignature[]): LayerOneInputFileShape {
     var output: LayerOneInputFileShape = {
         r: [],
         s: [],
@@ -53,48 +53,48 @@ function construct_input(sigs: EcdsaStarSignature[]): LayerOneInputFileShape {
 
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
-        poa_input_data_path: ['poa-input-data', 'i'],
-        layer_one_input_path: ['write-layer-one-data-to', 'o'],
-        account_start_index: ['account-start-index', 's'],
-        account_end_index: ['account-end-index', 'e'],
+        poaInputDataPath: ['poa-input-data', 'i'],
+        layerOneInputPath: ['write-layer-one-data-to', 'o'],
+        accountStartIndex: ['account-start-index', 's'],
+        accountEndIndex: ['account-end-index', 'e'],
     },
     default: {
-        poa_input_data_path: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
-        layer_one_input_path: path.join(__dirname, "../tests/layer_one/input.json"),
-        account_start_index: 0,
-        account_end_index: -1,
+        poaInputDataPath: path.join(__dirname, "../tests/input_data_for_2_accounts.json"),
+        layerOneInputPath: path.join(__dirname, "../tests/layer_one/input.json"),
+        accountStartIndex: 0,
+        accountEndIndex: -1,
     }
 });
 
-var input_data_path = argv.poa_input_data_path;
-var layer_one_input_path = argv.layer_one_input_path;
-var start_index = argv.account_start_index;
-var end_index = argv.account_end_index;
+var inputDataPath = argv.poaInputDataPath;
+var layerOneInputPath = argv.layerOneInputPath;
+var startIndex = argv.accountStartIndex;
+var endIndex = argv.accountEndIndex;
 
-fs.readFile(input_data_path, function read(err: any, json_in: any) {
+fs.readFile(inputDataPath, function read(err: any, json_in: any) {
     if (err) {
         throw err;
     }
 
-    var input_data: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
+    var inputData: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
 
-    if (end_index === -1) {
-        end_index = input_data.accountAttestations.length;
+    if (endIndex === -1) {
+        endIndex = inputData.accountAttestations.length;
     }
 
-    if (start_index >= end_index) {
-        throw new Error(`start_index ${start_index} must be less than end_index ${end_index}`);
+    if (startIndex >= endIndex) {
+        throw new Error(`startIndex ${startIndex} must be less than endIndex ${endIndex}`);
     }
 
-    var layer_one_input: LayerOneInputFileShape = construct_input(
-        input_data.accountAttestations.map(w => w.signature).slice(start_index, end_index)
+    var layerOneInput: LayerOneInputFileShape = constructInput(
+        inputData.accountAttestations.map(w => w.signature).slice(startIndex, endIndex)
     );
 
-    const json_out = JSON.stringify(
-        layer_one_input,
+    const jsonOut = JSON.stringify(
+        layerOneInput,
         (key, value) => typeof value === "bigint" ? value.toString() : value,
         2
     );
 
-    fs.writeFileSync(layer_one_input_path, json_out);
+    fs.writeFileSync(layerOneInputPath, jsonOut);
 });

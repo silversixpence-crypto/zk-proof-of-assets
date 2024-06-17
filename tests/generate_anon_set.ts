@@ -22,7 +22,7 @@ Output file is anonymity_set.csv with headings 'address,eth_balance'
 import { Wallet } from "ethers";
 import { randomBytes } from '@noble/hashes/utils';
 
-import { generate_pvt_pub_key_pairs, KeyPair, generate_deterministic_balance } from "./keys";
+import { generatePvtPubKeyPairs, KeyPair, generateDeterministicBalance } from "./keys";
 import { bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
 import { jsonReplacer } from "../scripts/lib/json_serde";
 import { AccountData } from "../scripts/lib/interfaces";
@@ -39,20 +39,20 @@ interface AccountDataRaw {
 }
 
 var argv = parseArgs(process.argv.slice(2), {
-    alias: { num_addresses: ['num-addresses', 'n'] },
-    default: { num_addresses: 100 }
+    alias: { numAddresses: ['num-addresses', 'n'] },
+    default: { numAddresses: 100 }
 });
 
-let num_addresses: number = argv.num_addresses;
+let numAddresses: number = argv.numAddresses;
 
-let random_address_set_path = path.join(__dirname, "random_ethereum_addresses.json");
-let random_address_set_raw = fs.readFileSync(random_address_set_path);
-let random_address_set: AccountDataRaw[] = JSON.parse(random_address_set_raw);
-let known_key_pairs: KeyPair[] = generate_pvt_pub_key_pairs(-1);
-let total_address_count = known_key_pairs.length + random_address_set.length;
+let randomAddressSetPath = path.join(__dirname, "random_ethereum_addresses.json");
+let randomAddressSetRaw = fs.readFileSync(randomAddressSetPath);
+let randomAddressSet: AccountDataRaw[] = JSON.parse(randomAddressSetRaw);
+let knownKeyPairs: KeyPair[] = generatePvtPubKeyPairs(-1);
+let totalAddressCount = knownKeyPairs.length + randomAddressSet.length;
 
-if (num_addresses > total_address_count) {
-    throw new Error(`Cannot generate anonymity set size greater than ${total_address_count}. Size requested was ${num_addresses}`);
+if (numAddresses > totalAddressCount) {
+    throw new Error(`Cannot generate anonymity set size greater than ${totalAddressCount}. Size requested was ${numAddresses}`);
 }
 
 let accounts: AccountData[] = [];
@@ -61,14 +61,14 @@ let i = 0;
 // =============================================================================
 // Add addresses from keys.ts
 
-while (i < known_key_pairs.length && i < num_addresses) {
-    let pvt_hex = known_key_pairs[i].pvt.toString(16);
-    let address_hex = new Wallet(pvt_hex).address;
-    let address_dec: bigint = BigInt(address_hex);
+while (i < knownKeyPairs.length && i < numAddresses) {
+    let pvtHex = knownKeyPairs[i].pvt.toString(16);
+    let addressHex = new Wallet(pvtHex).address;
+    let addressDec: bigint = BigInt(addressHex);
 
     accounts.push({
-        address: address_dec,
-        balance: generate_deterministic_balance(known_key_pairs[i]),
+        address: addressDec,
+        balance: generateDeterministicBalance(knownKeyPairs[i]),
     });
 
     i++;
@@ -77,11 +77,11 @@ while (i < known_key_pairs.length && i < num_addresses) {
 // =============================================================================
 // Add addresses from random_ethereum_addresses.json
 
-if (num_addresses > i) {
-    num_addresses = num_addresses - i;
-    for (let j = 0; j < num_addresses; j++) {
-        let address: bigint = BigInt(random_address_set[j].address);
-        let balance: bigint = BigInt(random_address_set[j].balance);
+if (numAddresses > i) {
+    numAddresses = numAddresses - i;
+    for (let j = 0; j < numAddresses; j++) {
+        let address: bigint = BigInt(randomAddressSet[j].address);
+        let balance: bigint = BigInt(randomAddressSet[j].balance);
         accounts.push({ address, balance });
     }
 }
@@ -99,14 +99,14 @@ accounts.sort((a, b) => {
 // =============================================================================
 // Write to csv.
 
-const filename = "anonymity_set_" + num_addresses + ".csv";
+const filename = "anonymity_set_" + numAddresses + ".csv";
 const writableStream = fs.createWriteStream(path.join(__dirname, filename));
 const columns = ["address", "eth_balance"];
 const stringifier = stringify({ header: true, columns });
 
 accounts.forEach(account => {
-    let address_hex = "0x" + bytesToHex(bigint_to_Uint8Array(account.address));
-    stringifier.write([address_hex, account.balance.toString()])
+    let addressHex = "0x" + bytesToHex(bigint_to_Uint8Array(account.address));
+    stringifier.write([addressHex, account.balance.toString()])
 }
 );
 

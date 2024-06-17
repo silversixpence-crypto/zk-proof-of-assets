@@ -22,7 +22,7 @@ npx ts-node ./scripts/ecdsa_sigs_parser.ts \
 import * as ethers from "ethers";
 import { AccountAttestation, EcdsaSignature, EcdsaStarSignature, ProofOfAssetsInputFileShape, SignatureData } from "./lib/interfaces";
 import { jsonReplacer } from "../scripts/lib/json_serde";
-import { ecdsa_star_from_ecdsa } from "./lib/ecdsa_star";
+import { ecdsaStarFromEcdsa } from "./lib/ecdsa_star";
 
 const fs = require('fs');
 const assert = require('assert');
@@ -56,7 +56,7 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
             v: ethers_ecdsaSig.v,
             msghash: sigInputData.signature.msghash,
         }
-        let ecdsaStarSig = ecdsa_star_from_ecdsa(ecdsaSig);
+        let ecdsaStarSig = ecdsaStarFromEcdsa(ecdsaSig);
         let addressFromEcdsaStar = ethers.computeAddress("0x" + ecdsaStarSig.pubkey.toHex());
 
         // Extra check to make sure the address of both sigs matches the input address.

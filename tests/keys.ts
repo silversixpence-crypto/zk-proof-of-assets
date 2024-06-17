@@ -11,7 +11,7 @@ export interface KeyPair {
     pub: Point,
 }
 
-export function generate_pvt_pub_key_pairs(num_key_pairs: number): KeyPair[] {
+export function generatePvtPubKeyPairs(numKeyPairs: number): KeyPair[] {
     var pvtkeys: Array<bigint> = [
         66938844460645107025781008991556355714625654511665288941412380224408210845354n,
         11103745739792365897258682640621486163995830732847673942264532053458061009278n,
@@ -615,17 +615,17 @@ export function generate_pvt_pub_key_pairs(num_key_pairs: number): KeyPair[] {
         89235560258563032673709510943928474518732738550212300909924101371260208469862n
     ];
 
-    if (num_key_pairs === -1) {
-        num_key_pairs = pvtkeys.length;
+    if (numKeyPairs === -1) {
+        numKeyPairs = pvtkeys.length;
     }
 
-    if (num_key_pairs > pvtkeys.length) {
-        throw new Error(`${num_key_pairs} is greater than the max number of private keys ${pvtkeys.length}`);
+    if (numKeyPairs > pvtkeys.length) {
+        throw new Error(`${numKeyPairs} is greater than the max number of private keys ${pvtkeys.length}`);
     }
 
     var pairs: KeyPair[] = [];
 
-    for (var i = 0; i < num_key_pairs; i++) {
+    for (var i = 0; i < numKeyPairs; i++) {
         var pubkey: Point = Point.fromPrivateKey(pvtkeys[i]);
         pairs.push({ pvt: pvtkeys[i], pub: pubkey });
     }
@@ -633,7 +633,7 @@ export function generate_pvt_pub_key_pairs(num_key_pairs: number): KeyPair[] {
     return pairs;
 }
 
-export function generate_deterministic_balance(key_pair: KeyPair): bigint {
-    return key_pair.pvt % 1000n;
+export function generateDeterministicBalance(keyPair: KeyPair): bigint {
+    return keyPair.pvt % 1000n;
 }
 

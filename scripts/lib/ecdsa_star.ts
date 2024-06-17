@@ -82,7 +82,7 @@ function hexToBytes(hex: string, endian: string = "big"): Uint8Array {
     return array;
 }
 
-export function ecdsa_star_from_ecdsa(ecdsa: EcdsaSignature): EcdsaStarSignature {
+export function ecdsaStarFromEcdsa(ecdsa: EcdsaSignature): EcdsaStarSignature {
     if (ecdsa.v != 27 && ecdsa.v != 28) {
         throw new Error(`Invalid ECDSA 'v' value ${ecdsa.v} (must be 27 or 28)`);
     }
