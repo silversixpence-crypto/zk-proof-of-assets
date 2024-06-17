@@ -142,7 +142,7 @@ address,eth_balance
 
 <summary>Diagram showing how the script works</summary>
 
-![Flow diagram](./images/full_workflow.png)
+![Flow diagram](../images/full_workflow.png)
 
 </details>
 
