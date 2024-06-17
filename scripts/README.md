@@ -138,6 +138,14 @@ address,eth_balance
 
 </details>
 
+<details>
+
+<summary>Diagram showing how the script works</summary>
+
+![Flow diagram](./images/full_workflow.png)
+
+</details>
+
 ---
 
 *The helper scripts..*
