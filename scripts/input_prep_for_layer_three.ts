@@ -32,7 +32,7 @@ import { Point, CURVE } from '@noble/secp256k1';
 import { jsonReviver } from "./lib/json_serde";
 import { ProofOfAssetsInputFileShape, Groth16ProofAsInput } from "./lib/interfaces";
 import { bigint_to_array, bigint_to_Uint8Array } from "./lib/utils";
-import { generator_g_formatted, generator_h_formatted, format_scalar_power } from "./lib/pedersen_commitment";
+import { generator_g_formatted, generator_h_formatted, formatScalarPower } from "./lib/pedersen_commitment";
 
 const fs = require('fs');
 const circomlibjs = require("circomlibjs");
@@ -74,7 +74,7 @@ function constructInput(proofData: Groth16ProofAsInput[], balances: bigint[], me
         merkle_root: merkleRoot,
         ped_com_generator_g: generator_g_formatted,
         ped_com_generator_h: generator_h_formatted,
-        ped_com_blinding_factor: format_scalar_power(blindingFactor),
+        ped_com_blinding_factor: formatScalarPower(blindingFactor),
     };
 
     for (let i = 0; i < proofData.length; i++) {
