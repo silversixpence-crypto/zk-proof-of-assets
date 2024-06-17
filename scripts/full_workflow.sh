@@ -569,6 +569,7 @@ printf "\n================ $MSG ================\n"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
+    --poa-input-data "$parsed_sigs_path" \
     --layer-three-public-inputs "$build"/public.json \
     --blinding-factor $blinding_factor
 

@@ -24,9 +24,6 @@ var argv = require('minimist')(process.argv.slice(2), {
         layerThreePublicInputsPath: ['layer-three-public-inputs', 'p'],
         blindingFactor: ['blinding-factor', 'b'],
     },
-    default: {
-        poaInputDataPath: path.join(__dirname, "../tests/input_data_for_2_accounts.json")
-    }
 });
 
 let inputDataPath = argv.poaInputDataPath;
