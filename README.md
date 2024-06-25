@@ -107,7 +107,21 @@ There are conflicts with function names between ed25519-circom and other depende
 
 Most of the time taken up by the workflow is in generating the proving keys (zkeys). These can take hours, days or weeks to generate, depending on the memory capacity of the machine & the size of the input to the workflow. The good thing is that, once the keys are generated, they can be reused. So, one only needs to generate them once, and then they can be used for any number of proofs going forward (as long as the size of the inputs stay the same).
 
-TODO create graphs for timing data, say which machine you ran stuff on
+### Constraints
+
+For layer 1, the number of non-linear constraints can be estimated with the following equation: 
+$$C_{\text{layer 1}}(s) = 447044s + 888502$$
+where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data (`(num_sigs, constraints)`):
+```
+[(1, 1509221), (2, 1932908), (2, 1932908), (4, 1932908), (7, 4161827), (16, 8173925), (128, 58102853)]
+```
+
+For layer 2, the number of non-linear constraints can be estimated with the following equation: 
+$$C_{\text{layer 2}}(s,h) = 159591s + 6054h + 19490640$$
+where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data (`(num_sigs, height, constraints)`):
+```
+[(4, 12, 19981480), (1, 5, 19823616), (2, 25, 19987876), (7, 25, 20784765), (16, 25, 22219209), (128, 25, 40070665)]
+```
 
 ## Testing
 
