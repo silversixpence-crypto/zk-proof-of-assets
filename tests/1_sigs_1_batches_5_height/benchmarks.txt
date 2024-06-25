@@ -1,0 +1,51 @@
+Data was gathered by running 1_sigs_1_batches_5_height.sh
+
+NOTE: the zkey generation times are unknown because previously generated zkeys were used.
+
+Compilation data for layer 1:
+# non-linear constraints: 1509221
+# linear constraints: 132139
+# public inputs: 0
+# private inputs: 24 (20 belong to witness)
+# public outputs: 1
+# wires: 1632790
+# labels: 2130987
+
+Layer 1 timings:
+# Compile: 1m
+# zkey gen: ?
+# vkey gen: ?
+# witness gen: 17s
+# proof gen: 3s
+
+Compilation data for layer 2:
+# non-linear constraints: 19823616
+# linear constraints: 1408262
+# public inputs: 1
+# private inputs: 211 (210 belong to witness)
+# public outputs: 1
+# wires: 21106893
+# labels: 25237904
+
+Layer 2 timings:
+# Compile: 8m
+# zkey gen: ?
+# vkey gen: ?
+# witness gen: 1m
+# proof gen: 27s
+
+Compilation data for layer 3:
+# non-linear constraints: 25322713
+# linear constraints: 3006283
+# public inputs: 0
+# private inputs: 485
+# public outputs: 12
+# wires: 28128132
+# labels: 37845715
+
+Layer 3 timings:
+# Compile: 10m
+# zkey gen: ?
+# vkey gen: ?
+# witness gen: ?
+# proof gen: ?

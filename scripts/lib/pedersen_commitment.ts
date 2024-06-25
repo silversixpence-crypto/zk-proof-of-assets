@@ -103,7 +103,7 @@ function chunkBigInt(n: bigint, mod = BigInt(2 ** 51)): bigint[] {
 }
 
 // This function will perform point addition on elliptic curve 25519 to check point addition circom
-function point_add(P: bigint[], Q: bigint[]): bigint[] {
+function pointAdd(P: bigint[], Q: bigint[]): bigint[] {
     let A = modulus((P[1] - P[0]) * (Q[1] - Q[0]), p);
     let B = modulus((P[1] + P[0]) * (Q[1] + Q[0]), p);
     let C = modulus(BigInt(2) * P[3] * Q[3] * d, p);
@@ -118,13 +118,13 @@ function point_add(P: bigint[], Q: bigint[]): bigint[] {
 }
 
 // This funciton will give the point multiplcation on EC 25519
-function point_mul(s: bigint, P: bigint[]): bigint[] {
+function pointMul(s: bigint, P: bigint[]): bigint[] {
     let Q = [0n, 1n, 1n, 0n];
     while (s > 0) {
         if (s & 1n) {
-            Q = point_add(Q, P);
+            Q = pointAdd(Q, P);
         }
-        P = point_add(P, P);
+        P = pointAdd(P, P);
         s >>= 1n;
     }
     return Q;
@@ -138,7 +138,7 @@ function dechunk(x: bigint[], mod = BigInt(2 ** 51)): bigint {
     return sum;
 }
 
-export function point_equal(P: bigint[], Q: bigint[]): boolean {
+export function pointEqual(P: bigint[], Q: bigint[]): boolean {
     //  x1 / z1 == x2 / z2  <==>  x1 * z2 == x2 * z1
     if (modulus((P[0] * Q[2] - Q[0] * P[2]), p) != 0n) {
         return false
@@ -149,7 +149,7 @@ export function point_equal(P: bigint[], Q: bigint[]): boolean {
     return true
 }
 
-function point_compress(P: bigint[]): bigint[] {
+function pointCompress(P: bigint[]): bigint[] {
     const zinv = bigintModArith.modInv(P[2], p);
     let x = modulus(P[0] * zinv, p);
     let y = modulus(P[1] * zinv, p);
@@ -179,7 +179,7 @@ for (let i = 0; i < 4; i++) {
 ////////////////////////////////////////////////
 // Format scalars.
 
-export function format_scalar_power(k: bigint) {
+export function formatScalarPower(k: bigint) {
     // This LE is a bit misleading, see:
     // https://github.com/silversixpence-crypto/zk-proof-of-assets/issues/38#issuecomment-1995667384
     const k_buf = bigIntToLEBuffer(k);
@@ -199,20 +199,20 @@ export function format_scalar_power(k: bigint) {
 ////////////////////////////////////////////////
 // Calculate Pedersen commitment.
 
-export function pedersen_commitment(secret: bigint, blinding_factor: bigint): bigint[] {
-    const first = point_mul(secret, generator_g);
+export function pedersenCommitment(secret: bigint, blindingFactor: bigint): bigint[] {
+    const first = pointMul(secret, generator_g);
     for (let i = 0; i < 4; i++) {
         first[i] = modulus(first[i], p);
     }
     // console.log("g^q", first);
 
-    const second = point_mul(blinding_factor, generator_h);
+    const second = pointMul(blindingFactor, generator_h);
     for (let i = 0; i < 4; i++) {
         second[i] = modulus(second[i], p);
     }
     // console.log("h^r", second);
 
-    const final = point_add(first, second);
+    const final = pointAdd(first, second);
     for (let i = 0; i < 4; i++) {
         final[i] = modulus(final[i], p);
     }
@@ -224,7 +224,7 @@ export function pedersen_commitment(secret: bigint, blinding_factor: bigint): bi
 ////////////////////////////////////////////////
 // Converting g16 signal data to an Edwards point.
 
-export function dechunk_to_point(g16_signal: bigint[]): bigint[] {
+export function dechunkToPoint(g16_signal: bigint[]): bigint[] {
     const chunks = [];
     for (let i = 0; i < 4; i++) {
         chunks.push(g16_signal.slice(3 * i, 3 * i + 3));

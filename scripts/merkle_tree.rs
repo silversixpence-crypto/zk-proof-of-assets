@@ -25,14 +25,16 @@ use clap::Parser;
 
 use serde::{Deserialize, Serialize};
 
-/// Search for a pattern in a file and display the lines that contain it.
+// TODO change 'eth_balance' to just 'balance'
+
+/// Construct a Merkle Tree for the anonymity set of Ethereum addresses & balances.
 #[derive(Parser)]
 struct Cli {
-    /// Path to the csv anonymity set file.
+    /// Path to the csv anonymity set file, with headings "address,eth_balance".
     #[arg(short, long, value_name = "FILE_PATH")]
     anon_set: PathBuf,
 
-    /// Path to the PoA input data file.
+    /// Path to the PoA input data file (output from ecdsa_sigs_parser.ts script).
     #[arg(short, long, value_name = "FILE_PATH")]
     poa_input_data: PathBuf,
 
@@ -180,6 +182,7 @@ impl Hasher for MyPoseidon {
 
 fn append_to_path(p: PathBuf, s: &str) -> PathBuf {
     let mut p = p.into_os_string();
+    p.push("/");
     p.push(s);
     p.into()
 }
@@ -248,7 +251,7 @@ fn build_leaves(anon_set_file_path: PathBuf) -> Vec<[u8; 32]> {
         leaves.push(hash);
     }
 
-    println!("Done creating leaves");
+    println!("Done creating {} leaves", leaves.len());
 
     // Add 0-valued nodes to make the tree full
     let size = leaves.len() as f64;
@@ -396,13 +399,14 @@ fn generate_proofs(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("Initiating Merkle Tree build..");
-
     let args = Cli::parse();
+
     let anon_set_file_path = args.anon_set;
     let poa_input_path = args.poa_input_data;
     let merkle_root_path = append_to_path(args.output_dir.clone(), "merkle_root.json");
     let merkle_proofs_path = append_to_path(args.output_dir, "merkle_proofs.json");
+
+    println!("Initiating Merkle Tree build..");
 
     let leaves = build_leaves(anon_set_file_path);
 

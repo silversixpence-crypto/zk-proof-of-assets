@@ -15,6 +15,7 @@ G16_PROVE_DIRECTORY="$(dirname "$G16_PROVE_PATH")"
 # https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
 . "$G16_PROVE_DIRECTORY/lib/error_handling.sh"
 . "$G16_PROVE_DIRECTORY/lib/cmd_executor.sh"
+. "$G16_PROVE_DIRECTORY/lib/g16_utils.sh"
 
 ############################################
 # Constants.
@@ -56,12 +57,6 @@ FLAGS:
     -q               Quick commands only
                      This skips proof generation, which is useful if you only want to do witness generation
 
-    -w               Verify the witness
-
-    -z               Verify the final proving key (zkey)
-                     You must also specify the ptau file path with '-t'
-                     WARN: this takes long for large circuits
-
     -v               Print commands that are run (set -x)
 
     -h               Help
@@ -80,8 +75,6 @@ OPTIONS:
     -r <PATH>        Path to the rapidsnark binary (needed for big circuits, see '-b')
                      Can also be set with the env var RAPIDSNARK_PATH
 
-    -t <PATH>        Powers of tau (ptau) file path (used for verifying the zkey, see '-z')
-
     -Z <PATH>        Path to proving key (zkey)
                      Default is '<build_dir>/<circuit_name>_final.zkey'
 
@@ -93,41 +86,6 @@ ARGS:
 "
 }
 
-if [ "$#" -lt 2 ]; then
-    echo "$ERR_PREFIX: Not enough arguments"
-    print_usage
-    exit 1
-fi
-
-############################################
-# Required args.
-
-# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
-circuit_path="${@:(-2):1}"
-signals_path="${@: -1}"
-
-if [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to a file."
-    print_usage
-    exit 1
-fi
-
-# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-circuit_file=$(basename $circuit_path)
-circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$CIRCUIT_PATH' does not point to an existing circom file."
-    print_usage
-    exit 1
-fi
-
-if [[ "${signals_path##*.}" != "json" ]] || [[ ! -f "$signals_path" ]]; then
-    echo "$ERR_PREFIX: <signals_path> '$signals_path' does not point to an existing json file."
-    print_usage
-    exit 1
-fi
-
 ############################################
 # Parse flags & optional args.
 
@@ -137,12 +95,10 @@ patched_node_path=$PATCHED_NODE_PATH
 rapidsnark_path=$RAPIDSNARK_PATH
 quick=false
 verbose=false
-verify_witness=false
-verify_zkey=false
 zkey_has_custom_path=false
 
 # https://stackoverflow.com/questions/7069682/how-to-get-arguments-with-flags-in-bash#21128172
-while getopts 'bB:hn:p:qr:t:vwzZ:' flag; do
+while getopts 'bB:hn:p:qr:vZ:' flag; do
     case "${flag}" in
     b)
         big_circuits=true
@@ -151,26 +107,42 @@ while getopts 'bB:hn:p:qr:t:vwzZ:' flag; do
     B) build_dir="${OPTARG}" ;;
     h)
         print_usage
-        exit 1
+        exit 0
         ;;
     n) patched_node_path="${OPTARG}" ;;
     p) proof_dir="${OPTARG}" ;;
     q) quick=true ;;
     r) rapidsnark_path="${OPTARG}" ;;
-    t) ptau_path="${OPTARG}" ;;
     v) verbose=true ;;
-    w) verify_witness=true ;;
-    z) verify_zkey=true ;;
     Z)
         zkey_has_custom_path=true
         zkey_path="${OPTARG}"
         ;;
     *)
         print_usage
-        exit 1
+        exit 0
         ;;
     esac
 done
+
+############################################
+# Required args.
+
+if [ "$#" -lt 2 ]; then
+    ERR_MSG="$ERR_PREFIX: Not enough arguments"
+    exit 1
+fi
+
+# https://stackoverflow.com/questions/11054939/how-to-get-the-second-last-argument-from-shell-script#11055032
+circuit_path="${@:(-2):1}"
+signals_path="${@: -1}"
+
+check_file_exists_with_ext "$ERR_PREFIX" "circuit_path" "$circuit_path" "circom"
+check_file_exists_with_ext "$ERR_PREFIX" "signals_path" "$signals_path" "json"
+
+# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
 
 ############################################
 
@@ -180,23 +152,10 @@ if $verbose; then
 fi
 
 ############################################
-
-if $verify_zkey; then
-    if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
-        echo "$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
-        print_usage
-        exit 1
-        # elif
-        # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
-        # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
-    fi
-fi
-
-############################################
 # Verify build directory exists.
 
 if [[ ! -d "$build_dir" ]]; then
-    echo "Build directory $build_dir does not exist"
+    ERR_MSG="Build directory $build_dir does not exist"
     exit 1
 fi
 
@@ -214,49 +173,28 @@ if [[ ! -d "$proof_dir" ]]; then
 fi
 
 ############################################
-# Verify custom zkey path.
+# Verify/set zkey path.
 
-if $zkey_has_custom_path; then
-    if [[ -z $zkey_path ]]; then
-        echo "$ERR_PREFIX: Path to zkey not set, but '-Z' option was given."
-        print_usage
-        exit 1
-    fi
-
-    if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
-        echo "$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
-        print_usage
-        exit 1
-    fi
-else
-    zkey_path="$build_dir"/"$circuit_name"_final.zkey
+if ! $zkey_has_custom_path; then
+    set_default_zkey_path_final "$build_dir" "$circuit_name" zkey_path
 fi
+
+verify_zkey_path "$zkey_path" "$ERR_PREFIX"
 
 ############################################
 # Setup for big circuits.
 
 if $big_circuits; then
-    if [[ -z $patched_node_path ]]; then
-        echo "$ERR_PREFIX: Path to patched node binary not set. This must be set if using '-b' (see '-n')."
-        print_usage
-        exit 1
-    fi
-
-    patched_node_file=$(basename $patched_node_path)
-    if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
-        echo "$ERR_PREFIX: $patched_node_path must point to a file with name 'node'"
-        exit 1
-    fi
+    verify_patched_node_path "$patched_node_path" "$ERR_PREFIX"
 
     if [[ -z "$rapidsnark_path" ]]; then
-        echo "$ERR_PREFIX: Path to rapidsnark binary not set. This must be set if using '-b'."
-        print_usage
+        ERR_MSG="$ERR_PREFIX: Path to rapidsnark binary not set. This must be set if using '-b'."
         exit 1
     fi
 
     rapidsnark_file=$(basename "$rapidsnark_path")
     if [[ ! -f "$rapidsnark_path" ]] || [[ $rapidsnark_file != "prover" ]]; then
-        echo "$ERR_PREFIX: $rapidsnark_path must point to a file with name 'prover'"
+        ERR_MSG="$ERR_PREFIX: $rapidsnark_path must point to a file with name 'prover'"
         exit 1
     fi
 
@@ -266,7 +204,7 @@ else
 fi
 
 if [[ ! -f "$expected_wtns_gen_path" ]]; then
-    echo "$ERR_PREFIX: The witness generation code does not exist at the expected path $expected_wtns_gen_path"
+    ERR_MSG="$ERR_PREFIX: The witness generation code does not exist at the expected path $expected_wtns_gen_path"
     exit 1
 fi
 
@@ -287,11 +225,6 @@ ERR_MSG="UNKNOWN"
 # e.g. layer_one_128_sigs.zkey
 # e.g. layer_three_1_proof.zkey
 
-MSG="VERIFYING FINAL ZKEY"
-if $verify_zkey; then
-    execute npx snarkjs zkey verify "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$zkey_path"
-fi
-
 if $big_circuits; then
     MSG="GENERATING WITNESS USING C++ CODE"
     execute "$build_dir"/"$circuit_name"_cpp/"$circuit_name" "$signals_path" "$proof_dir"/witness.wtns
@@ -300,9 +233,9 @@ else
     execute npx node "$build_dir"/"$circuit_name"_js/generate_witness.js "$build_dir"/"$circuit_name"_js/"$circuit_name".wasm "$signals_path" "$proof_dir"/witness.wtns
 fi
 
-MSG="VERIFYING WITNESS"
-if $verify_witness; then
-    execute snarkjs wtns check "$build_dir"/"$circuit_name".r1cs "$proof_dir"/witness.wtns
+if $quick; then
+    printf "\n================ SKIPPING PROOF GENERATION DUE TO SHORT-CIRCUIT FLAG -q ================"
+    exit 0
 fi
 
 if $big_circuits; then
@@ -312,8 +245,5 @@ else
     MSG="GENERATING PROOF USING SNARKJS"
     execute npx snarkjs groth16 prove "$zkey_path" "$proof_dir"/witness.wtns "$proof_dir"/proof.json "$proof_dir"/public.json
 fi
-
-MSG="VERIFYING PROOF"
-execute npx snarkjs groth16 verify "$build_dir"/"$circuit_name"_vkey.json "$proof_dir"/public.json "$proof_dir"/proof.json
 
 printf "\n================ DONE G16 PROVE ================\n"

@@ -13,6 +13,7 @@ Cargo.lock
 merkle_tree.json
 merkle_proofs.json
 merkle_root.json
-anonymity_set.json
+anonymity_set*
+signatures*
 pubkey_x_coords_hash.txt
 input_data_for_*

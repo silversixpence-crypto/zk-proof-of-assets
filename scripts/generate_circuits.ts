@@ -1,6 +1,24 @@
+/**
+   Generates Circom code for the 3 layers, using CLI input value.
+
+   It basically configures the input params for the 3 circuit layers.
+
+   Use CLI like this:
+   ```bash
+   npx ts-node ./scripts/generate_circuits.ts \
+                 --num-sigs <num_sigs_per_batch> \
+                 --num-sigs-remainder <num_sigs_in_remainder_batch> \
+                 --tree-height <merkle_tree_height> \
+                 --parallelism <num_batches> \
+                 --write-circuits-to <generated_circuits_dir> \
+                 --circuits-library-relative-path <path_to_circuits_dir_from_generated_circuits_dir>
+   ```
+**/
+
 const fs = require('fs');
 const path = require('path');
 const parseArgs = require('minimist');
+const assert = require('assert');
 
 var argv = parseArgs(process.argv.slice(2), {
     alias: {
@@ -27,14 +45,19 @@ var argv = parseArgs(process.argv.slice(2), {
     }
 });
 
-let numSigs = argv.numSigs;
-let numSigsRemainder = argv.numSigsRemainder;
-let merkleTreeHeight = argv.merkleTreeHeight;
+let numSigs: number = argv.numSigs;
+let numSigsRemainder: number = argv.numSigsRemainder;
+let merkleTreeHeight: number = argv.merkleTreeHeight;
 let parallelism: number = argv.layerParallelism;
-let circuitsDir = argv.circuitsDir;
-let circuitsLib = argv.circuitsLib;
+let circuitsDir: string = argv.circuitsDir;
+let circuitsLib: string = argv.circuitsLib;
 
-// TODO ensure all the above values are the expected type
+assert.ok(typeof numSigs === 'number');
+assert.ok(typeof numSigsRemainder === 'number');
+assert.ok(typeof merkleTreeHeight === 'number');
+assert.ok(typeof parallelism === 'number');
+assert.ok(typeof circuitsDir === 'string');
+assert.ok(typeof circuitsLib === 'string');
 
 if (!fs.existsSync(circuitsDir)) {
     fs.mkdirSync(circuitsDir);
@@ -63,7 +86,7 @@ component main = LayerThree(${parallelism});
 `};
 
 if (numSigsRemainder > 0) {
-    let remainder_circuits = {
+    let remainderCircuits = {
         one_remainder: `pragma circom 2.1.7;
 
 include "${circuitsLib}/layer_one.circom";
@@ -81,7 +104,7 @@ component main {public [merkle_root]} = LayerTwo(${numSigsRemainder}, ${merkleTr
 
     circuits = {
         ...circuits,
-        ...remainder_circuits,
+        ...remainderCircuits,
     }
 }
 

@@ -37,3 +37,17 @@ export function Uint8Array_to_bigint(x: Uint8Array) {
     return ret;
 }
 
+// Taken from:
+// https://github.com/yi-sun/circom-pairing/blob/107c316223a08ac577522c54edd81f0fc4c03130/test/test.ts
+const hexes = Array.from({ length: 256 }, (v, i) =>
+    i.toString(16).padStart(2, "0")
+);
+export function bytesToHex(uint8a: Uint8Array): string {
+    // pre-caching chars could speed this up 6x.
+    let hex = "";
+    for (let i = 0; i < uint8a.length; i++) {
+        hex += hexes[uint8a[i]];
+    }
+    return hex;
+}
+

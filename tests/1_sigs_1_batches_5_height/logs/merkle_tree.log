@@ -1,0 +1,14 @@
+
+================ GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES ================
+Mon Jun 17 09:28:55 BST 2024
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `target/debug/merkle-tree --anon-set /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/anonymity_set_10.csv --poa-input-data /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/input_data_for_1_accounts.json --output-dir /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height`
+Initiating Merkle Tree build..
+Trying to read given file '"/root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/anonymity_set_10.csv"'
+Converting lines in '"/root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/anonymity_set_10.csv"' into leaf nodes.. (leaf node = hash(address, balance))
+Done creating 10 leaves
+Number of leaves (after adding padding nodes): 16
+Creating Merkle tree..
+Done creating Merkle tree of height 5
+Root hash 1827675346918652786775828752113256067185960984884833786531891239712039959055 written to file "/root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/merkle_root.json"
+STATS: time ([H:]M:S) 0:00.06 ; mem 0Kb ; cpu 91%

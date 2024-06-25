@@ -1,0 +1,148 @@
+
+================ COMPILING CIRCUIT ================
+Mon Jun 17 09:30:04 BST 2024
+[32mtemplate instances[0m: 489
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->get_bn254_b
+        ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->SubgroupCheckG1
+        ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->SubgroupCheckG2
+        ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->SubgroupCheckG2
+        ->get_bn254_b
+         ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->FinalExponentiate
+        ->FinalExpEasyPart
+         ->Fp12FrobeniusMap
+          ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->FinalExponentiate
+        ->BNFinalExpHardPart
+         ->Fp12FrobeniusMap
+          ->get_bn254_prime
+
+[0m[1m[38;5;11mwarning[T3001][0m[1m: Typing warning: Mismatched dimensions, assigning to an array an expression of smaller length, the remaining positions are not modified. Initially all variables are initialized to 0.
+  Expected length: 50, given 6[0m
+   [0m[34m┌─[0m "/root/zk-proof-of-assets/git_modules/circom-pairing/circuits/bn254/bn254_func.circom":30:9
+   [0m[34m│[0m
+[0m[34m30[0m [0m[34m│[0m         [0m[33mp = [4496167861575, 6843252835345, 7000891737505, 3140707462190, 3410247779588, 415682586050][0m;
+   [0m[34m│[0m         [0m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [0m[33mfound here[0m
+   [0m[34m│[0m
+   [0m[34m=[0m call trace:
+     ->LayerTwo
+      ->verifyProof
+       ->FinalExponentiate
+        ->BNFinalExpHardPart
+         ->Fp12FrobeniusMap
+          ->get_bn254_prime
+
+non-linear constraints: 19823616
+linear constraints: 1408262
+public inputs: 1
+private inputs: 211 (210 belong to witness)
+public outputs: 1
+wires: 21106893
+labels: 25237904
+[32mWritten successfully:[0m /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/layer_two.r1cs
+[32mWritten successfully:[0m /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/layer_two.sym
+[32mWritten successfully:[0m /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/layer_two_cpp/layer_two.cpp and /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/layer_two_cpp/layer_two.dat
+[32mWritten successfully:[0m /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/layer_two_cpp/main.cpp, circom.hpp, calcwit.hpp, calcwit.cpp, fr.hpp, fr.cpp, fr.asm and Makefile
+[32mEverything went okay[0m
+STATS: time ([H:]M:S) 7:40.72 ; mem 0Kb ; cpu 105%
+
+================ COMPILING C++ WITNESS GENERATION CODE ================
+Mon Jun 17 09:37:45 BST 2024
+g++ -c main.cpp -std=c++11 -O3 -I.
+g++ -c calcwit.cpp -std=c++11 -O3 -I.
+g++ -c fr.cpp -std=c++11 -O3 -I.
+nasm -felf64 fr.asm -o fr_asm.o
+g++ -c layer_two.cpp -std=c++11 -O3 -I.
+g++ -o layer_two *.o -lgmp 
+STATS: time ([H:]M:S) 0:35.45 ; mem 0Kb ; cpu 99%
+/root/zk-proof-of-assets
+
+================ SKIPPING ZKEY GENERATION, USING EXISTING ZKEY /root/zk-proof-of-assets/scripts/../zkeys/layer_two_1_sigs_5_height.zkey ================
+================ EXPORTING VKEY ================
+Mon Jun 17 09:38:20 BST 2024
+[32;22m[INFO]  [39;1msnarkJS[0m: EXPORT VERIFICATION KEY STARTED
+[32;22m[INFO]  [39;1msnarkJS[0m: > Detected protocol: groth16
+[32;22m[INFO]  [39;1msnarkJS[0m: EXPORT VERIFICATION KEY FINISHED
+STATS: time ([H:]M:S) 0:00.51 ; mem 0Kb ; cpu 246%
+
+================ DONE G16 SETUP ================

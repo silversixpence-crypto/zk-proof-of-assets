@@ -13,8 +13,10 @@ G16_SETUP_DIRECTORY="$(dirname "$G16_SETUP_PATH")"
 
 # Inspiration taken from
 # https://stackoverflow.com/questions/12815774/importing-functions-from-a-shell-script/76241268#76241268
+
 . "$G16_SETUP_DIRECTORY/lib/error_handling.sh"
 . "$G16_SETUP_DIRECTORY/lib/cmd_executor.sh"
+. "$G16_SETUP_DIRECTORY/lib/g16_utils.sh"
 
 ############################################
 # Constants.
@@ -25,7 +27,7 @@ SNARKJS_CLI="$PROJECT_ROOT_DIR"/node_modules/snarkjs/cli.js
 SNARKJS_FILE=$(basename $SNARKJS_CLI)
 
 if [[ ! -f "$SNARKJS_CLI" ]]; then
-    echo "$ERR_PREFIX: snarkjs not present in node_modules. Maybe run 'pnpm i'?."
+    ERR_MSG="$ERR_PREFIX: snarkjs not present in node_modules. Maybe run 'pnpm i'?."
     exit 1
 fi
 
@@ -91,31 +93,6 @@ ARGS:
 "
 }
 
-if [ "$#" -lt 2 ]; then
-    echo "$ERR_PREFIX: Not enough arguments"
-    print_usage
-    exit 1
-fi
-
-############################################
-# Required args.
-
-circuit_path="${@: -1}"
-
-if [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
-    exit 1
-fi
-
-# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
-circuit_file=$(basename $circuit_path)
-circuit_name="${circuit_file%.*}"
-
-if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
-    echo "$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
-    exit 1
-fi
-
 ############################################
 # Parse flags & optional args.
 
@@ -138,7 +115,7 @@ while getopts 'bB:hn:qr:t:vZ:' flag; do
     B) build_dir="${OPTARG}" ;;
     h)
         print_usage
-        exit 1
+        exit 0
         ;;
     n) patched_node_path="${OPTARG}" ;;
     q) quick=true ;;
@@ -151,10 +128,34 @@ while getopts 'bB:hn:qr:t:vZ:' flag; do
         ;;
     *)
         print_usage
-        exit 1
+        exit 0
         ;;
     esac
 done
+
+############################################
+# Required args.
+
+if [ "$#" -lt 2 ]; then
+    ERR_MSG="$ERR_PREFIX: Not enough arguments"
+    exit 1
+fi
+
+circuit_path="${@: -1}"
+
+if [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to a file."
+    exit 1
+fi
+
+# https://stackoverflow.com/questions/965053/extract-filename-and-extension-in-bash
+circuit_file=$(basename $circuit_path)
+circuit_name="${circuit_file%.*}"
+
+if [[ "${circuit_path##*.}" != "circom" ]] || [[ ! -f "$circuit_path" ]]; then
+    ERR_MSG="$ERR_PREFIX: <circuit_path> '$circuit_path' does not point to an existing circom file."
+    exit 1
+fi
 
 ############################################
 
@@ -175,17 +176,7 @@ fi
 # Setup for big circuits.
 
 if $big_circuits; then
-    if [[ -z "$patched_node_path" ]]; then
-        echo "$ERR_PREFIX: Path to patched node binary not set. This must be set if using '-b'."
-        print_usage
-        exit 1
-    fi
-
-    patched_node_file=$(basename $patched_node_path)
-    if [[ ! -f "$patched_node_path" ]] || [[ $patched_node_file != "node" ]]; then
-        echo "$ERR_PREFIX: $patched_node_path must point to a file with name 'node'"
-        exit 1
-    fi
+    verify_patched_node_path "$patched_node_path" "$ERR_PREFIX"
 fi
 
 ############################################
@@ -193,19 +184,17 @@ fi
 
 if $skip_zkey_gen; then
     if [[ -z "$zkey_path" ]]; then
-        echo "$ERR_PREFIX: Path to zkey not set, but -Z option was given."
-        print_usage
+        ERR_MSG="$ERR_PREFIX: Path to zkey not set, but -Z option was given."
         exit 1
     fi
 
     if [[ "${zkey_path##*.}" != "zkey" ]] || [[ ! -f "$zkey_path" ]]; then
-        echo "$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
+        ERR_MSG="$ERR_PREFIX: <zkey_path> '$zkey_path' does not point to an existing zkey file."
         exit 1
     fi
 else
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
-        echo "$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
-        print_usage
+        ERR_MSG="$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file OR zkey file."
         exit 1
         # elif
         # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
@@ -239,7 +228,7 @@ if $big_circuits; then
 fi
 
 if $quick; then
-    printf "\n================ DONE, SKIPPING ZKEY & VKEY GENERATION ================"
+    printf "\n================ SKIPPING ZKEY & VKEY GENERATION DUE TO SHORT-CIRCUIT FLAG -q ================"
     exit 0
 fi
 
@@ -268,7 +257,9 @@ if ! $skip_zkey_gen; then
         execute npx snarkjs zkey beacon "$build_dir"/"$circuit_name"_"$suffix".zkey "$build_dir"/"$circuit_name"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
     fi
 
-    zkey_path="$build_dir"/"$circuit_name"_final.zkey
+    set_default_zkey_path_final "$build_dir" "$circuit_name" zkey_path
+else
+    printf "\n================ SKIPPING ZKEY GENERATION, USING EXISTING ZKEY $zkey_path ================"
 fi
 
 MSG="EXPORTING VKEY"

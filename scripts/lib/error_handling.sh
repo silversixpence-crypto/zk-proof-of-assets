@@ -21,7 +21,11 @@ failure() {
     local msg=$6
     local lineno_fns=${1% 0}
 
-    if [[ "$lineno_fns" != "0" ]] ; then
+    if [[ $exitstatus == 0 ]]; then
+        exit 0
+    fi
+
+    if [[ "$lineno_fns" != "0" ]]; then
         lineno="${lineno} ${lineno_fns}"
     fi
 
@@ -34,5 +38,29 @@ failure() {
 
     exit 1
 }
-trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR
+trap 'failure "${BASH_LINENO[*]}" "$LINENO" "${FUNCNAME[*]:-script}" "$?" "$BASH_COMMAND" "$ERR_MSG"' ERR EXIT
 
+check_file_exists() {
+    local err_prefix=$1
+    local name=$2
+    local path=$3
+
+    if [[ ! -f "$path" ]]; then
+        ERR_MSG="$err_prefix: <$name> '$path' does not point to a file."
+        exit 1
+    fi
+}
+
+check_file_exists_with_ext() {
+    check_file_exists "$1" "$2" "$3"
+
+    local err_prefix=$1
+    local name=$2
+    local path=$3
+    local ext=$4
+
+    if [[ "${path##*.}" != "$ext" ]]; then
+        ERR_MSG="$err_prefix: <$name> '$path' does not point an existing $ext file."
+        exit 1
+    fi
+}

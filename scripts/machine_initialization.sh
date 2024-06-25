@@ -66,6 +66,40 @@ Setup various software required to used the zk-proof-of-asset repo.
 USAGE:
     ./machine_initialization.sh [FLAGS] [OPTIONS]
 
+DESCRIPTION:
+    This script does the following:
+    1. Installs a bunch of software using the APT package manager
+    2. Installs Rust via their install script
+    3. Clones the Circom repo, and builds from source
+    4. Clones the pyenv repo, and installs Python 3.10 & 3.6
+    5. Clones the node repo, selects a particular commit, and builds from source
+    6. Installs nvm via their install script, and installs latest npm
+    7. Clones rapidsnark repo, and builds from source
+    8. Installs pnpm via their install script
+    9. Print out the `export` command that needs to be run manually before trying to run full_workflow.sh
+
+    The script can be run multiple times without repeating work e.g. if a command
+    fails then you can run the script again and it will pick up where it left off.
+
+TROUBLESHOOTING:
+
+    If the npm install fails with this error:
+      > Installing latest LTS version.
+      > Downloading and installing node v20.11.0...
+      > Binary download failed, trying source.
+    Then run this command manually:
+      export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && \. \"$NVM_DIR/nvm.sh\" && nvm install --lts.
+    And restart the process.
+
+    If the pnpm install fails with this error:
+      > ==> Downloading pnpm binaries 8.15.1
+      > WARN using --force I sure hope you know what you are doing
+      > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
+      > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
+    Then run this command manually (with different tmp file):
+      SHELL=\"$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force
+    And restart the process.
+
 FLAGS:
 
      -c            AWS CloudWatch memory metrics
@@ -87,6 +121,7 @@ OPTIONS:
                    See all ptau files here https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2
 
      -r <DIR>      Clone zk-proof-of-assets repo into <DIR>
+                   Also install dependencies and apply patches to dependencies
 
      -s <SIZE>     Create swap file of size <SIZE> (recommended for large circuits)
 "
@@ -138,7 +173,7 @@ ERR_MSG="Initial setup failed"
 
 sudo apt update && sudo apt upgrade -y
 
-sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git time patch parallel
+sudo apt install -y build-essential gcc pkg-config libssl-dev libgmp-dev libsodium-dev nasm nlohmann-json3-dev cmake m4 curl wget git time patch parallel jq bc
 
 # for pyenv
 sudo apt install -y --no-install-recommends make zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev llvm libncurses5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
@@ -174,8 +209,9 @@ ERR_MSG="System config setup failed"
 # https://stackoverflow.com/questions/23537560/docker-build-read-only-file-system
 # 6553000 is enough for at least 256 signatures in layer 1 circuit
 sudo sysctl -w vm.max_map_count=6553000
-# TODO do not add this if it has already been added
-sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
+if ! grep "vm.max_map_count=6553000" /etc/sysctl.conf; then
+    sudo sh -c 'echo "vm.max_map_count=6553000" >>/etc/sysctl.conf'
+fi
 
 if $SWAP; then
     # Increase swap memory, and persist after reboot
@@ -245,13 +281,16 @@ if ! which npm; then
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-    # NOTE This sometimes fails with:
-    # > Installing latest LTS version.
-    # > Downloading and installing node v20.11.0...
-    # > Binary download failed, trying source.
-    #
-    # In this case run this command manually:
-    # `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm install --lts`.
+    printf "
+    NOTE This sometimes fails with:
+    > Installing latest LTS version.
+    > Downloading and installing node v20.11.0...
+    > Binary download failed, trying source.
+
+    In this case run this command manually:
+    export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\" && nvm install --lts.
+    \n"
+
     nvm install --lts
 fi
 
@@ -274,13 +313,17 @@ export RAPIDSNARK_PATH=$HOME/rapidsnark/package/bin/prover
 ERR_MSG="PNPM setup failed"
 cd "$HOME"
 if [[ ! -f "$HOME/.local/share/pnpm/pnpm" ]]; then
-    # NOTE This sometimes fails with:
-    # > ==> Downloading pnpm binaries 8.15.1
-    # > WARN using --force I sure hope you know what you are doing
-    # > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
-    # > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
-    # In this case just run this manually (with different tmp file):
-    # `SHELL="$SHELL"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force`
+    printf "
+    NOTE This sometimes fails with:
+    > ==> Downloading pnpm binaries 8.15.1
+    > WARN using --force I sure hope you know what you are doing
+    > Copying pnpm CLI from /tmp/tmp.a13YBtCUZy/pnpm to /root/.local/share/pnpm/pnpm
+    > ERR_PNPM_UNKNOWN_SHELL Could not infer shell type.
+
+    In this case just run this manually (with different tmp file):
+    SHELL=\"\$SHELL\"  /tmp/tmp.PZoYjFP8NI/pnpm setup --force
+    \n"
+
     curl -fsSL https://get.pnpm.io/install.sh | sh -
 fi
 export PNPM_HOME="$HOME/.local/share/pnpm"

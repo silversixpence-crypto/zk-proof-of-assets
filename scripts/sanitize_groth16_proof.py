@@ -43,22 +43,15 @@ def convert_vkey(n, k, vkeyFile):
 
     x, y, z = tuple([FQ((int(x))) for x in vkey["vk_alpha_1"]])
     negalpha = ( x / z, -(y / z) )
-    # print("negalpha", negalpha)
 
     x, y, z = tuple([ FQ2([int(x[0]), int(x[1])]) for x in vkey["vk_beta_2"]])
     beta = ( x / z, y / z )
 
-    # print("beta", beta)
-
     x, y, z = tuple([ FQ2([int(x[0]), int(x[1])]) for x in vkey["vk_gamma_2"]])
     gamma = ( x / z, y / z )
 
-    # print("gamma", gamma)
-
     x, y, z = tuple([ FQ2([int(x[0]), int(x[1])]) for x in vkey["vk_delta_2"]])
     delta = ( x / z, y / z )
-
-    # print("delta", delta)
 
     public_input_count = vkey["nPublic"]
 
@@ -68,7 +61,6 @@ def convert_vkey(n, k, vkeyFile):
         ICs.append( ( x / z, y / z ) )
 
     negalphabeta = pairing.pairing( beta, negalpha )
-    #print("negalphabeta", negalphabeta)
 
     inputParameters = {
         "gamma2": [ Fp2convert(gamma[0], n, k), Fp2convert(gamma[1], n, k)],
@@ -77,7 +69,6 @@ def convert_vkey(n, k, vkeyFile):
         "IC": [[Fpconvert(IC[0], n, k), Fpconvert(IC[1], n, k)] for IC in ICs],
        }
 
-    # print("inputParameters", inputParameters)
     return inputParameters
 
 

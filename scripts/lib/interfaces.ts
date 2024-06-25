@@ -1,22 +1,36 @@
 import { Point } from '@noble/secp256k1';
 import { interfaces } from 'mocha';
 
-// Main input for the system.
-export interface ProofOfAssetsInputFileShape {
-    account_data: AccountAttestation[],
-    msg_hash: Uint8Array,
+// Input given by the prover.
+export interface SignatureData {
+    address: string,
+    balance: string,
+    signature: EcdsaSignature,
 }
 
-export interface Signature {
+// Main input for the system.
+export interface ProofOfAssetsInputFileShape {
+    accountAttestations: AccountAttestation[],
+}
+
+export interface EcdsaSignature {
+    v: number, // must be 27 or 28
+    r: string,
+    s: string,
+    msghash: string,
+}
+
+export interface EcdsaStarSignature {
     r: bigint,
     s: bigint,
     r_prime: bigint,
     pubkey: Point,
+    msghash: Uint8Array,
 }
 
 export interface AccountAttestation {
-    signature: Signature,
-    account_data: AccountData,
+    signature: EcdsaStarSignature,
+    accountData: AccountData,
 }
 
 export interface AccountData {
@@ -41,6 +55,7 @@ export interface Leaf {
     hash: bigint,
 }
 
+// TODO change the name here to MerkleProofs
 export interface Proofs {
     leaves: Leaf[],
     path_elements: bigint[][],
