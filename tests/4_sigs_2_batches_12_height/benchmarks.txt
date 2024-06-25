@@ -1,0 +1,62 @@
+machine specs:
+- mem: 125 GB
+- cpu: Ryzen 9 32 core 5GHz
+- ssd: PCIe v4
+
+docker container
+- max mem: 90 GB
+- unlimited swap
+
+layer 3 zkey gen max memory usage: 290 GB
+
+=================================
+
+Data was gathered by running 4_sigs_2_batches_12_height.sh
+
+Compilation data for layer 1:
+# non-linear constraints: 1932908
+# linear constraints: 161762
+# public inputs: 0
+# private inputs: 48
+# public outputs: 1
+# wires: 2083343
+# labels: 2760073
+
+Layer 1 timings:
+# Compile: 1.5m
+# zkey gen: 2.5m
+# vkey gen: 1s
+# witness gen: ?
+# proof gen: ?
+
+Compilation data for layer 2:
+# non-linear constraints: 19981480
+# linear constraints: 1500408
+# public inputs: 1
+# private inputs: 257
+# public outputs: 1
+# wires: 21356921
+# labels: 27512569
+
+Layer 2 timings:
+# Compile: 8m
+# zkey gen: 3h 15m
+# vkey gen: 1s
+# witness gen: 1m
+# proof gen: 27s
+
+Compilation data for layer 3:
+# non-linear constraints: 48187301
+# linear constraints: 4534996
+# public inputs: 0
+# private inputs: 690
+# public outputs: 12
+# wires: 52367163
+# labels: 64544124
+
+Layer 3 timings:
+# Compile: 17m
+# zkey gen: ?
+# vkey gen: ?
+# witness gen: ?
+# proof gen: ?
