@@ -1,16 +1,23 @@
 # ZK Proof of Assets
 
-Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets.
+Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol). 
+1. For details on the whole PoR project see [this project doc](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/S1Ozo-iO2).
+2. For the original Proof of Assets design doc see [this](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/rJXtAeyLT). Note, however, that the final design is slightly different to the original (some optimizations were done). See below for final design.
+3. For an in-depth explanation of Proof of Assets see [this article](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/r1FR-0uBR).
 
-[Here](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/rJXtAeyLT) is the original design doc for the protocol. Note, however, that the final design is slightly different to the original (some optimizations were done). See below for final design.
+## Brief overview of PoA
 
-[Here](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/r1FR-0uBR) is a blog article diving into Proof of Assets.
+The above-linked docs offer an in-depth explanation, but here is a brief one:
 
-Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol. For details on the whole PoR project see [this project doc](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/S1Ozo-iO2).
+Problem statement: a crypto-asset custodian wants to prove they own $X$ digital assets, but do not want to reveal the addresses that hold the assets.
+
+Solution: the custodian produces signatures for the addresses (which forms the ownership proof), and feeds them as private inputs to a ZK-SNARK, which verifies them and checks that they are contained within a larger set of addresses (the anonymity set). This set is a public input to the snark and must be checked to mirror the blockchain by the verifier. Finally, the snark adds up the balances of the addresses, and outputs a Pedersen commitment of the sum. The commitment is public and can be used in conjunction with 
 
 ## Current state
 
-The code is working as of June 2024 and can be used as is. No audit has been done yet. 
+***No audit has been done yet***
+
+The code is working as of June 2024 and can be used as is. It only works for EVM blockchains, but it is possible to support other chains.
 
 See [the high priority task list](https://github.com/silversixpence-crypto/zk-proof-of-assets/issues?q=is%3Aissue+is%3Aopen+label%3Apriority%3Ahigh) for some important outstanding issues.
 
@@ -18,9 +25,14 @@ The code is at it's first stage: Groth16 & Circom libraries. Second stage involv
 
 ## Design
 
-TODO explain inputs & outputs of the system
+There is a system of snarks, seperated into 3 layers and linked via snark recursion. The was done to increase the total number of signatures that can be supported (see design doc for more details).
 
-TODO explain what to do with the pedersen commitment
+Inputs to the system (produced by the custodian):
+- set of ECDSA signatures & account balances (will be a private input to the snarks)
+- anonymity set of addresses (public input to the snarks)
+
+Output of the system
+- Pedersen commitment to the sum of balances related to the ECDSA signatures
 
 <details>
 
@@ -89,7 +101,12 @@ SELECT * FROM `bigquery-public-data.crypto_ethereum.balances` ORDER BY eth_balan
 
 ### Verifier
 
-TODO
+Verification can be done with the [snarkjs](https://github.com/iden3/snarkjs) tool:
+```bash
+snarkjs groth16 verify ./path/to/vkey.json ./path/to/public_inputs.json ./path/to/proof.json
+```
+
+All 3 of the inputs to the script need to be provided by the prover.
 
 ## Patches
 
