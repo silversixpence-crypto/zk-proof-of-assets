@@ -268,7 +268,7 @@ set_circuit_path() {
     declare -n ret=$2
     local name
     parse_layer_name $1 name
-    ret="$build_dir"/layer_"$name".circom
+    ret="$build_dir"/layer_"$name"/layer_"$name".circom
 }
 
 set_ptau_path() {
@@ -281,8 +281,23 @@ set_ptau_path() {
 set_signals_path() {
     declare -n ret=$2
     local name
+
     parse_layer_name $1 name
-    ret="$build_dir"/layer_"$name"_input.json
+
+    if [[ $name == one || $name == two ]]; then
+        batch_num=$3
+        if [[ -z $batch_num ]]; then
+            ERR_MSG="$ERR_PREFIX: [likely a bug] No batch number set for signals path. Layer: $name"
+            exit 1
+        else
+            ret="$build_dir"/layer_"$name"/"$batch_num"/layer_"$name"_"$batch_num"_input.json
+        fi
+    elif [[ $name == three ]]; then
+        ret="$build_dir"/layer_"$name"/layer_"$name"_input.json
+    else
+        ERR_MSG="$ERR_PREFIX: [likely a bug] Invalid layer selection for signals path: $name"
+        exit 1
+    fi
 }
 
 set_existing_zkey_path() {
@@ -469,7 +484,7 @@ prove_layers_one_two() {
 
     # Setup layer 1 path variables.
     set_layer_build_dir 1 build
-    set_signals_path 1 signals
+    set_signals_path 1 signals batch_"$i"
     set_circuit_path 1 circuit
     set_zkey_arg 1 zkey
 
@@ -490,7 +505,7 @@ prove_layers_one_two() {
 
     # Setup layer 2 path variables.
     set_layer_build_dir 2 build
-    set_signals_path 2 signals
+    set_signals_path 2 signals batch_"$i"
     set_circuit_path 2 circuit
     set_zkey_arg 2 zkey
 
