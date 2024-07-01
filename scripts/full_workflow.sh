@@ -268,7 +268,7 @@ set_circuit_path() {
     declare -n ret=$2
     local name
     parse_layer_name $1 name
-    ret="$build_dir"/layer_"$name"/layer_"$name".circom
+    ret="$build_dir"/layer_"$name".circom
 }
 
 set_ptau_path() {
