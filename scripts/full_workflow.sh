@@ -388,7 +388,7 @@ fi
 # these need to be exported for the parallel command
 export -f setup_layer set_layer_build_dir set_ptau_path set_zkey_arg parse_layer_name set_existing_zkey_path
 export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
-export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder merkle_tree_height
+export parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder merkle_tree_height
 
 layers="one two three $setup_remainder_inputs"
 
@@ -460,11 +460,11 @@ prove_layers_one_two() {
     local start_index end_index build signals circuit zkey proof
 
     # Index range of the signature set to be done in this batch.
-    start_index=$((i * threshold))
+    start_index=$((i * num_sigs_per_batch))
     if [[ $i -eq $((parallelism - 1)) ]]; then
         end_index=$num_sigs
     else
-        end_index=$((start_index + threshold)) # not inclusive
+        end_index=$((start_index + num_sigs_per_batch)) # not inclusive
     fi
 
     # Setup layer 1 path variables.
@@ -567,6 +567,7 @@ MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
 "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" $zkey "$circuit" "$signals"
+"$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" "$circuit"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
