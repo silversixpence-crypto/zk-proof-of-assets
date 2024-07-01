@@ -357,7 +357,7 @@ generate_merkle_tree() {
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
     printf "\n================ $MSG ================\nSEE $logs_dir/merkle_tree.log\n"
 
-    RUSTFLAGS=-Awarnings execute cargo run --bin merkle-tree -- \
+    RUSTFLAGS=-Awarnings execute ./target/release/merkle-tree \
         --anon-set "$anon_set_path" \
         --poa-input-data "$parsed_sigs_path" \
         --output-dir "$build_dir" \

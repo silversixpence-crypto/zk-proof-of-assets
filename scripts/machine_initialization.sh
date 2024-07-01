@@ -364,6 +364,8 @@ if $REPO; then
     cd -
 
     pip install -r requirements.txt
+
+    cargo build --release
 fi
 
 # TODO instead of checking if the file exists rather check its checksum,
