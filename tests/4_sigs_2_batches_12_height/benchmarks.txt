@@ -4,7 +4,7 @@ machine specs:
 - ssd: PCIe v4
 
 docker container
-- max mem: 90 GB
+- max mem: 110GB (layer 3 zkey gen won't work with <=90GB)
 - unlimited swap
 
 layer 3 zkey gen max memory usage: 290 GB
@@ -26,8 +26,8 @@ Layer 1 timings:
 # Compile: 1.5m
 # zkey gen: 2.5m
 # vkey gen: 1s
-# witness gen: ?
-# proof gen: ?
+# witness gen: 20s
+# proof gen: 20s
 
 Compilation data for layer 2:
 # non-linear constraints: 19981480
@@ -43,7 +43,7 @@ Layer 2 timings:
 # zkey gen: 3h 15m
 # vkey gen: 1s
 # witness gen: 1m
-# proof gen: 27s
+# proof gen: 1m
 
 Compilation data for layer 3:
 # non-linear constraints: 48187301
@@ -55,8 +55,8 @@ Compilation data for layer 3:
 # labels: 64544124
 
 Layer 3 timings:
-# Compile: 17m
-# zkey gen: ?
-# vkey gen: ?
-# witness gen: ?
-# proof gen: ?
+# Compile: 18m
+# zkey gen: 34h
+# vkey gen: 1s
+# witness gen: 2m
+# proof gen: 1m
