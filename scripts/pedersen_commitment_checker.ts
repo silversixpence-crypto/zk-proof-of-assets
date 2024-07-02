@@ -4,8 +4,18 @@ matches the one that was outputted by the layer 3 circuit.
 
 ```bash
 npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --poa-input-data <json_with_full_system_input> \
               --layer-three-public-inputs <json_with_public_inputs_for_layer_3_circuit> \
-              --blinding-factor <blinding_factor>
+              --blindingFactor <blinding_factor>
+```
+
+Example:
+```bash
+npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --layer-three-public-inputs tests/4_sigs_2_batches_12_height/layer_three/public.json \
+              --blindingFactor 57896044618658097711785492504343953926634992332820282019728792003956564819948 \
+              --poa-input-data tests/4_sigs_2_batches_12_height/input_data_for_4_accounts.json
+
 ```
 */
 
@@ -20,8 +30,9 @@ var argv = require('minimist')(process.argv.slice(2), {
     alias: {
         poaInputDataPath: ['poa-input-data', 'i'],
         layerThreePublicInputsPath: ['layer-three-public-inputs', 'p'],
-        blindingFactor: ['blinding-factor', 'b'],
     },
+    // if we don't treat this as a string then there are problems converting to bigint
+    string: ['blindingFactor']
 });
 
 let inputDataPath = argv.poaInputDataPath;

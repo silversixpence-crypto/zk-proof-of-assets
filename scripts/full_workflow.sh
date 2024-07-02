@@ -576,7 +576,7 @@ execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
     --merkle-root-path "$merkle_root_path" \
     --layer-two-sanitized-proof-paths "$layer_two_proofs" \
     --write-layer-three-data-to "$signals" \
-    --blinding-factor $blinding_factor
+    --blindingFactor $blinding_factor
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
@@ -588,6 +588,6 @@ MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
     --poa-input-data "$parsed_sigs_path" \
     --layer-three-public-inputs "$build"/public.json \
-    --blinding-factor $blinding_factor
+    --blindingFactor $blinding_factor
 
 echo "SUCCESS"
