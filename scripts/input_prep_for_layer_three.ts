@@ -123,6 +123,11 @@ for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     proofDataArray.push(proofData);
 }
 
+console.log(`Layer 3 raw inputs:
+Balances (layer 2 output): ${balances}
+Merkle root: ${merkleRoot}
+Blinding factor: ${blindingFactor}`);
+
 let layerThreeInput: LayerThreeInputFileShape = constructInput(proofDataArray, balances, merkleRoot, blindingFactor);
 
 const jsonOut = JSON.stringify(
@@ -130,5 +135,7 @@ const jsonOut = JSON.stringify(
     (_, value) => typeof value === "bigint" ? value.toString() : value,
     2
 );
+
+console.log(`Layer 3 direct inputs: ${jsonOut}`);
 
 fs.writeFileSync(layerThreeInputPath, jsonOut);

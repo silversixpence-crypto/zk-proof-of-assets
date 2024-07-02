@@ -9,14 +9,12 @@ npx ts-node ./scripts/pedersen_commitment_checker.ts \
 ```
 */
 
-import { generator_g_formatted, generator_h_formatted, formatScalarPower, pedersenCommitment, dechunkToPoint, pointEqual } from "./lib/pedersen_commitment";
+import { pedersenCommitment, dechunkToPoint, pointEqual } from "./lib/pedersen_commitment";
 import { jsonReviver } from "./lib/json_serde";
 import { ProofOfAssetsInputFileShape } from "./lib/interfaces";
 const assert = require('assert');
 
 const fs = require('fs');
-const circomlibjs = require("circomlibjs");
-const path = require('path');
 
 var argv = require('minimist')(process.argv.slice(2), {
     alias: {
@@ -40,6 +38,9 @@ let balanceSum = inputData.accountAttestations.reduce(
     (accumulator, currentValue) => currentValue.accountData.balance + accumulator,
     0n
 );
+
+console.log(`Balance sum calculated from input data: ${balanceSum}`);
+console.log(`Blinding factor given: ${blindingFactor}`);
 
 let comCalc = pedersenCommitment(balanceSum, blindingFactor);
 let comCircuit = dechunkToPoint(publicInputs.map(i => BigInt(i)));
