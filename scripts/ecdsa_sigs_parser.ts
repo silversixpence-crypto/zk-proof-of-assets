@@ -44,6 +44,8 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
 
     let sigsInputData: SignatureData[] = JSON.parse(jsonIn);
 
+    console.log(`Parsing ${sigsInputData.length} ECDSA signatures..`);
+
     let accountAttestations: AccountAttestation[] = sigsInputData.map(sigInputData => {
         let ethers_ecdsaSig = ethers.Signature.from(sigInputData.signature);
         let pubkey = ethers.SigningKey.recoverPublicKey(sigInputData.signature.msghash, ethers_ecdsaSig)
@@ -80,6 +82,8 @@ fs.readFile(signaturesPath, function read(err: any, jsonIn: any) {
             }
         };
     });
+
+    console.log(`Successfully parsed ECDSA signatures and converted them to ECDSA* signatures`);
 
     let outputData: ProofOfAssetsInputFileShape = {
         accountAttestations

@@ -107,7 +107,6 @@ let merkleRoot: bigint = JSON.parse(merkleRootRaw, jsonReviver);
 let proofDataArray: Groth16ProofAsInput[] = [];
 let balances: bigint[] = [];
 
-
 for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     if (!fs.lstatSync(layerTwoProofPath).isFile()) {
         throw new Error(`Expected ${layerTwoProofPath} to be a path to a file`);
@@ -124,10 +123,12 @@ for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     proofDataArray.push(proofData);
 }
 
-console.log(`Layer 3 raw inputs:
-Balances (layer 2 output): ${balances}
-Merkle root: ${merkleRoot}
-Blinding factor: ${blindingFactor}`);
+console.log(`Preparing input for layer 3 using the following data:
+- Merkle root: ${merkleRoot}
+- Blinding factor: ${blindingFactor}
+- Balances (layer 2 output): ${balances}
+Path to write processed data to: ${layerThreeInputPath}
+`);
 
 let layerThreeInput: LayerThreeInputFileShape = constructInput(proofDataArray, balances, merkleRoot, blindingFactor);
 
