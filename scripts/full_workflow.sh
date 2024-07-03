@@ -281,8 +281,23 @@ set_ptau_path() {
 set_signals_path() {
     declare -n ret=$2
     local name
+
     parse_layer_name $1 name
-    ret="$build_dir"/layer_"$name"_input.json
+
+    if [[ $name == one || $name == two ]]; then
+        batch_num=$3
+        if [[ -z $batch_num ]]; then
+            ERR_MSG="$ERR_PREFIX: [likely a bug] No batch number set for signals path. Layer: $name"
+            exit 1
+        else
+            ret="$build_dir"/layer_"$name"/"$batch_num"/layer_"$name"_"$batch_num"_input.json
+        fi
+    elif [[ $name == three ]]; then
+        ret="$build_dir"/layer_"$name"/layer_"$name"_input.json
+    else
+        ERR_MSG="$ERR_PREFIX: [likely a bug] Invalid layer selection for signals path: $name"
+        exit 1
+    fi
 }
 
 set_existing_zkey_path() {
@@ -357,7 +372,7 @@ generate_merkle_tree() {
     MSG="GENERATING MERKLE TREE FOR ANONYMITY SET, AND MERKLE PROOFS FOR OWNED ADDRESSES"
     printf "\n================ $MSG ================\nSEE $logs_dir/merkle_tree.log\n"
 
-    RUSTFLAGS=-Awarnings execute cargo run --bin merkle-tree -- \
+    RUSTFLAGS=-Awarnings execute ./target/release/merkle-tree \
         --anon-set "$anon_set_path" \
         --poa-input-data "$parsed_sigs_path" \
         --output-dir "$build_dir" \
@@ -388,7 +403,7 @@ fi
 # these need to be exported for the parallel command
 export -f setup_layer set_layer_build_dir set_ptau_path set_zkey_arg parse_layer_name set_existing_zkey_path
 export SCRIPTS_DIR FULL_WORKFLOW_DIR ZKEY_DIR
-export threshold parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder merkle_tree_height
+export parallelism num_sigs num_sigs_per_batch build_dir logs_dir remainder merkle_tree_height
 
 layers="one two three $setup_remainder_inputs"
 
@@ -460,16 +475,16 @@ prove_layers_one_two() {
     local start_index end_index build signals circuit zkey proof
 
     # Index range of the signature set to be done in this batch.
-    start_index=$((i * threshold))
+    start_index=$((i * num_sigs_per_batch))
     if [[ $i -eq $((parallelism - 1)) ]]; then
         end_index=$num_sigs
     else
-        end_index=$((start_index + threshold)) # not inclusive
+        end_index=$((start_index + num_sigs_per_batch)) # not inclusive
     fi
 
     # Setup layer 1 path variables.
     set_layer_build_dir 1 build
-    set_signals_path 1 signals
+    set_signals_path 1 signals batch_"$i"
     set_circuit_path 1 circuit
     set_zkey_arg 1 zkey
 
@@ -490,7 +505,7 @@ prove_layers_one_two() {
 
     # Setup layer 2 path variables.
     set_layer_build_dir 2 build
-    set_signals_path 2 signals
+    set_signals_path 2 signals batch_"$i"
     set_circuit_path 2 circuit
     set_zkey_arg 2 zkey
 
@@ -561,17 +576,18 @@ execute npx ts-node "$SCRIPTS_DIR"/input_prep_for_layer_three.ts \
     --merkle-root-path "$merkle_root_path" \
     --layer-two-sanitized-proof-paths "$layer_two_proofs" \
     --write-layer-three-data-to "$signals" \
-    --blinding-factor $blinding_factor
+    --blindingFactor $blinding_factor
 
 MSG="RUNNING PROVING SYSTEM FOR LAYER THREE CIRCUIT"
 printf "\n================ $MSG ================\n"
 
 "$SCRIPTS_DIR"/g16_prove.sh -b -B "$build" $zkey "$circuit" "$signals"
+"$SCRIPTS_DIR"/g16_verify.sh -b -B "$build" "$circuit"
 
 MSG="VERIFYING FINAL PEDERSEN COMMITMENT"
 execute npx ts-node "$SCRIPTS_DIR"/pedersen_commitment_checker.ts \
     --poa-input-data "$parsed_sigs_path" \
     --layer-three-public-inputs "$build"/public.json \
-    --blinding-factor $blinding_factor
+    --blindingFactor $blinding_factor
 
 echo "SUCCESS"

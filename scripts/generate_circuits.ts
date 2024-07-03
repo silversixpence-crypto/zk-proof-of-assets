@@ -59,7 +59,17 @@ assert.ok(typeof parallelism === 'number');
 assert.ok(typeof circuitsDir === 'string');
 assert.ok(typeof circuitsLib === 'string');
 
+console.log(`Generating circuits for input values:
+Number of signatures in batch: ${numSigs}
+Number of signatures in last batch: ${numSigsRemainder}
+Merkle tree height: ${merkleTreeHeight}
+Number of batches: ${parallelism}
+Directory to write circom files to: ${circuitsDir}
+Circuits library: ${circuitsLib}
+`);
+
 if (!fs.existsSync(circuitsDir)) {
+    console.log(`Creating directory ${circuitsDir} to write circuits to`);
     fs.mkdirSync(circuitsDir);
 }
 
@@ -86,6 +96,8 @@ component main = LayerThree(${parallelism});
 `};
 
 if (numSigsRemainder > 0) {
+    console.log(`Different circuits required for the final batch (named with suffix 'remainder')`);
+
     let remainderCircuits = {
         one_remainder: `pragma circom 2.1.7;
 
@@ -112,3 +124,5 @@ for (const [name, code] of Object.entries(circuits)) {
     let filepath = path.join(circuitsDir, "layer_" + name + ".circom");
     fs.writeFileSync(filepath, code);
 }
+
+console.log("Successfully wrote circuits.");

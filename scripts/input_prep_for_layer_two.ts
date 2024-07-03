@@ -87,6 +87,8 @@ async function writePubkeyXCoordsHash(pubkeys: Point[], outputPath: String): Pro
     let xCoords = pubkeys.map(pubkey => bigint_to_array(64, 4, pubkey.x)).flat();
     let hash = await hashXCoords(xCoords);
 
+    console.log(`Hash of public keys x-coords: ${hash}`);
+
     fs.writeFileSync(outputPath, hash);
 
     return hash;
@@ -123,6 +125,8 @@ function constructInput(proofData: Groth16ProofAsInput, xCoordsHash: string, acc
 // that the addresses are in ascending order, which is required by the circuit so that
 // the prover cannot do a double-spend attack.
 function checkAddressOrdering(accountAttestations: AccountAttestation[], merkleLeaves: Leaf[]) {
+    console.log("Checking that the order of addresses in input data & Merkle proofs is the same..")
+
     if (accountAttestations.length != merkleLeaves.length) {
         throw new Error(`Length of input data array ${accountAttestations.length} should equal length of merkle proofs array ${merkleLeaves.length}`);
     }
@@ -186,7 +190,18 @@ let endIndex = argv.accountEndIndex;
 let inputDataRaw = fs.readFileSync(inputDataPath);
 let inputData: ProofOfAssetsInputFileShape = JSON.parse(inputDataRaw, jsonReviver);
 
+console.log(`Preparing input for layer 2 using the following data:
+- System input: ${inputDataPath}
+- Start index for batch: ${startIndex}
+- End index for batch: ${endIndex}
+- Merkle proofs path: ${merkleProofsPath}
+- Merkle root path: ${merkleRootPath}
+Path to write processed data to: ${layerTwoInputPath}
+Path to write public keys hash to: ${xCoordsHashPath}
+`);
+
 if (endIndex === -1) {
+    console.log("Batch contains all input data i.e. there is only 1 batch");
     endIndex = inputData.accountAttestations.length;
 }
 
@@ -219,7 +234,7 @@ writePubkeyXCoordsHash(accountAttestations.map(w => w.signature.pubkey), xCoords
 
         const jsonOut = JSON.stringify(
             layerTwoInput,
-            (key, value) => typeof value === "bigint" ? value.toString() : value,
+            (_, value) => typeof value === "bigint" ? value.toString() : value,
             2
         );
 

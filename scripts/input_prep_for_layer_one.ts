@@ -13,14 +13,11 @@ Some of this code was taken from
 https://github.com/puma314/batch-ecdsa/blob/b512c651f497985a74858154e4a69bcdaf02443e/test/utils.ts
 **/
 
-import { Point, CURVE } from '@noble/secp256k1';
-
 import { jsonReviver } from "./lib/json_serde";
 import { EcdsaStarSignature, ProofOfAssetsInputFileShape } from "./lib/interfaces";
 import { bigint_to_array, Uint8Array_to_bigint } from "./lib/utils";
 
 const fs = require('fs');
-const circomlibjs = require("circomlibjs");
 const path = require('path');
 
 interface LayerOneInputFileShape {
@@ -71,6 +68,13 @@ var layerOneInputPath = argv.layerOneInputPath;
 var startIndex = argv.accountStartIndex;
 var endIndex = argv.accountEndIndex;
 
+console.log(`Preparing input for layer 1 using the following data:
+- System input: ${inputDataPath}
+- Start index for batch: ${startIndex}
+- End index for batch: ${endIndex}
+Path to write processed data to: ${layerOneInputPath}
+`);
+
 fs.readFile(inputDataPath, function read(err: any, json_in: any) {
     if (err) {
         throw err;
@@ -79,6 +83,7 @@ fs.readFile(inputDataPath, function read(err: any, json_in: any) {
     var inputData: ProofOfAssetsInputFileShape = JSON.parse(json_in, jsonReviver);
 
     if (endIndex === -1) {
+        console.log("Batch contains all input data i.e. there is only 1 batch");
         endIndex = inputData.accountAttestations.length;
     }
 
@@ -92,7 +97,7 @@ fs.readFile(inputDataPath, function read(err: any, json_in: any) {
 
     const jsonOut = JSON.stringify(
         layerOneInput,
-        (key, value) => typeof value === "bigint" ? value.toString() : value,
+        (_, value) => typeof value === "bigint" ? value.toString() : value,
         2
     );
 

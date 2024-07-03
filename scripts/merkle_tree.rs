@@ -265,7 +265,6 @@ fn build_leaves(anon_set_file_path: PathBuf) -> Vec<[u8; 32]> {
         leaves.len()
     );
 
-    leaves.sort();
     leaves
 }
 
@@ -329,8 +328,6 @@ fn generate_proofs(
         })
         .collect();
 
-    owned_leaves.sort_by(|a, b| a.hash.cmp(&b.hash));
-
     let mut owned_leaf_indices = Vec::<usize>::new();
     let mut anon_i = 0;
 
@@ -361,17 +358,17 @@ fn generate_proofs(
         let anon_set_index = *owned_leaf_indices.get(i).unwrap();
 
         let proof: MerkleProof<MyPoseidon> = merkle_tree.proof(&[anon_set_index]);
+        let owned_leaf = owned_leaves.get(i).unwrap();
 
         output_leaves.push(Leaf {
             address: BigIntJson {
-                __bigint__: owned_leaves.get(i).unwrap().address.clone(),
+                __bigint__: owned_leaf.address.clone(),
             },
             balance: BigIntJson {
-                __bigint__: owned_leaves.get(i).unwrap().balance.clone(),
+                __bigint__: owned_leaf.balance.clone(),
             },
             hash: BigIntJson {
-                __bigint__: BigUint::from_bytes_be(&owned_leaves.get(i).unwrap().hash[..])
-                    .to_string(),
+                __bigint__: BigUint::from_bytes_be(&owned_leaf.hash[..]).to_string(),
             },
         });
 

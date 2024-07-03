@@ -13,7 +13,7 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
                --merkle-root-path <path_to_merkle_root_json> \
                --layer-two-sanitized-proof-paths <list_of_paths_to_sanitize_proof_files> \
                --write-layer-three-data-to <path_to_output_json> \
-               --blinding-factor <num>
+               --blindingFactor <num>
 ```
 
 Note: the layer two proof paths must be separated by a comma (e.g. "path1,path2,path3")
@@ -24,7 +24,7 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
                --merkle-root-path ./build/merkle_root.json \
                --layer-two-sanitized-proof-paths "./build/layer_two/batch_0/sanitized_proof.json,./build/layer_two/batch_1/sanitized_proof.json" \
                --write-layer-three-data-to ./build/layer_three \
-               --blinding-factor 78534060564309
+               --blindingFactor 78534060564309
 ```
 **/
 
@@ -91,8 +91,9 @@ var argv = require('minimist')(process.argv.slice(2), {
         merkleRootPath: ['merkle-root-path', 'm'],
         layerTwoSanitizedProofPaths: ['layer-two-sanitized-proof-paths', 'p'],
         layerThreeInputPath: ['write-layer-three-data-to', 'o'],
-        blindingFactor: ['blinding-factor', 'b'],
     },
+    // if we don't treat this as a string then there are problems converting to bigint
+    string: ['blindingFactor']
 });
 
 let merkleRootPath = argv.merkleRootPath;
@@ -105,7 +106,6 @@ let merkleRoot: bigint = JSON.parse(merkleRootRaw, jsonReviver);
 
 let proofDataArray: Groth16ProofAsInput[] = [];
 let balances: bigint[] = [];
-
 
 for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     if (!fs.lstatSync(layerTwoProofPath).isFile()) {
@@ -122,6 +122,13 @@ for (const layerTwoProofPath of layerTwoSanitizedProofPaths.split(',')) {
     balances.push(proofData.pubInput[0]);
     proofDataArray.push(proofData);
 }
+
+console.log(`Preparing input for layer 3 using the following data:
+- Merkle root: ${merkleRoot}
+- Blinding factor: ${blindingFactor}
+- Balances (layer 2 output): ${balances}
+Path to write processed data to: ${layerThreeInputPath}
+`);
 
 let layerThreeInput: LayerThreeInputFileShape = constructInput(proofDataArray, balances, merkleRoot, blindingFactor);
 

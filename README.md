@@ -1,6 +1,6 @@
 # ZK Proof of Assets
 
-Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol). 
+Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol).
 1. For details on the whole PoR project see [this project doc](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/S1Ozo-iO2).
 2. For the original Proof of Assets design doc see [this](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/rJXtAeyLT). Note, however, that the final design is slightly different to the original (some optimizations were done). See below for final design.
 3. For an in-depth explanation of Proof of Assets see [this article](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/r1FR-0uBR).
@@ -11,7 +11,7 @@ The above-linked docs offer an in-depth explanation, but here is a brief one:
 
 Problem statement: a crypto-asset custodian wants to prove they own $X$ digital assets, but do not want to reveal the addresses that hold the assets.
 
-Solution: the custodian produces signatures for the addresses (which forms the ownership proof), and feeds them as private inputs to a ZK-SNARK, which verifies them and checks that they are contained within a larger set of addresses (the anonymity set). This set is a public input to the snark and must be checked to mirror the blockchain by the verifier. Finally, the snark adds up the balances of the addresses, and outputs a Pedersen commitment of the sum. The commitment is public and can be used in conjunction with 
+Solution: the custodian produces signatures for the addresses (which forms the ownership proof), and feeds them as private inputs to a ZK-SNARK, which verifies them and checks that they are contained within a larger set of addresses (the anonymity set). This set is a public input to the snark and must be checked to mirror the blockchain by the verifier. Finally, the snark adds up the balances of the addresses, and outputs a Pedersen commitment of the sum. The commitment is public and can be used in conjunction with the output of Proof of Liabilities to show solvency.
 
 ## Current state
 
@@ -126,14 +126,14 @@ Most of the time taken up by the workflow is in generating the proving keys (zke
 
 ### Constraints
 
-For layer 1, the number of non-linear constraints can be estimated with the following equation: 
+For layer 1, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 1}}(s) = 447044s + 888502$$
 where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data (`(num_sigs, constraints)`):
 ```
 [(1, 1509221), (2, 1932908), (2, 1932908), (4, 1932908), (7, 4161827), (16, 8173925), (128, 58102853)]
 ```
 
-For layer 2, the number of non-linear constraints can be estimated with the following equation: 
+For layer 2, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 2}}(s,h) = 159591s + 6054h + 19490640$$
 where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data (`(num_sigs, height, constraints)`):
 ```
@@ -146,6 +146,4 @@ Related issue: https://github.com/silversixpence-crypto/zk-proof-of-assets/issue
 
 There are scripts in the *tests* directory for running the tests. The have the format `N_sigs_K_batches_H_height.sh`. The tests can take many hours to run, depending on the test & the size of the machine running them. The results from running the tests can be found in the directory under *tests* with the same name as the shell script. The *tests/old* directory contains tests that were run using a slightly older version of the workflow (same circuits, different scripts).
 
-There are only integration tests, no unit tests. The reason for this is that the whole system might change in the next version, so writing lots of unit tests is a bit of a waste of time. The unit tests would be there to catch any bugs introduced with future changes, but if there are to be no future changes to the current system then the unit tests are a waste. We already have integration tests to make sure that no bugs are present with the current workflow. 
-
-
+There are only integration tests, no unit tests. The reason for this is that the whole system might change in the next version, so writing lots of unit tests is a bit of a waste of time. The unit tests would be there to catch any bugs introduced with future changes, but if there are to be no future changes to the current system then the unit tests are a waste. We already have integration tests to make sure that no bugs are present with the current workflow.
