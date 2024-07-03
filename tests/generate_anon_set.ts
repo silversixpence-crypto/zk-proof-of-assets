@@ -20,13 +20,10 @@ Output file is anonymity_set.csv with headings 'address,eth_balance'
 **/
 
 import { Wallet } from "ethers";
-import { randomBytes } from '@noble/hashes/utils';
 
 import { generatePvtPubKeyPairs, KeyPair, generateDeterministicBalance } from "./keys";
 import { bigint_to_Uint8Array, bytesToHex } from "../scripts/lib/utils";
-import { jsonReplacer } from "../scripts/lib/json_serde";
 import { AccountData } from "../scripts/lib/interfaces";
-import { interfaces } from "mocha";
 
 const parseArgs = require('minimist');
 const fs = require('fs');
