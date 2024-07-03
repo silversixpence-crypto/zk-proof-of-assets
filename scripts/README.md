@@ -701,7 +701,7 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
                --merkle-root-path <path_to_merkle_root_json> \
                --layer-two-sanitized-proof-paths <list_of_paths_to_sanitize_proof_files> \
                --write-layer-three-data-to <path_to_output_json> \
-               --blinding-factor <num>
+               --blindingFactor <num>
 ```
 
 Note: the layer two proof paths must be separated by a comma (e.g. "path1,path2,path3")
@@ -712,7 +712,7 @@ npx ts-node ./scripts/input_prep_for_layer_three.ts \
                --merkle-root-path ./build/merkle_root.json \
                --layer-two-sanitized-proof-paths "./build/layer_two/batch_0/sanitized_proof.json,./build/layer_two/batch_1/sanitized_proof.json" \
                --write-layer-three-data-to ./build/layer_three \
-               --blinding-factor 78534060564309
+               --blindingFactor 78534060564309
 ```
 
 <details>
@@ -969,8 +969,17 @@ matches the one that was outputted by the layer 3 circuit.
 
 ```bash
 npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --poa-input-data <json_with_full_system_input> \
               --layer-three-public-inputs <json_with_public_inputs_for_layer_3_circuit> \
-              --blinding-factor <blinding_factor>
+              --blindingFactor <blinding_factor>
+```
+
+Example:
+```bash
+npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --poa-input-data tests/4_sigs_2_batches_12_height/input_data_for_4_accounts.json
+              --layer-three-public-inputs tests/4_sigs_2_batches_12_height/layer_three/public.json \
+              --blindingFactor 57896044618658097711785492504343953926634992332820282019728792003956564819948 \
 ```
 
 ## [Sanitize G16 proof](./sanitize_groth16_proof.py)

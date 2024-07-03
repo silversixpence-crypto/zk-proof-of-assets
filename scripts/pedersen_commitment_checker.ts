@@ -12,10 +12,9 @@ npx ts-node ./scripts/pedersen_commitment_checker.ts \
 Example:
 ```bash
 npx ts-node ./scripts/pedersen_commitment_checker.ts \
+              --poa-input-data tests/4_sigs_2_batches_12_height/input_data_for_4_accounts.json
               --layer-three-public-inputs tests/4_sigs_2_batches_12_height/layer_three/public.json \
               --blindingFactor 57896044618658097711785492504343953926634992332820282019728792003956564819948 \
-              --poa-input-data tests/4_sigs_2_batches_12_height/input_data_for_4_accounts.json
-
 ```
 */
 
