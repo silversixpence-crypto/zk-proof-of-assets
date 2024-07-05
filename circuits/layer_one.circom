@@ -1,6 +1,6 @@
 pragma circom 2.1.7;
 
-include "../git_modules/batch-ecdsa/circuits/batch_ecdsa.circom";
+include "./ecdsa_verify.circom";
 include "./poseidon.circom";
 
 template LayerOne(num_sigs) {
@@ -8,19 +8,22 @@ template LayerOne(num_sigs) {
     var ec_dimension = 2;
 
     // Recommended register bit length for ECDSA verification.
+    // Referred to as 'n' in the libraries.
     var register_bit_length = 64;
 
     // Recommended number of registers for ECDSA verification.
+    // Referred to as 'k' in the libraries.
     var num_registers = 4;
 
     //////////////////////////////////////////////
     // ECDSA signature values.
 
-    signal input r[num_sigs][num_registers];
-    signal input rprime[num_sigs][num_registers];
     signal input s[num_sigs][num_registers];
-    signal input msghash[num_sigs][num_registers];
-    signal input pubkey[num_sigs][ec_dimension][num_registers];
+    signal input T_pre_computes[num_sigs][32][256][2][4]; // T = r^-1 * R
+    signal input U[num_sigs][ec_dimension][num_registers]; // -(m * r^-1 * G)
+
+    signal input pubkey_in[num_sigs][ec_dimension][num_registers];
+    signal pubkey[num_sigs][ec_dimension][num_registers];
 
     //////////////////////////////////////////////
     // Verify ECDSA signatures.
@@ -31,21 +34,11 @@ template LayerOne(num_sigs) {
 
     assert(num_sigs > 0);
 
-    if (num_sigs == 1) {
-        signal verification_result <==
-            ECDSAVerifyNoPubkeyCheck(register_bit_length, num_registers)
-            (r[0], s[0], msghash[0], pubkey[0]);
+    for (var i = 0; i < num_sigs; i++) {
+        pubkey[i] <== ECDSAVerify(register_bit_length, num_registers)
+            (s[i], T_pre_computes[i], U[i]);
 
-        verification_result === 1;
-    } else {
-        signal verification_result <==
-            BatchECDSAVerifyNoPubkeyCheck(
-               register_bit_length,
-               num_registers,
-               num_sigs
-            )(r, rprime, s, msghash, pubkey);
-
-        verification_result === 1;
+        pubkey_in[i] === pubkey[i];
     }
 
     //////////////////////////////////////////////
@@ -61,4 +54,24 @@ template LayerOne(num_sigs) {
     }
 
     signal output pubkey_x_coord_hash <== hasher.out;
+
+    //////////////////////////////////////////////
+    // Hash T pre-computes
+
+    component hasher2 = PoseidonSponge(num_sigs*32*256*2*4);
+
+    for (var i = 0; i < num_sigs; i++) {
+        for (var j = 0; j < 32; j++) {
+            for (var k = 0; k < 256; k++) {
+                for (var l = 0; l < 2; l++) {
+                    for (var m = 0; m < 4; m++) {
+                        hasher2.inputs[32*256*2*4*i + 256*2*4*j + 2*4*k + 4*l + m] <== T_pre_computes[i][j][k][l][m];
+                    }
+                }
+            }
+        }
+    }
+
+    signal input T_pre_computes_hash;
+    T_pre_computes_hash === hasher2.out;
 }
