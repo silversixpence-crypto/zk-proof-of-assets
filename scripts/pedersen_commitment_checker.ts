@@ -44,6 +44,9 @@ let inputData: ProofOfAssetsInputFileShape = JSON.parse(inputDataRaw, jsonRevive
 let publicInputsRaw = fs.readFileSync(layerThreePublicInputsPath);
 let publicInputs: string[] = JSON.parse(publicInputsRaw, jsonReviver);
 
+// the first 12 elements of the list are the pedersen commitment, the 13th element is the merkle root
+let commitmentInputs: string[] = publicInputs.slice(0,12);
+
 let balanceSum = inputData.accountAttestations.reduce(
     (accumulator, currentValue) => currentValue.accountData.balance + accumulator,
     0n
@@ -53,7 +56,7 @@ console.log(`Balance sum calculated from input data: ${balanceSum}`);
 console.log(`Blinding factor given: ${blindingFactor}`);
 
 let comCalc = pedersenCommitment(balanceSum, blindingFactor);
-let comCircuit = dechunkToPoint(publicInputs.map(i => BigInt(i)));
+let comCircuit = dechunkToPoint(commitmentInputs.map(i => BigInt(i)));
 
 assert.ok(
     pointEqual(comCalc, comCircuit),
