@@ -44,7 +44,7 @@ mv "$TEST_DIR"/$anon_set "$BUILD_DIR"
 "$SCRIPTS_DIR"/full_workflow.sh \
               -s \
               -b "$BATCH_SIZE" \
-              -p "$SOURCE_DIR"/powersOfTau28_hez_final_26.ptau \
+              -p "$SOURCE_DIR"/powersOfTau28_hez_final.ptau \
               -B "$TEST_DIR" \
               "$BUILD_DIR"/$signatures \
               "$BUILD_DIR"/$anon_set \
