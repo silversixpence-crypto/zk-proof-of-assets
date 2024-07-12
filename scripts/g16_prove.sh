@@ -227,10 +227,15 @@ ERR_MSG="UNKNOWN"
 
 if $big_circuits; then
     MSG="GENERATING WITNESS USING C++ CODE"
-    execute "$build_dir"/"$circuit_name"_cpp/"$circuit_name" "$signals_path" "$proof_dir"/witness.wtns
+    execute "$build_dir"/"$circuit_name"_cpp/"$circuit_name" \
+            "$signals_path" \
+            "$proof_dir"/witness.wtns
 else
     MSG="GENERATING WITNESS USING WASM CODE"
-    execute npx node "$build_dir"/"$circuit_name"_js/generate_witness.js "$build_dir"/"$circuit_name"_js/"$circuit_name".wasm "$signals_path" "$proof_dir"/witness.wtns
+    execute npx node "$build_dir"/"$circuit_name"_js/generate_witness.js \
+            "$build_dir"/"$circuit_name"_js/"$circuit_name".wasm \
+            "$signals_path" \
+            "$proof_dir"/witness.wtns
 fi
 
 if $quick; then
@@ -240,10 +245,18 @@ fi
 
 if $big_circuits; then
     MSG="GENERATING PROOF USING RAPIDSNARK"
-    execute "$rapidsnark_path" "$zkey_path" "$proof_dir"/witness.wtns "$proof_dir"/proof.json "$proof_dir"/public.json
+    execute "$rapidsnark_path" \
+            "$zkey_path" \
+            "$proof_dir"/witness.wtns \
+            "$proof_dir"/proof.json \
+            "$proof_dir"/public.json
 else
     MSG="GENERATING PROOF USING SNARKJS"
-    execute npx snarkjs groth16 prove "$zkey_path" "$proof_dir"/witness.wtns "$proof_dir"/proof.json "$proof_dir"/public.json
+    execute npx snarkjs groth16 prove \
+            "$zkey_path" \
+            "$proof_dir"/witness.wtns \
+            "$proof_dir"/proof.json \
+            "$proof_dir"/public.json
 fi
 
 printf "\n================ DONE G16 PROVE ================\n"
