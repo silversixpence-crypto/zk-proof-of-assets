@@ -92,7 +92,7 @@ component main {public [merkle_root]} = LayerTwo(${numSigs}, ${merkleTreeHeight}
 
 include "${circuitsLib}/layer_three.circom";
 
-component main = LayerThree(${parallelism});
+component main {public [merkle_root]} = LayerThree(${parallelism});
 `};
 
 if (numSigsRemainder > 0) {

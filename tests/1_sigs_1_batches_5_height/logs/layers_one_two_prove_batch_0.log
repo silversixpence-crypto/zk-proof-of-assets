@@ -1,52 +1,69 @@
 
 ================ PREPARING INPUT SIGNALS FILE FOR LAYER 1 CIRCUIT BATCH 0 ================
-Mon Jun 17 10:13:06 BST 2024
-STATS: time ([H:]M:S) 0:00.84 ; mem 0Kb ; cpu 194%
+Sat Jul  6 17:20:49 BST 2024
+Preparing input for layer 1 using the following data:
+- System input: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/input_data_for_1_accounts.json
+- Start index for batch: 0
+- End index for batch: 1
+Path to write processed data to: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_one/batch_0/layer_one_batch_0_input.json
+
+STATS: time ([H:]M:S) 0:00.74 ; mem 0Kb ; cpu 204%
 
 ================ GENERATING WITNESS USING C++ CODE ================
-Mon Jun 17 10:13:07 BST 2024
-STATS: time ([H:]M:S) 0:16.74 ; mem 0Kb ; cpu 99%
+Sat Jul  6 17:20:50 BST 2024
+STATS: time ([H:]M:S) 0:17.91 ; mem 0Kb ; cpu 99%
 
 ================ GENERATING PROOF USING RAPIDSNARK ================
-Mon Jun 17 10:13:24 BST 2024
-STATS: time ([H:]M:S) 0:02.83 ; mem 0Kb ; cpu 2120%
+Sat Jul  6 17:21:07 BST 2024
+STATS: time ([H:]M:S) 0:02.56 ; mem 0Kb ; cpu 2183%
 
 ================ DONE G16 PROVE ================
 
 ================ VERIFYING PROOF ================
-Mon Jun 17 10:13:27 BST 2024
+Sat Jul  6 17:21:10 BST 2024
 [32;22m[INFO]  [39;1msnarkJS[0m: OK!
-STATS: time ([H:]M:S) 0:00.29 ; mem 0Kb ; cpu 344%
+STATS: time ([H:]M:S) 0:00.31 ; mem 0Kb ; cpu 317%
 
 ================ DONE G16 VERIFY ================
 
 ================ CONVERTING LAYER 1 PROOF TO LAYER 2 INPUT SIGNALS BATCH 0 ================
-Mon Jun 17 10:13:27 BST 2024
-STATS: time ([H:]M:S) 0:03.20 ; mem 0Kb ; cpu 100%
+Sat Jul  6 17:21:10 BST 2024
+STATS: time ([H:]M:S) 0:03.39 ; mem 0Kb ; cpu 100%
 
 ================ PREPARING INPUT SIGNALS FILE FOR LAYER 2 CIRCUIT BATCH 0 ================
-Mon Jun 17 10:13:30 BST 2024
-STATS: time ([H:]M:S) 0:00.95 ; mem 0Kb ; cpu 202%
+Sat Jul  6 17:21:14 BST 2024
+Preparing input for layer 2 using the following data:
+- System input: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/input_data_for_1_accounts.json
+- Start index for batch: 0
+- End index for batch: 1
+- Merkle proofs path: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/merkle_proofs.json
+- Merkle root path: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/merkle_root.json
+Path to write processed data to: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/layer_two/batch_0/layer_two_batch_0_input.json
+Path to write public keys hash to: /root/zk-proof-of-assets/tests/1_sigs_1_batches_5_height/pubkey_x_coords_hash.txt
+
+Hash of public keys x-coords: 16046945922456683920931562152137446035290667510980821390048840882709291296593
+Checking that the order of addresses in input data & Merkle proofs is the same..
+STATS: time ([H:]M:S) 0:00.98 ; mem 0Kb ; cpu 188%
 
 ================ RUNNING PROVING SYSTEM FOR LAYER 2 CIRCUIT BATCH 0 ================
 
 ================ GENERATING WITNESS USING C++ CODE ================
-Mon Jun 17 10:13:31 BST 2024
-STATS: time ([H:]M:S) 0:53.84 ; mem 0Kb ; cpu 99%
+Sat Jul  6 17:21:15 BST 2024
+STATS: time ([H:]M:S) 0:54.66 ; mem 0Kb ; cpu 99%
 
 ================ GENERATING PROOF USING RAPIDSNARK ================
-Mon Jun 17 10:14:25 BST 2024
-STATS: time ([H:]M:S) 0:26.85 ; mem 0Kb ; cpu 2014%
+Sat Jul  6 17:22:09 BST 2024
+STATS: time ([H:]M:S) 0:26.70 ; mem 0Kb ; cpu 2012%
 
 ================ DONE G16 PROVE ================
 
 ================ VERIFYING PROOF ================
-Mon Jun 17 10:14:52 BST 2024
+Sat Jul  6 17:22:36 BST 2024
 [32;22m[INFO]  [39;1msnarkJS[0m: OK!
-STATS: time ([H:]M:S) 0:00.31 ; mem 0Kb ; cpu 321%
+STATS: time ([H:]M:S) 0:00.30 ; mem 0Kb ; cpu 336%
 
 ================ DONE G16 VERIFY ================
 
 ================ CONVERTING LAYER 2 PROOF TO LAYER 3 INPUT SIGNALS ================
-Mon Jun 17 10:14:52 BST 2024
-STATS: time ([H:]M:S) 0:02.99 ; mem 0Kb ; cpu 100%
+Sat Jul  6 17:22:36 BST 2024
+STATS: time ([H:]M:S) 0:03.16 ; mem 0Kb ; cpu 100%
