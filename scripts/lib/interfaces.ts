@@ -55,8 +55,7 @@ export interface Leaf {
     hash: bigint,
 }
 
-// TODO change the name here to MerkleProofs
-export interface Proofs {
+export interface MerkleProofs {
     leaves: Leaf[],
     path_elements: bigint[][],
     path_indices: number[][],

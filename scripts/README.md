@@ -510,7 +510,7 @@ Format data for use in layer 2 circuit.
 
 This script takes
 1. the output of ecdsa_sigs_parser.ts: `ProofOfAssetsInputFileShape`
-2. merkle root (`bigint`) & proofs (`Proofs`) from merkle_tree.rs
+2. merkle root (`bigint`) & proofs (`MerkleProofs`) from merkle_tree.rs
 3. layer 1 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
 and converts it to the format required by the layer 2 circuit: `LayerTwoInputFileShape`
 

@@ -160,7 +160,6 @@ if $verify_zkey; then
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
         ERR_MSG="$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
         exit 1
-        # elif
         # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
         # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
     fi
