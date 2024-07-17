@@ -1,5 +1,5 @@
 import { jsonReplacer, jsonReviver } from "./lib/json_serde";
-import { ProofOfAssetsInputFileShape, AccountData, Proofs, Leaf } from "./lib/interfaces";
+import { ProofOfAssetsInputFileShape, AccountData, MerkleProofs, Leaf } from "./lib/interfaces";
 
 const circomlibjs = require("circomlibjs");
 const fs = require('fs');
@@ -63,7 +63,7 @@ async function build_tree(poseidon: any, field: any, leaves: bigint[], height: n
 }
 
 // ================================================================
-// Proofs.
+// MerkleProofs.
 
 // Node indexing starts at 0, so left nodes are at '% 2 === 0' and right nodes at '% 2 === 1'.
 function path_element_index(node_index: number) {
@@ -111,8 +111,8 @@ async function verify_merkle_proof(poseidon: any, field: any, root: bigint, leaf
     return hash === root;
 }
 
-async function generate_proofs(poseidon: any, field: any, tree: bigint[][], owned_leaves: Leaf[]): Promise<Proofs> {
-    let proofs: Proofs = {
+async function generate_proofs(poseidon: any, field: any, tree: bigint[][], owned_leaves: Leaf[]): Promise<MerkleProofs> {
+    let proofs: MerkleProofs = {
         leaves: [],
         path_elements: [],
         path_indices: [],
@@ -270,7 +270,7 @@ async function main() {
     let json = JSON.stringify(root, jsonReplacer, 2);
     fs.writeFileSync(merkle_root_path, json);
 
-    let proofs: Proofs = await generate_proofs(poseidon, field, tree, owned_leaves);
+    let proofs: MerkleProofs = await generate_proofs(poseidon, field, tree, owned_leaves);
     json = JSON.stringify(
         proofs,
         jsonReplacer,
@@ -338,7 +338,7 @@ async function test() {
     let json = JSON.stringify(root, jsonReplacer, 2);
     fs.writeFileSync(merkle_root_path, json);
 
-    let proofs: Proofs = await generate_proofs(poseidon, field, tree, owned_leaves);
+    let proofs: MerkleProofs = await generate_proofs(poseidon, field, tree, owned_leaves);
     json = JSON.stringify(
         proofs,
         jsonReplacer,

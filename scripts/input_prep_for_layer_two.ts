@@ -3,7 +3,7 @@ Format data for use in layer 2 circuit.
 
 This script takes
 1. the output of ecdsa_sigs_parser.ts: `ProofOfAssetsInputFileShape`
-2. merkle root (`bigint`) & proofs (`Proofs`) from merkle_tree.rs
+2. merkle root (`bigint`) & proofs (`MerkleProofs`) from merkle_tree.rs
 3. layer 1 proof (after sanitization with sanitize_groth16_proof.py): `Groth16ProofAsInput`
 and converts it to the format required by the layer 2 circuit: `LayerTwoInputFileShape`
 
@@ -20,7 +20,7 @@ import {
     ProofOfAssetsInputFileShape,
     Groth16ProofAsInput,
     AccountAttestation,
-    Proofs,
+    MerkleProofs,
     Leaf
 } from "./lib/interfaces";
 
@@ -97,7 +97,7 @@ async function writePubkeyXCoordsHash(pubkeys: Point[], outputPath: String): Pro
 // =========================================================
 // Input signal builder for the circuit.
 
-function constructInput(proofData: Groth16ProofAsInput, xCoordsHash: string, accountAttestations: AccountAttestation[], merkleRoot: bigint, merkleProofs: Proofs): LayerTwoInputFileShape {
+function constructInput(proofData: Groth16ProofAsInput, xCoordsHash: string, accountAttestations: AccountAttestation[], merkleRoot: bigint, merkleProofs: MerkleProofs): LayerTwoInputFileShape {
     var { pubInput, ...otherData } = proofData;
 
     var layerTwoInput: LayerTwoInputFileShape = {
@@ -217,9 +217,9 @@ writePubkeyXCoordsHash(accountAttestations.map(w => w.signature.pubkey), xCoords
         let merkleRoot: bigint = JSON.parse(merkleRootRaw, jsonReviver);
 
         let merkleProofsRaw = fs.readFileSync(merkleProofsPath);
-        let merkleProofs: Proofs = JSON.parse(merkleProofsRaw, jsonReviver);
+        let merkleProofs: MerkleProofs = JSON.parse(merkleProofsRaw, jsonReviver);
 
-        let merkleProofsSlice: Proofs = {
+        let merkleProofsSlice: MerkleProofs = {
             leaves: merkleProofs.leaves.slice(startIndex, endIndex),
             path_elements: merkleProofs.path_elements.slice(startIndex, endIndex),
             path_indices: merkleProofs.path_indices.slice(startIndex, endIndex),

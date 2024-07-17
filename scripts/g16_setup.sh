@@ -218,7 +218,12 @@ MSG="COMPILING CIRCUIT"
 #
 # --O1 optimization only removes “equals” constraints but does not optimize out “linear” constraints.
 # the further --O2 optimization takes significantly longer on large circuits (for reasons that aren’t totally clear)
-execute circom "$circuit_path" --r1cs $compile_flags --sym --output "$build_dir" -l ./node_modules -l ./git_modules
+execute circom "$circuit_path" \
+        --r1cs $compile_flags \
+        --sym \
+        --output "$build_dir" \
+        -l ./node_modules \
+        -l ./git_modules
 
 if $big_circuits; then
     MSG="COMPILING C++ WITNESS GENERATION CODE"
@@ -235,10 +240,16 @@ fi
 if ! $skip_zkey_gen; then
     if $big_circuits; then
         MSG="GENERATING ZKEY FOR CIRCUIT USING PATCHED NODE"
-        execute "$patched_node_path" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$build_dir"/"$circuit_name"_0.zkey
+        execute "$patched_node_path" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey new \
+                "$build_dir"/"$circuit_name".r1cs \
+                "$ptau_path" \
+                "$build_dir"/"$circuit_name"_0.zkey
     else
         MSG="GENERATING ZKEY FOR CIRCUIT"
-        execute npx snarkjs groth16 setup "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$build_dir"/"$circuit_name"_0.zkey
+        execute npx snarkjs groth16 setup \
+                "$build_dir"/"$circuit_name".r1cs \
+                "$ptau_path" \
+                "$build_dir"/"$circuit_name"_0.zkey
     fi
 
     MSG="CONTRIBUTING TO PHASE 2 CEREMONY"
@@ -248,13 +259,22 @@ if ! $skip_zkey_gen; then
         suffix="final"
     fi
     # TODO allow cli to give random text for entropy
-    execute npx snarkjs zkey contribute "$build_dir"/"$circuit_name"_0.zkey "$build_dir"/"$circuit_name"_"$suffix".zkey --name="First contributor" -e="random text for entropy"
+    execute npx snarkjs zkey contribute \
+            "$build_dir"/"$circuit_name"_0.zkey \
+            "$build_dir"/"$circuit_name"_"$suffix".zkey \
+            --name="First contributor" \
+            -e="random text for entropy"
 
     # TODO allow cli to give randomness
     if $beacon; then
         MSG="GENERATING FINAL ZKEY USING RANDOM BEACON"
         # what is this random hex? https://github.com/iden3/snarkjs#20-apply-a-random-beacon
-        execute npx snarkjs zkey beacon "$build_dir"/"$circuit_name"_"$suffix".zkey "$build_dir"/"$circuit_name"_final.zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+        execute npx snarkjs zkey beacon \
+                "$build_dir"/"$circuit_name"_"$suffix".zkey \
+                "$build_dir"/"$circuit_name"_final.zkey \
+                0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f \
+                10 \
+                -n="Final Beacon phase2"
     fi
 
     set_default_zkey_path_final "$build_dir" "$circuit_name" zkey_path
@@ -264,9 +284,13 @@ fi
 
 MSG="EXPORTING VKEY"
 if $big_circuits; then
-    execute "$patched_node_path" "$SNARKJS_CLI" zkey export verificationkey "$zkey_path" "$build_dir"/"$circuit_name"_vkey.json
+    execute "$patched_node_path" "$SNARKJS_CLI" zkey export verificationkey \
+            "$zkey_path" \
+            "$build_dir"/"$circuit_name"_vkey.json
 else
-    execute npx snarkjs zkey export verificationkey "$zkey_path" "$build_dir"/"$circuit_name"_vkey.json -v
+    execute npx snarkjs zkey export verificationkey -v \
+            "$zkey_path" \
+            "$build_dir"/"$circuit_name"_vkey.json \
 fi
 
 printf "\n================ DONE G16 SETUP ================\n"
