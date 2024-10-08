@@ -1,6 +1,6 @@
 # ZK Proof of Assets
 
-Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol).
+Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol)).
 1. For details on the whole PoR project see [this project doc](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/S1Ozo-iO2).
 2. For the original Proof of Assets design doc see [this](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/rJXtAeyLT). Note, however, that the final design is slightly different to the original (some optimizations were done). See below for final design.
 3. For an in-depth explanation of Proof of Assets see [this article](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/r1FR-0uBR).
@@ -102,7 +102,7 @@ The code has only been tested on a Linux machine (Debian).
 
 First, you'll need to install some software. There is a script that does all of this for you: [machine_initialization.sh](./scripts/machine_initialization.sh). **The script only works on a Debian machine.** It does some invasive changes to the machine (like changing `vm.max_map_count` in `sysctl`) so it is recommended to run it on a server and not your personal machine; running it in a Docker container is also an option. You can find out more about what this script does [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
 
-Next, you run the [full workflow](./scripts/full_workflow.sh) script, which will run the entire snark proving system. The anonymity set and signuture set will have to be given as input to the script, so these need to be generated first. You can read more about the script and it's inputs [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
+Next, you run the [full workflow](./scripts/full_workflow.sh) script, which will run the entire snark proving system. The anonymity set and signature set will have to be given as input to the script, so these need to be generated first. You can read more about the script and it's inputs [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
 
 Here are some useful commands to copy:
 ```bash
@@ -153,7 +153,7 @@ SELECT * FROM `bigquery-public-data.crypto_ethereum.balances` ORDER BY eth_balan
 
 ### Verifier
 
-TODO the verifier also needs to grab the anon set and produce the merkle root, compare that to the public inputs
+Script still needs to be written: https://github.com/silversixpence-crypto/zk-proof-of-assets/issues/60
 
 Verification can be done with the [snarkjs](https://github.com/iden3/snarkjs) tool:
 ```bash
@@ -182,16 +182,29 @@ Most of the time taken up by the workflow is in generating the proving keys (zke
 
 For layer 1, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 1}}(s) = 447044s + 888502$$
-where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data (`(num_sigs, constraints)`):
-```
-[(1, 1509221), (2, 1932908), (2, 1932908), (4, 1932908), (7, 4161827), (16, 8173925), (128, 58102853)]
+where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data:
+```python
+# (num_sigs, constraints)
+ [(1,        1509221),
+  (2,        1932908),
+  (2,        1932908),
+  (4,        1932908),
+  (7,        4161827),
+  (16,       8173925),
+  (128,      58102853)]
 ```
 
 For layer 2, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 2}}(s,h) = 159591s + 6054h + 19490640$$
-where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data (`(num_sigs, height, constraints)`):
-```
-[(4, 12, 19981480), (1, 5, 19823616), (2, 25, 19987876), (7, 25, 20784765), (16, 25, 22219209), (128, 25, 40070665)]
+where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data:
+```python
+# (num_sigs, height, constraints)
+ [(4,        12,     19981480),
+  (1,        5,      19823616),
+  (2,        25,     19987876),
+  (7,        25,     20784765),
+  (16,       25,     22219209),
+  (128,      25,     40070665)]
 ```
 
 ## Testing
