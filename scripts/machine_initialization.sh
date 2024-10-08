@@ -76,7 +76,7 @@ DESCRIPTION:
     6. Installs nvm via their install script, and installs latest npm
     7. Clones rapidsnark repo, and builds from source
     8. Installs pnpm via their install script
-    9. Print out the `export` command that needs to be run manually before trying to run full_workflow.sh
+    9. Print out the 'export' command that needs to be run manually before trying to run full_workflow.sh
 
     The script can be run multiple times without repeating work e.g. if a command
     fails then you can run the script again and it will pick up where it left off.
