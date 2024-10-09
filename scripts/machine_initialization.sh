@@ -244,6 +244,10 @@ cd "$HOME"
 if [[ ! -d "$HOME/circom" ]]; then
     git clone https://github.com/iden3/circom.git
     cd circom
+
+    # this is circom 2.1.8 (there seems to be problems compiling circuits for later versions)
+    git checkout 207a712e7830774a66189ef453b77a04cec97995
+
     cargo build --release
     cargo install --path circom
 fi
