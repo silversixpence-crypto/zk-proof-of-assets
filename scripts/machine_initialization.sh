@@ -76,7 +76,7 @@ DESCRIPTION:
     6. Installs nvm via their install script, and installs latest npm
     7. Clones rapidsnark repo, and builds from source
     8. Installs pnpm via their install script
-    9. Print out the `export` command that needs to be run manually before trying to run full_workflow.sh
+    9. Print out the 'export' command that needs to be run manually before trying to run full_workflow.sh
 
     The script can be run multiple times without repeating work e.g. if a command
     fails then you can run the script again and it will pick up where it left off.
@@ -244,6 +244,10 @@ cd "$HOME"
 if [[ ! -d "$HOME/circom" ]]; then
     git clone https://github.com/iden3/circom.git
     cd circom
+
+    # this is circom 2.1.8 (there seems to be problems compiling circuits for later versions)
+    git checkout 207a712e7830774a66189ef453b77a04cec97995
+
     cargo build --release
     cargo install --path circom
 fi

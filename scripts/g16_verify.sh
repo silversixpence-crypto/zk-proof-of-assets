@@ -160,7 +160,6 @@ if $verify_zkey; then
     if [[ "${ptau_path##*.}" != "ptau" ]] || [[ ! -f "$ptau_path" ]]; then
         ERR_MSG="$ERR_PREFIX: <ptau_path> '$ptau_path' does not point to an existing ptau file. You must provide a ptau file if you want the zkey to be verified."
         exit 1
-        # elif
         # TODO check file hash matches https://github.com/iden3/snarkjs#7-prepare-phase-2
         # TODO verify ptau file https://github.com/iden3/snarkjs#8-verify-the-final-ptau
     fi
@@ -191,18 +190,29 @@ ERR_MSG="UNKNOWN"
 MSG="VERIFYING FINAL ZKEY"
 if $verify_zkey; then
     if $big_circuits; then
-        execute "$patched_node_path" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey verify "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$zkey_path"
+        execute "$patched_node_path" $NODE_CLI_OPTIONS "$SNARKJS_CLI" zkey verify \
+                "$build_dir"/"$circuit_name".r1cs \
+                "$ptau_path" \
+                "$zkey_path"
     else
-        execute npx snarkjs zkey verify "$build_dir"/"$circuit_name".r1cs "$ptau_path" "$zkey_path"
+        execute npx snarkjs zkey verify \
+                "$build_dir"/"$circuit_name".r1cs \
+                "$ptau_path" \
+                "$zkey_path"
     fi
 fi
 
 MSG="VERIFYING WITNESS"
 if $verify_witness; then
-    execute snarkjs wtns check "$build_dir"/"$circuit_name".r1cs "$proof_dir"/witness.wtns
+    execute snarkjs wtns check \
+            "$build_dir"/"$circuit_name".r1cs \
+            "$proof_dir"/witness.wtns
 fi
 
 MSG="VERIFYING PROOF"
-execute npx snarkjs groth16 verify "$build_dir"/"$circuit_name"_vkey.json "$proof_dir"/public.json "$proof_dir"/proof.json
+execute npx snarkjs groth16 verify \
+        "$build_dir"/"$circuit_name"_vkey.json \
+        "$proof_dir"/public.json \
+        "$proof_dir"/proof.json
 
 printf "\n================ DONE G16 VERIFY ================\n"

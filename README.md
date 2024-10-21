@@ -1,6 +1,6 @@
 # ZK Proof of Assets
 
-Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol).
+Circom & Groth16 SNARK implementation of Proof of Assets. This repo allows digital asset custodians (such as cryptocurrency exchanges) to prove that they own a certain amount of digital assets, without revealing the addresses that hold the assets. Proof of Assets is the first out of 2 protocols that make up a Proof of Reserves protocol; the other protocol is Proof of Liabilities (repo [here](https://github.com/silversixpence-crypto/dapol)).
 1. For details on the whole PoR project see [this project doc](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/S1Ozo-iO2).
 2. For the original Proof of Assets design doc see [this](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/rJXtAeyLT). Note, however, that the final design is slightly different to the original (some optimizations were done). See below for final design.
 3. For an in-depth explanation of Proof of Assets see [this article](https://hackmd.io/@JI2FtqawSzO-olUw-r48DQ/r1FR-0uBR).
@@ -11,7 +11,9 @@ The above-linked docs offer an in-depth explanation, but here is a brief one:
 
 Problem statement: a crypto-asset custodian wants to prove they own $X$ digital assets, but do not want to reveal the addresses that hold the assets.
 
-Solution: the custodian produces signatures for the addresses (which forms the ownership proof), and feeds them as private inputs to a ZK-SNARK, which verifies them and checks that they are contained within a larger set of addresses (the anonymity set). This set is a public input to the snark and must be checked to mirror the blockchain by the verifier. Finally, the snark adds up the balances of the addresses, and outputs a Pedersen commitment of the sum. The commitment is public and can be used in conjunction with the output of Proof of Liabilities to show solvency.
+Solution: the custodian produces signatures for the addresses (which forms the ownership proof), and feeds them as private inputs to a ZK-SNARK, which verifies them and checks that they are contained within a larger set of addresses (the anonymity set). This set is a public input to the snark and must be checked to mirror the blockchain by the verifier.
+
+The main purpose of PoA is to link with PoL to produce a proof that $\sum \text{liabilities} \le \sum \text{assets}$. In this case the custodian can hide their asset sum $X$ and just produce a proof that the solvency equation holds. The output of the PoA snark is thus a Pedersen commitment to $X$, as opposed to the raw value.
 
 ## Current state
 
@@ -25,22 +27,72 @@ The code is at it's first stage: Groth16 & Circom libraries. Second stage involv
 
 ## Design
 
-There is a system of snarks, seperated into 3 layers and linked via snark recursion. The was done to increase the total number of signatures that can be supported (see design doc for more details).
+### Overview
 
-Inputs to the system (produced by the custodian):
-- set of ECDSA signatures & account balances (will be a private input to the snarks)
-- anonymity set of addresses (public input to the snarks)
+Prover:
+- select anonymity set, making sure that all owned addresses are contained in it
+- publish anonymity set
+- produce signatures for owned addresses
+- produce snark proof, using signatures as private input and anonymity set as public input
 
-Output of the system
-- Pedersen commitment to the sum of balances related to the ECDSA signatures
+Verifier:
+- check that anonymity set matches on-chain data
+- verify snark proof
+
+### Detailed
+
+*The motivation for the following design can be found in the above-linked design doc*
+
+There is a system of snarks, separated into 3 layers and linked via snark recursion. The was done to increase the total number of signatures that can be supported. The max number of signatures is determined by the max number of R1CS constraints for a Groth16 snark, which depends on [publicly available Powers of Tau files](https://github.com/iden3/snarkjs?tab=readme-ov-file#7-prepare-phase-2). Note that signature verification is the most expensive operation (read more [here](https://hackmd.io/juvO0SxlSqWa2pTYDKCOcw?view=#ECDSA-on-secp256k1)).
+
+The layers each have the following responsibilities:
+- Layer 1: verify signatures (many snarks in parallel)
+- Layer 2: verify public keys are associated with an address in the anonymity set (many snarks in parallel)
+- Layer 3: sum up balances & produce Pedersen commitment
+
+Verifying a snark inside a snark is rather expensive (~20M constraints) and the cost increases dramatically if the public inputs are large (read more [here](https://hackmd.io/juvO0SxlSqWa2pTYDKCOcw?view=#Groth16-verification)). To keep the public inputs small, we hash public values.
+
+The anonymity set is much too large to feed into the snark as a public input, so we rather create a Merkle tree from the set (outside the snark) and use Merkle inclusion proofs (private inputs) and the root hash (public input) as inputs to the snark system. The Poseidon hash function was chosen because of it's snark-compatibility (read more [here](https://hackmd.io/juvO0SxlSqWa2pTYDKCOcw?view=#Merkle-proofs)).
+
+The Pedersen commitment is done with the Ristretto Group for the Edwards form of Curve25519 (read more [here](https://hackmd.io/juvO0SxlSqWa2pTYDKCOcw?view=#Pedersen-commitments)).
 
 <details>
 
 <summary>Diagram showing recursive snark design for ECDSA signatures</summary>
 
+Key:
+- $N$ - total number of signatures
+- $k$ - number of batches
+- $n'$ - batch size, where $kn' = N$
+- $\sigma = (\sigma_{\text{pubkey}}, \sigma_r, \sigma_{r'}, \sigma_s, \sigma_{\text{message}})$ - ECDSA* signature (note that $r'$ is an extension of the original ECDSA signature, and can be calculated from the other signature values)
+- $x$ - number of field values in a snark proof
+- $h$ - height of the merkle tree
+
 ![Flow diagram](./images/poa_snark_recursive_design.png)
 
 </details>
+
+#### Prover
+
+The prover $\mathcal{P}$ needs to produce the following:
+- A set of owned addresses & balances: $`A=\{(a,b) : a \text{ is an address owned by P and } b \text{ is it's balance}\}`$
+- ECDSA* signatures for all owned addresses: $`S=\{\sigma=(\sigma_{\text{public key}}, \sigma_r, \sigma_{r'}, \sigma_s, \sigma_{\text{message}}) : (a,b) \in A, a = \text{address\_from\_pubkey}(\sigma_{\text{public key}})\}`$
+- A set of addresses & balances from the Ethereum blockchain: $`A^*=\{(a,b) : a \text{ is an address and } b \text{ is it's balance}\}`$. The addresses corresponding to sigs in $S$ must be contained in $A^*$.
+- A Merkle tree for $A^* $: $`M=\text{merkle\_tree}(A^*)`$
+- Merkle proofs for $A$:  $`M_{\text{proofs}}=\{\text{merkle\_proof}(a,M) : a \in A\}`$
+- Pedersen commitment to the balance sum of $A$: $P=g^{\sum_{b \in A} b} h^r$ where $g$ & $h$ are generators and $r$ is the blinding factor
+
+The prover then runs the snark system on these inputs to produce a proof $\pi$, and publishes the following: $\pi$, $A^* $, $P$.
+
+#### Verifier
+
+The verifier does the following:
+- Construct the root hash of the Merkle tree using $A^*$: $M_{\text{root}}$
+- Verify the proof $\pi$ using $(M_{\text{root}},P)$
+
+#### Security
+
+See [this](https://github.com/silversixpence-crypto/zk-proof-of-assets/labels/security) list of issues, and [this](https://hackmd.io/juvO0SxlSqWa2pTYDKCOcw?view=#Library-security).
 
 ## Usage
 
@@ -50,7 +102,7 @@ The code has only been tested on a Linux machine (Debian).
 
 First, you'll need to install some software. There is a script that does all of this for you: [machine_initialization.sh](./scripts/machine_initialization.sh). **The script only works on a Debian machine.** It does some invasive changes to the machine (like changing `vm.max_map_count` in `sysctl`) so it is recommended to run it on a server and not your personal machine; running it in a Docker container is also an option. You can find out more about what this script does [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
 
-Next, you run the [full workflow](./scripts/full_workflow.sh) script, which will run the entire snark proving system. The anonymity set and signuture set will have to be given as input to the script, so these need to be generated first. You can read more about the script and it's inputs [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
+Next, you run the [full workflow](./scripts/full_workflow.sh) script, which will run the entire snark proving system. The anonymity set and signature set will have to be given as input to the script, so these need to be generated first. You can read more about the script and it's inputs [here](https://github.com/silversixpence-crypto/zk-proof-of-assets/tree/stent/readme/scripts#machine-initialization).
 
 Here are some useful commands to copy:
 ```bash
@@ -101,6 +153,8 @@ SELECT * FROM `bigquery-public-data.crypto_ethereum.balances` ORDER BY eth_balan
 
 ### Verifier
 
+Script still needs to be written: https://github.com/silversixpence-crypto/zk-proof-of-assets/issues/60
+
 Verification can be done with the [snarkjs](https://github.com/iden3/snarkjs) tool:
 ```bash
 snarkjs groth16 verify ./path/to/vkey.json ./path/to/public_inputs.json ./path/to/proof.json
@@ -128,16 +182,29 @@ Most of the time taken up by the workflow is in generating the proving keys (zke
 
 For layer 1, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 1}}(s) = 447044s + 888502$$
-where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data (`(num_sigs, constraints)`):
-```
-[(1, 1509221), (2, 1932908), (2, 1932908), (4, 1932908), (7, 4161827), (16, 8173925), (128, 58102853)]
+where $s$ is the number of signatures. This equation was calculated using a line of best fit from the test data:
+```python
+# (num_sigs, constraints)
+ [(1,        1509221),
+  (2,        1932908),
+  (2,        1932908),
+  (4,        1932908),
+  (7,        4161827),
+  (16,       8173925),
+  (128,      58102853)]
 ```
 
 For layer 2, the number of non-linear constraints can be estimated with the following equation:
 $$C_{\text{layer 2}}(s,h) = 159591s + 6054h + 19490640$$
-where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data (`(num_sigs, height, constraints)`):
-```
-[(4, 12, 19981480), (1, 5, 19823616), (2, 25, 19987876), (7, 25, 20784765), (16, 25, 22219209), (128, 25, 40070665)]
+where $h$ is the height of the Merkle tree. Note that the main source of constraints in the layer 2 circuit comes from Groth16 verification.  This equation was calculated using a line of best fit from the test data:
+```python
+# (num_sigs, height, constraints)
+ [(4,        12,     19981480),
+  (1,        5,      19823616),
+  (2,        25,     19987876),
+  (7,        25,     20784765),
+  (16,       25,     22219209),
+  (128,      25,     40070665)]
 ```
 
 ## Testing
